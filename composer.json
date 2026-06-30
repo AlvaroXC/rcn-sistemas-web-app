@@ -1,0 +1,15 @@
+{
+    "name": "alvaroxoolcanul/rcnsistemas",
+    "description": "Proyecto con PHP, JS y MYSQL",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Alvaro Xool",
+            "email": "alvaroxool14@gmail.com"
+        }
+    ],
+    "require": {
+        "phpmailer/phpmailer": "^7.0",
+        "vlucas/phpdotenv": "^5.6"
+    }
+}

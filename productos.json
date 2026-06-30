@@ -1,0 +1,646 @@
+[
+    {
+        "id": 1,
+        "nombre": "CONTPAQi® Contabilidad",
+        "descrip_corta": "Administra tu nómina y cubre en tiempo con las obligaciones de ley.",
+        "url_imagen": "src/img/ContCont.svg",
+        "frase":"El software favorito de los contadores",
+        "descrip_larga":"Controla y analiza toda la información contable, fiscal y financiera de tu negocio con CONTPAQi® Contabilidad.",
+        "url_ficha_tecnica": "fichas_producto/Ficha_Producto_Contabilidad.pdf",
+        "url_video":"https://www.youtube.com/embed/PBf5tzobbkU?si=ACMmb_JbNNQLveg1",
+        "beneficios": [
+            {
+                "titulo": "Captura automatizada y personalización contable",
+                "descripcion": "Asocia automáticamente los nuevos CFDI Factura y CFDI Pagos a las pólizas contables, facilitando el prellenado de algunos datos con documentos bancarios. El Administrador de Documentos Digitales (ADD) gestiona los XML y registra movimientos recurrentes como la renta."
+            },
+            {
+                "titulo": "Cumplimiento de la contabilidad electrónica",
+                "descripcion": "Genera archivos XML de balanza de comprobación, catálogo de cuentas, pólizas y auxiliares según el Anexo 24. También cuenta con reportes para revisar la información antes de enviarla al SAT."
+            },
+            {
+                "titulo": "Conciliación contable automatizada",
+                "descripcion": "Facilita la comparación automática entre movimientos bancarios y contables, reduciendo el tiempo de trabajo."
+            },
+            {
+                "titulo": "Declaración anual para personas morales",
+                "descripcion": "Asigna rubros de acuerdo a las NIF para generar reportes de estados financieros y anexos, con herramientas que permiten visualizar reportes predefinidos."
+            },
+            {
+                "titulo": "Control de activos fijos",
+                "descripcion": "Gestiona la depreciación contable y fiscal de activos fijos."
+            },
+            {
+                "titulo": "Reportes versátiles",
+                "descripcion": "Genera estados financieros comparativos, analiza la situación contable y fiscal, y permite diseñar cédulas en Excel para pagos provisionales y declaraciones anuales."
+            },
+            {
+                "titulo": "Administrador de Documentos Digitales (ADD)",
+                "descripcion": "Recibe y gestiona los CFDI de Factura, Nóminas y Pagos, verificando la validez de los documentos XML."
+            }
+        ],
+        "titulo_video_uso":"Como utilizar CONTPAQi Contabilidad" ,
+        "descrip_video_uso":"Descubre cómo el software favorito de los contadores, hará mas eficiente tu labor contable",
+        "url_video_uso" : "https://www.youtube.com/embed/pwOXfRiXlJ4?si=gTMtCtWTR67_EUlQ"
+    }, 
+    {
+        "id" : 2,
+        "nombre": "CONTPAQi® Nóminas",
+        "descrip_corta": "Administra tu nómina y cubre en tiempo con las obligaciones de ley.",
+        "url_imagen": "src/img/ContNom.svg",
+        "frase": "Facilita la nómina de tu negocio y gana tranquilidad",
+        "descrip_larga": "Gestiona y contabiliza los sueldos de tus empleados desde nuestro sistema de nóminas para agilizar la administración de tu negocio, cumplir con tus obligaciones legales y las necesidades de tu empresa.",
+        "url_ficha_tecnica": "fichas_producto/Ficha_Producto_CONTPAQi_Nominas.pdf",
+        "url_video": "https://www.youtube.com/embed/LjNl_fgJqLw?si=alCdUrx25QkZkozz" ,
+        "beneficios": [
+            {
+                "titulo": "Cumplimiento de la disposición de Nómina Digital Anexo 20, versión 4.0",
+                "descripcion": "Incluye herramientas de apoyo para timbrado exitoso, emisión ilimitada de CFDI y validación de RFC y CURP."
+            },
+            {
+                "titulo": "Adaptación al cálculo de nómina",
+                "descripcion": "Permite manejar varios registros patronales y adaptar fórmulas, crear periodos extraordinarios y detallar conceptos de sueldo."
+            },
+            {
+                "titulo": "Cumplimiento con obligaciones obrero-patronales",
+                "descripcion": "Conexión con INFONAVIT, envíos al IDSE, cálculo de vacaciones y cumplimiento de leyes de ISR, IMSS, SAR y más."
+            },
+            {
+                "titulo": "Cálculos de IMSS e INFONAVIT correctos",
+                "descripcion": "Concilia y cumple con obligaciones de ISR e IMSS, identifica diferencias con el SUA y automatiza exportación de datos."
+            },
+            {
+                "titulo": "Consulta ágil de la información de nómina",
+                "descripcion": "Facilita consultas, reportes en varios formatos y personalización de cédulas en Excel."
+            },
+            {
+                "titulo": "Integración con otros procesos",
+                "descripcion": "Conexión en línea con SUA y relojes checadores, y generación de archivos para bancos y contabilidad."
+            },
+            {
+                "titulo": "Emisión y timbrado ilimitado de CFDI de nómina",
+                "descripcion": "Incluye almacenamiento, administración y entrega masiva de CFDI, así como un módulo de cancelación."
+            },
+            {
+                "titulo": "Cambio de sistema de nómina fácil y rápido",
+                "descripcion": "Permite cargar la información inicial de la empresa a partir de recibos XML."
+            },
+            {
+                "titulo": "Automatización de empleados asimilados a salarios",
+                "descripcion": "Previene cancelaciones de CFDIs asegurando la correcta asociación de conceptos de percepción."
+            },
+            {
+                "titulo": "Actualizaciones fiscales automáticas",
+                "descripcion": "Actualización en línea de tablas y valores fiscales, garantizando cumplimiento continuo."
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    }, 
+    {
+        "id":3,
+        "nombre":"CONTPAQi® Bancos",
+        "descrip_corta": "Facilita la administración de tus cuentas y flujo de efectivo con el control de ingresos y egresos.",
+        "url_imagen": "src/img/ContBan.svg",
+        "frase": "Controla y mejora tus finanzas con nuestro software para flujo de caja",
+        "descrip_larga": "Con un software de flujo de efectivo podrás gestionar desde un solo lugar y sin complicaciones tus gastos, ingresos y liquidez.",
+        "url_ficha_tecnica": "fichas_producto/Ficha_Producto_CONTPAQi_Bancos.pdf",
+        "url_video": "https://www.youtube.com/embed/bBT0xne1870?si=sJiG97et1p8FCR2K",
+        "beneficios": [
+        {
+            "titulo": "Cuida lo que más te importa: tu liquidez",
+            "descripcion": "Registra ingresos y egresos para mejorar el procesamiento y asociación a los movimientos del negocio."
+        },
+        {
+            "titulo": "Obtén flujo de efectivo a tu favor",
+            "descripcion": "Genera proyecciones de gastos e ingresos para planificar y administrar estratégicamente tu dinero."
+        },
+        {
+            "titulo": "Controla fechas de pago",
+            "descripcion": "Modifica las fechas probables de pago de clientes para mejorar la visión de ingresos y cuentas por cobrar."
+        },
+        {
+            "titulo": "Conoce nuestro contabilizador",
+            "descripcion": "Personaliza asientos contables con segmentos de cuentas, fórmulas o valores predefinidos para potencializar el cobro y pago de comprobantes."
+        },
+        {
+            "titulo": "Contabiliza tus documentos bancarios",
+            "descripcion": "Controla cajas, reposiciones de gastos, viáticos y toda la información financiera desde un solo lugar."
+        },
+        {
+            "titulo": "Visualiza comprobantes y facturas",
+            "descripcion": "Timbrado ilimitado a cero pesos para emitir CFDI sin costo adicional, sin importar la cantidad."
+        },
+        {
+            "titulo": "Saldos por CFDI",
+            "descripcion": "Controla saldos por CFDI a nivel de documento bancario, registrando pagos y cobros con mayor precisión, y transformando movimientos bancarios en documentos contables con certeza."
+        }
+    ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id":4,
+        "nombre": "CONTPAQi® XML En Línea+",
+        "descrip_corta": "Busca y descarga de forma automática y masiva los CFDI del portal del SAT. ",
+        "url_imagen": "src/img/ContXML.svg",
+        "frase": "Realiza una descarga masiva de XML en un solo clic",
+        "descrip_larga": "Con nuestro software especializado en la descarga de XML desde el SAT y de forma masiva, podrás mejorar tu control administrativo y agilizar el registro contable de tus operaciones.",
+        "url_ficha_tecnica": "fichas_producto/Ficha_Producto_CONTPAQi_XML.pdf",
+        "url_video": "https://www.youtube.com/embed/1Ebr6thH3Qs?si=QlzjPIbHkz6JtZjv",
+"beneficios": [
+        {
+            "titulo": "Agrega RFCs en nuestro nuevo catálogo",
+            "descripcion": "Conéctate automáticamente al portal del SAT para recuperar y descargar los archivos XML de tus facturas electrónicas que has perdido o nunca recibiste."
+        },
+        {
+            "titulo": "Descarga CFDIs ilimitados",
+            "descripcion": "Descarga más de 2,000 CFDI por solicitud y agiliza tu contabilidad electrónica."
+        },
+        {
+            "titulo": "Obtén una plataforma flexible y fácil de usar",
+            "descripcion": "Selecciona rápidamente la información y obtén reportes en Excel para tomar mejores decisiones."
+        },
+        {
+            "titulo": "Conoce nuestro contabilizador",
+            "descripcion": "Lleva el control de tus solicitudes de descargas y mejora la administración de tu información."
+        },
+        {
+            "titulo": "Cumple con la Contabilidad Electrónica",
+            "descripcion": "Conecta tu información con otros sistemas CONTPAQi®, carga los archivos XML de tus CFDI al ADD y verifica la validez de tus comprobantes."
+        }
+    ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id":5,
+        "nombre" : "CONTPAQi® Comercial",
+        "descrip_corta": "Ahora cualquier versión de tu CONTPAQi® Comercial con licencia anual incluye gratis Wopen Estándar.",
+        "url_imagen": "src/img/ContCom.svg",
+        "frase": "El software administrativo que te ayudará a simplificar tus procesos",
+        "descrip_larga": "Nuestro sistema administrativo para negocios te ayudará a integrar y simplificar tus actividades. ",
+        "url_ficha_tecnica": "fichas_producto/Ficha_Producto_CONTPAQi_Comercial_Start.pdf",
+        "url_video": "https://www.youtube.com/embed/Jzrmi47PW1U?si=59sZhWf5s4gU0TbU",
+        "beneficios": [
+        {
+            "titulo": "Emite los CFDI como Facturas electrónicas y Recibos electrónicos de pago (REP)",
+            "descripcion": "Conforme lo solicita el SAT, incluye todos los catálogos actualizados y emite el Recibo Electrónico de Pago (Complemento de Recepción de Pagos). Genera, timbra y envía tus Complementos Electrónicos de Pago y REP para transacciones comerciales especiales como factoraje financiero o cadenas comerciales. Personaliza los comprobantes con formatos HTML para reflejar la imagen de tu negocio."
+        },
+        {
+            "titulo": "Usa a tu favor la información de tus XML",
+            "descripcion": "Aprovecha la información contenida en los CFDI que emites y recibes en formato XML, estandarizada por todos los contribuyentes del país, y ahorra horas en la captura de documentos."
+        },
+        {
+            "titulo": "Te ayuda a incrementar las ventas de tu negocio y cumplir con las disposiciones fiscales",
+            "descripcion": "Con su calificador de cotizaciones podrás conocer mejor a tus clientes, diseñar estrategias para el cierre de ventas y registrar información para una atención personalizada."
+        },
+        {
+            "titulo": "Conoces y analizas mejor tu relación con clientes y proveedores",
+            "descripcion": "Clasifica a tus clientes y proveedores por diferentes criterios y consulta el estado de tu cartera para llevar un mejor control del crédito y documentos vencidos."
+        },
+        {
+            "titulo": "Maneja las existencias de mercancía en tu negocio",
+            "descripcion": "Usa las compras y ventas para ajustar las existencias en tu almacén multialmacén. Genera códigos de barras para un mejor control de inventario y agiliza el proceso de venta."
+        },
+        {
+            "titulo": "Agilizas la consulta inteligente de tu información comercial",
+            "descripcion": "Genera, adapta, guarda y comparte vistas personalizadas para analizar tu información. Exporta reportes en varios formatos y utiliza filtros para informes detallados de clientes y productos."
+        },
+        {
+            "titulo": "Cuenta con un módulo de tesorería incluido",
+            "descripcion": "Gestiona tus cuentas bancarias, tarjetas y movimientos financieros. Controla tus cuentas por pagar y cuentas por cobrar mediante su módulo de control de bancos."
+        },
+        {
+            "titulo": "Carta Porte 3.1",
+            "descripcion": "Genera CFDI con complemento Carta Porte, declara regímenes aduaneros, controla las mercancías durante su trayecto y administra el catálogo de materiales peligrosos con la nueva versión 3.1."
+        }
+    ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id": 6,
+        "nombre": "CONTPAQi® Factura electronica",
+        "descrip_corta": "Automatiza y haz más eficiente tu proceso de facturación.  ",
+        "url_imagen": "src/img/ContFact.svg",
+        "frase": "Conoce nuestro Software de Facturación apegado a validaciones y guías de llenado requeridas por el SAT",
+        "descrip_larga": "Emitir facturas electrónicas y CFDIs (comprobante fiscal) nunca ha sido tan fácil. Con nuestro sistema de facturación podrás cumplir en tiempo y forma con tus obligaciones fiscales.",
+        "url_ficha_tecnica": "",
+        "url_video": "https://www.youtube.com/embed/DQj_YpZhbK4?si=L3qy9dIIaniWrC74",
+"beneficios": [
+        {
+            "descripcion": "Cuentas con folios ilimitados para emitir facturas, CFDI, recibos de honorarios, REP o cualquier otro que necesites."
+        },
+        {
+            "descripcion": "Registra los ingresos y gastos de tus operaciones diarias en nuestro sistema de facturación para obtener reportes personalizados."
+        },
+        {
+            "descripcion": "Nuestro programa de facturación siempre está actualizado con los últimos cambios fiscales oficiales para que cumplas con la ley."
+        },
+        {
+            "descripcion": "Logra que tu gestión empresarial sea más ágil y sencilla gracias a una óptima facturación de tus cobros y pagos a clientes o proveedores."
+        },
+        {
+            "descripcion": "Da el primer paso para ser un empresario más productivo; con nuestro sistema de facturación podrás vender y cobrar mejor, al mismo tiempo que cumples con tu Régimen de Incorporación Fiscal."
+        }
+    ],
+        "titulo_video_uso": "Como usar CONTPAQi® FACTURA ELECTRÓNICA",
+        "descrip_video_uso": "Descubre el poder de CONTPAQi® FACTURA ELECTRÓNICA con este video. Aprenderás de manera general y rapida cómo aprovechar al máximo todas las funcionalidades de este software líder en facturación electrónica.",
+        "url_video_uso": "https://www.youtube.com/embed/DQj_YpZhbK4?si=XrWyTP9QcWkhfm16"
+    }, 
+    {
+        "id": 7,
+        "nombre": "CONTPAQi® CFDI Facturación en línea+",
+        "descrip_corta": "Facilita la emisión y timbrado de tus CFDI por internet.",
+        "url_imagen": "src/img/ContCFDI.svg",
+        "frase": "",
+        "descrip_larga": "Conoce más de CONTPAQi® CFDI Facturación en línea +, el software de facturación desde un portal web y cumple en tiempo y forma con la Factura Electrónica 4.0.",
+        "url_ficha_tecnica": "",
+        "url_video": "https://www.youtube.com/embed/hA1bB8x4y3Q?si=fTjqyh0pmnRglHhW",
+        "beneficios": [
+            {
+                "titulo": "Listo, funcional y al día",
+                "descripcion": "No requiere instalación, fácil de usar, actualizado a las últimas disposiciones de ley y disponible siempre que lo necesites."
+            },
+            {
+                "titulo": "Emite todo tipo de CFDI 4.0",
+                "descripcion": "Facturas, notas de cargo y de crédito, recibos de honorarios, arrendamiento y parcialidades."
+            },
+            {
+                "titulo": "Timbrado ilimitado a cero pesos",
+                "descripcion": "Te ofrecemos todos los CFDI que requieras sin costo adicional o bien cancelarlos sin pagar cuotas adicionales."
+            },
+            {
+                "titulo": "Seguridad y confianza",
+                "descripcion": "Cuentas con los servicios de uno de los PAC más importantes de México."
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id": 8,
+        "nombre": "CONTPAQi® Evalúa035",
+        "descrip_corta": "Aplicación que te ayuda al cumplimiento y la administración de la NOM035.",
+        "url_imagen": "src/img/Logo_Evalua035.svg",
+        "frase": "Mejora la gestión de tu personal, obtén un software de evaluación de desempeñi y clima laboral",
+        "descrip_larga": "Conoce nuestro sistema de evaluación organizacional que te ayudará a cumplir, implementar y administrar la NOM-035, a través de herramientas como el test para medir el ambiente, sistemas para llevar el control de cada trabajador y prevenir riesgos psicosociales en tu empresa.",
+        "url_ficha_tecnica": "fichas_producto/Ficha_Producto_CONTPAQi_Evalua.pdf",
+        "url_video": "https://www.youtube.com/embed/NGb3K-KdgdY?si=RYT7igEelKF_0uaj",
+        "beneficios": [
+            {
+                "descripcion": "Genera reportes por cada colaborador y agrúpalos por áreas."
+            },
+            {
+                "descripcion": "Cumple con los estándares establecidos en la NOM - 035."
+            },
+            {
+                "descripcion": "Importa la información de tu talento humano a Excel y mejora la toma de decisiones."
+            },
+            {
+                "descripcion": "Crear períodos de evaluación con base en departamentos."
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id": 9,
+        "nombre": "CONTPAQi® Kursa",
+        "descrip_corta": "Plataforma de auto capacitación y certificación en línea de los sistemas CONTPAQi® avalado por CONOCER.",
+        "url_imagen": "src/img/contpaqi-kursa-logotipo.png",
+        "frase": "",
+        "descrip_larga": "CONTPAQi® KURSA es tu plataforma de formación en línea, diseñada para que aprendas a tu ritmo y según tus necesidades. Obtén conocimientos sólidos en temas fiscales y los sistemas CONTPAQi® para convertirte en un experto.",
+        "url_ficha_tecnica": "",
+        "url_video": "",
+        "beneficios": [
+            {
+                "titulo": "Autocapacitación en línea",
+                "descripcion": "Estudia, capacítate y aprovecha la plataforma en línea para que trabajes a tu ritmo con cursos interactivos y especializados, disponibles 24/7."
+            },
+            {
+                "titulo": "Al día en temas fiscales",
+                "descripcion": "Siempre actualizados para que aprendas todo lo referente a los cambios fiscales, su aplicación y cumplimiento con los sistemas CONTPAQi®."
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id": 10 ,
+        "nombre": "CONTPAQi® Contabiliza",
+        "descrip_corta": "Lleva toda tu información contable en la nube con CONTPAQi® Contabiliza",
+        "url_imagen": "src/img/CONTPAQi-Contabiliza.png",
+        "frase": "El software favorito ​de los contadores, ahora en la nube",
+        "descrip_larga": "Nuestra nueva solución de contabilidad en la nube te dará nuevas posibilidades en tu trabajo, ahora podrás tener un completo control y visibilidad de todos tus datos contables en una sola cuenta, para que tu contabilidad esté al día y en cualquier lugar conectado a internet",
+        "url_ficha_tecnica": "fichas_producto/Ficha_Producto_CONTPAQi_Contabiliza.pdf",
+        "url_video": "https://www.youtube.com/embed/WQrPq8Pc_Xc?si=JoigX7LfqXsEnxC7",
+        "beneficios": [
+        {
+            "titulo": "Fácil",
+            "descripcion": "Utiliza una sola cuenta para acceder a todas tus aplicaciones."
+        },
+        {
+            "titulo": "Colaborativa",
+            "descripcion": "Invita a colaborar a otros sin necesidad de estar en el mismo lugar."
+        },
+        {
+            "titulo": "Segura",
+            "descripcion": "Tu información segura en servidores con altos niveles de seguridad."
+        }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    }, 
+    {
+        "id":11 ,
+        "nombre": "CONTPAQi® Despachos",
+        "descrip_corta": "Gestiona tus procesos administrativos de personal interno y de sus clientes, cumpliendo obligaciones fiscales.",
+        "url_imagen": "src/img/Logo_Despachos.png",
+        "frase": "Innovación que cuenta",
+        "descrip_larga": "CONTPAQi® Despachos es una plataforma en la nube que permite a los despachos contables y contadores independientes llevar de manera practica y fácil la gestión de sus procesos administrativos con su personal interno y la gestión de sus clientes garantizando el cumplimiento oportuno y en tiempo de sus obligaciones fiscales. ",
+        "url_ficha_tecnica": "fichas_producto/Ficha_Producto_CONTPAQi_Despachos.pdf",
+        "url_video": "https://www.youtube.com/embed/dXzwAr96Ick?si=raiXI15am50nD0GL",
+        "beneficios": [
+            {
+                "titulo": "Almacenamiento ampliado",
+                "descripcion": "Amplio almacenamiento de documentos en la aplicación"
+            }, {
+                "titulo": "Gestión de clientes",
+                "descripcion": "Creación y administración ilimitada de clientes"
+            }, 
+            {
+                "titulo": "Asignación eficiente",
+                "descripcion": "Asignación eficiente de ejecutivos y seguimiento de obligaciones fiscales"
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    }, 
+    {
+        "id": 12 ,
+        "nombre": "CONTPAQi® Colabora",
+        "descrip_corta": "Gestiona los procesos de nómina y recursos humanos para agilizar los procedimientos e impulsar la productividad.",
+        "url_imagen": "src/img/Logo_Colabora.png",
+        "frase": "La gestión de  tu talento. ",
+        "descrip_larga": "Esta solución permite gestionar al nominista los procesos de la nómina así como los de recursos humanos, de sus colaboradores, con el objetivo agilizar proceso así como impulsar la productividad. A través de un módulo central, el nominista/RH, cuenta con un canal bilateral de comunicación por medio de una APP, misma que será utilizada por el empleado, ya sea para bajar su CFDI’s y tener actualizados sus datos personales en línea.",
+        "url_ficha_tecnica": "",
+        "url_video": "",
+        "beneficios": [
+            {
+                "descripcion": "Digitaliza y automatiza procesos"
+            },
+            {
+                "descripcion": "Impulsa el autoservicio y la satisfacción de tus clientes internos."
+            },
+            {
+                "descripcion": "Permite que tus empleados visualicen y actualicen sus datos personales y de colaborador al instante."
+            },
+            {
+                "descripcion": "Genera automáticamente las incidencias."
+            },
+            {
+                "descripcion": "Agilizas la entrega de recibos de nómina tanto en formato PDF como XML."
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id": 13 ,
+        "nombre": "CONTPAQi® Personia",
+        "descrip_corta": "Controla, automatiza y administra tus operaciones de nómina desde cualquier lugar y en todo momento.",
+        "url_imagen": "src/img/Logo_CONTPAQi_Personia.svg",
+        "frase": "Controla, administra y  automatiza tus procesos  de nómina",
+        "descrip_larga": "Nuestro sistema en la nube que tomando como base el cálculo y timbrado de la nómina te ayuda a controlar, automatizar y administrar de una manera sencilla tus operaciones desde cualquier lugar y en todo momento.",
+        "url_ficha_tecnica": "",
+        "url_video": "https://www.youtube.com/embed/3GFI3TludU4?si=S_wki_omnYlPR_mY",
+        "beneficios": [
+            {
+                "descripcion": "Calcula la nómina de tus trabajadores en cualquier momento y lugar."
+            }, 
+            {
+                "descripcion": "Emite CFDI de pago de nómina de manera ilimitada. Controla los periodos calculados y timbrados e identifica los recibos de pagos que no están timbrados."
+            }, 
+            {
+                "descripcion": "Conecta tu nomina con CONTPAQi Colabora® y facilita el acceso de tus colaboradores a sus datos e información de nómina."
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    }, 
+    {
+        "id": 14 ,
+        "nombre": "CONTPAQi® Cobra",
+        "descrip_corta": "Gestiona y automatiza el proceso de cuentas por cobrar de empresas mediante un estado de cuenta interactivo, cumpliendo con el timbrado, entrega y recepción del REP de clientes.",
+        "url_imagen": "src/img/Logo_CONTPAQi_Cobra.svg",
+        "frase": "Automatiza tu cobranza en la nube",
+        "descrip_larga": "CONTPAQi® Cobra es una solución en la nube para el seguimiento, gestión y automatización del proceso de cuentas por cobrar de una empresa a través del estado de cuenta interactivo, cumpliendo con el timbrado, entrega y recepción del REP de clientes.",
+        "url_ficha_tecnica": "fichas_producto/Ficha_Producto_CONTPAQi_Cobra.pdf",
+        "url_video": "https://www.youtube.com/embed/XbVNjTEBE_8?si=QAbORxvBDJ6_1-gV",
+        "beneficios": [
+            {
+                "titulo": "Tablero de operaciones",
+                "descripcion": "Visualiza la información más relevante: Mi cobranza de hoy, Principales deudores, Facturas vencidas, etc."
+            },
+            {
+                "titulo": "Tareas",
+                "descripcion": "Genera actividades diarias para tus agentes de cobranza y optimiza el seguimiento."
+            },
+            {
+                "titulo": "Seguridad de la información",
+                "descripcion": "Nuestra plataforma vive en la nube de Amazon Web Services (AWS) con los estándares más altos del mercado."
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id": 15 ,
+        "nombre": "CONTPAQi® Vende",
+        "descrip_corta": "Realiza todo el proceso para la generación de factura electrónica y administración de documentos emitidos de cuentas por cobrar.",
+        "url_imagen": "src/img/CONTPAQI_Logo_vende.svg",
+        "frase": "La solución fácil para facturar en la nube",
+        "descrip_larga": "Es un sistema en la nube que permite realizar todo el proceso para la generación de factura electrónica y la administración de los documentos emitidos para darle seguimiento a las cuentas por cobrar.​",
+        "url_ficha_tecnica": "fichas_producto/Ficha de Producto CONTPAQi Vende.pdf",
+        "url_video": "https://www.youtube.com/embed/VL5vTWCEuIc?si=2qOTOGdFxKZ0_skp",
+        "beneficios": [
+            {
+                "titulo": "Generación de CFDI",
+                "descripcion": "Puedes generar CFDI de manera ilimitada en una solución de fácil manejo"
+            },
+            {
+                "titulo": "Reportes",
+                "descripcion": "Puedes obtener reportes amigables para seguimiento de cuentas por cobrar"
+            },
+            {
+                "titulo": "XML",
+                "descripcion": "Puedes hacer carga de XML emitidos previamente en otras soluciones facilitando su migración"
+            },
+            {
+                "titulo": "Carta porte 3.1",
+                "descripcion": "Genera CFDI con complemento Carta Porte de manera sencilla y segura."
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id": 16 ,
+        "nombre": "CONTPAQi® Viaticos",
+        "descrip_corta": "Lleva el control de gastos de viaje con múltiples formas de pago, incluyendo efectivo",
+        "url_imagen": "src/img/Logo_Viaticos.png",
+        "frase": "Tus viajes de trabajo sin preocupaciones",
+        "descrip_larga": "CONTPAQi® Viáticos es una plataforma en la nube que lleva el control de gastos de viaje con múltiples formas de pago, incluyendo gastos en efectivo. Además, a través de su propia app, ayuda a recabar todos los XMLs de un usuario viaticador mediante un correo dedicado para ello que interpreta, de manera automática, los datos del XML para convertirlos en un gasto, lo que asegura que sólo pueda asociar sus comprobantes y no los de otros colaboradores",
+        "url_ficha_tecnica": "fichas_producto/Ficha_Producto_CONTPAQi_Viaticos.pdf",
+        "url_video": "https://www.youtube.com/embed/n7KyZrLmZ9c?si=2TJ7DQRYvyB85CIo",
+        "beneficios": [
+            {
+                "titulo": "Control de gastos",
+                "descripcion": "Controla tus gastos de viaje con múltiples formas de pago, incluido gastos en efectivo."
+            },
+            {
+                "titulo": "Recabación de XML",
+                "descripcion": "Ayuda a recabar todos los XMLS de un viaticador para convertirlos en un gasto."
+            },
+            {
+                "titulo": "Información a la mano",
+                "descripcion": "Podrás generar informes de los viaticadores, revisando estadísticas de gastos de viaje, gastos promedio, entre otros."
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id": 17 ,
+        "nombre": "CONTPAQi® Timbra",
+        "descrip_corta": "Timbrado masivo de CFDI’s para empresas con altos niveles de transacciones y necesidades de automatización en facturación",
+        "url_imagen": "src/img/Logo_Timbra.svg",
+        "frase": "Masivo, Automático e Integrado a tus procesos",
+        "descrip_larga": "CONTPAQi® TIMBRA es un servicio de timbrado masivo de CFDI’s para empresas que tienen altos niveles de transacciones con requerimientos de automatizar diversos procesos de facturación, CONTPAQi® representa una opción confiable, respaldado en sus capacidades tecnológicas y reconocido como referente fiscal, además de ser el Proveedor Autorizado de Certificación (PAC) Mas Grande de México*.",
+        "url_ficha_tecnica": "",
+        "url_video": "https://www.youtube.com/embed/XOU62YScxNo?si=yJXnvsEUGIAtwE0Q",
+        "beneficios": [
+            {
+                "titulo": "Servicio siempre actualizado",
+                "descripcion": "Facturación actualizada de acuerdo con las normas de la autoridad fiscal."
+            },
+            {
+                "titulo": "Sin errores",
+                "descripcion": "Eliminación de costos y riesgos en la operación por la generación de facturas de manera incorrecta."
+            },
+            {
+                "titulo": "Complejidad resuelta",
+                "descripcion": "Mediante nuestro servicio de consultoría e integración para procesos tecnológicos comerciales y fiscales."
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id": 18 ,
+        "nombre": "CONTPAQi® Respaldos",
+        "descrip_corta": "Sube, administra y resguarda en la nube, toda la información de tus sistemas CONTPAQi® y de cualquier archivo de tu equipo.",
+        "url_imagen": "src/img/CONTPAQi-Respaldos.svg",
+        "frase": "Toda tu información al alcance de tu mano",
+        "descrip_larga": "CONTPAQi® Respaldos es la aplicación que te permitirá tener toda tu información de los sistemas CONTPAQi® en un solo lugar, con almacenamiento en la nube, además de subir más datos o hacerles modificaciones en tiempo real desde cualquier lugar.",
+        "url_ficha_tecnica": "fichas_producto/Ficha_Producto_CONTPAQi_Respaldos.pdf",
+        "url_video": "https://www.youtube.com/embed/RKGFUcD45ZU?si=UmaPjRzYH_gPPb0E",
+        "beneficios": [
+            {
+                "titulo": "Almacenamiento seguro",
+                "descripcion": "Protege tus datos con los más altos estándares de seguridad en una nube confiable."
+            },
+            {
+                "titulo": "Acceso instantáneo",
+                "descripcion": "Obtén tus respaldos en cualquier momento y lugar, asegurando la continuidad de tu negocio."
+            },
+            {
+                "titulo": "Total confianza",
+                "descripcion": "Descansa tranquilo sabiendo que tus datos están resguardados y disponibles cuando más los necesitas."
+            },
+            {
+                "titulo": "Actualizaciones automáticas",
+                "descripcion": "CONTPAQi® Respaldos se actualiza automáticamente al abrirse, informándote sobre nuevas funciones, mejoras y si son opcionales u obligatorias. "
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id": 19 ,
+        "nombre": "CONTPAQi® Escritorio Virtual",
+        "descrip_corta": "Accede al escritorio de tu computadora desde cualquier dispositivo en el lugar y momento que lo necesites.",
+        "url_imagen": "src/img/CONTPAQi-escritoriovirtual.svg",
+        "frase": "Accede a tu contabilidad en la nube desde cualquier lugar",
+        "descrip_larga": "Convierte cualquier espacio en tu oficina gracias a nuestra herramienta de Escritorio Virtual, en la cual podrás acceder a sistemas CONTPAQi® y continuar con tus operaciones sin importar en donde se encuentren.",
+        "url_ficha_tecnica": "fichas_producto/Ficha_Producto_CONTPAQi_Escritorio_Virtual.pdf",
+        "url_video": "https://www.youtube.com/embed/suP8coLFBQk?si=mS1bjev3bKHVHFDz",
+        "beneficios": [
+            {
+                "titulo": "Conectividad flexible",
+                "descripcion": "Trabaja desde casa o en cualquier lugar sin perder conectividad ni parar operaciones"
+            },
+            {
+                "titulo": "Integración empresarial",
+                "descripcion": "Conecta a todas las áreas de tu empresa y trabaja en tiempo real"
+            },
+            {
+                "titulo": "Respaldo confiable",
+                "descripcion": "Respalda tu información cada día y accede a ella de manera fácil y segura"
+            },
+            {
+                "titulo": "En línea acceso total",
+                "descripcion": "720 horas mensuales y snapshot diario a las 11 pm para tu tranquilidad"
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    },
+    {
+        "id": 20 ,
+        "nombre": "CONTPAQi® QR",
+        "descrip_corta": "Facilita y automatiza el intercambio de información fiscal entre usuarios y proveedores mediante un QR Code, como parte de la solución CONTPAQi® Vende",
+        "url_imagen": "src/img/LOGO_QR.png",
+        "frase": "",
+        "descrip_larga": "Es una aplicación móvil en la nube que permite facilitar y automatizar el intercambio de información fiscal entre un usuario que busca facturar y una empresa proveedora de productos y servicios que le facturará, a través de la captura de un QR Code. Mismo que se suma como una funcionalidad de valor con nuestra solución CONTPAQi® Vende.",
+        "url_ficha_tecnica": "",
+        "url_video": "https://www.youtube.com/embed/4iKSuPkqM1s?si=HXLMJhHw03pRGxY_",
+        "beneficios": [
+            {
+                "titulo": "Minimiza errores de facturación",
+                "descripcion": "Ya que la captura de datos fiscales se realiza por única vez y la APP de CONTPAQi QR usuario estará lista para compartir la información de manera correcta y en cualquier momento."
+            },
+            {
+                "titulo": "Automatiza y simplifica el proceso de facturación",
+                "descripcion": "Ya que las aplicaciones te permiten el traslado de información del usuario al establecimiento y de ahí la interfaz con CONTPAQi Vende para la generación y gestión de las facturas."
+            },
+            {
+                "titulo": "Cumple con las condiciones fiscales del CFDI 4.0",
+                "descripcion": "Ya que la APP de CONTPAQi QR usuario requerirá de manera obligatoria los datos fiscales necesarios para que el comprobante digital se emita de manera correcta."
+            }
+        ],
+        "titulo_video_uso": "",
+        "descrip_video_uso": "",
+        "url_video_uso": ""
+    }
+
+
+]

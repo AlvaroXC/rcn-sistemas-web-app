@@ -1,0 +1,9 @@
+/vendor/
+.env
+.env.local
+.vscode/
+*.log
+.codex/skills
+openspec/
+scratch/
+.DS_Store
