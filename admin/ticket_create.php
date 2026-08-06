@@ -45,6 +45,7 @@ $ticketForm = [
     'subject' => trim((string) ($_POST['subject'] ?? '')),
     'context_label' => trim((string) ($_POST['context_label'] ?? '')),
     'message' => trim((string) ($_POST['message'] ?? '')),
+    'price_amount' => trim((string) ($_POST['price_amount'] ?? '')),
 ];
 
 $customerForm = [
@@ -70,6 +71,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($ticketForm['message'] === '') {
         $error = 'El mensaje del ticket es obligatorio.';
     } else {
+        $priceValidation = normalize_ticket_price_input($ticketForm['price_amount']);
+        if (!$priceValidation['ok']) {
+            $error = $priceValidation['error'];
+        }
+    }
+
+    if ($error === '') {
+        $priceValidation = normalize_ticket_price_input($ticketForm['price_amount']);
+        $normalizedPriceAmount = $priceValidation['value'];
+        $adminUserId = isset($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : null;
         $customer = null;
 
         if ($customerMode === 'existing') {
@@ -100,7 +111,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         }
-
+        
         if ($error === '') {
             $attachmentPath = '';
             $attachmentSave = save_ticket_attachment(
@@ -129,6 +140,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'subject' => $ticketForm['subject'],
                 'message' => $ticketForm['message'],
                 'attachment_path' => $attachmentPath,
+                'price_amount' => $normalizedPriceAmount,
+                'price_updated_by' => $normalizedPriceAmount !== null ? $adminUserId : null,
             ]);
 
             if ($ticket) {
@@ -137,6 +150,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $error = 'No se pudo crear el ticket en este momento.';
         }
+    } else {
+        $normalizedPriceAmount = null;
     }
 }
 ?>
@@ -371,9 +386,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label class="admin-form__label" for="message">Mensaje</label>
                 <textarea id="message" name="message" class="admin-form__input admin-form__input--textarea" rows="6" required><?php echo e($ticketForm['message']); ?></textarea>
             </div>
-            <div class="admin-form__group">
-                <label class="admin-form__label" for="attachment">Adjunto opcional</label>
-                <input type="file" id="attachment" name="attachment" class="admin-form__input" accept="image/*">
+            <div class="admin-form__row">
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="price_amount">Precio opcional (MXN)</label>
+                    <input type="text" id="price_amount" name="price_amount" class="admin-form__input" value="<?php echo e($ticketForm['price_amount']); ?>" inputmode="decimal" placeholder="0.00">
+                </div>
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="attachment">Adjunto opcional</label>
+                    <input type="file" id="attachment" name="attachment" class="admin-form__input" accept="image/*">
+                </div>
             </div>
         </section>
 

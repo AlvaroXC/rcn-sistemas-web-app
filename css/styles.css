@@ -739,6 +739,12 @@ main .section--secondary,
     color: var(--text-muted);
     line-height: 1.7;
 }
+.ticket-price {
+    display: inline-flex;
+    align-items: center;
+    font-weight: 800;
+    color: #0f766e;
+}
 .ticket-inline-alert {
     margin: 0;
 }
@@ -1023,6 +1029,11 @@ main .section--secondary,
 }
 .ticket-observation-form {
     gap: 1.4rem;
+}
+.ticket-price-form {
+    gap: 1.4rem;
+    padding-top: 1.8rem;
+    border-top: 1px solid var(--border);
 }
 .admin-form__input--textarea {
     min-height: 13rem;

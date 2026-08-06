@@ -192,15 +192,39 @@ function ensure_support_tickets_schema($conn) {
             subject VARCHAR(255) NULL,
             message TEXT NOT NULL,
             attachment_path VARCHAR(255) NULL,
+            price_amount DECIMAL(10,2) NULL,
+            price_currency CHAR(3) NULL DEFAULT 'MXN',
+            price_updated_by INT UNSIGNED NULL,
+            price_updated_at TIMESTAMP NULL DEFAULT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             KEY idx_tickets_customer_id (customer_id),
             KEY idx_tickets_status (status),
             KEY idx_tickets_consultation_type (consultation_type),
             KEY idx_tickets_created_at (created_at),
-            KEY idx_tickets_origin_type (origin_type)
+            KEY idx_tickets_origin_type (origin_type),
+            KEY idx_tickets_price_updated_by (price_updated_by)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
+
+    $ticketColumns = [
+        'price_amount' => "ALTER TABLE tickets ADD COLUMN price_amount DECIMAL(10,2) NULL AFTER attachment_path",
+        'price_currency' => "ALTER TABLE tickets ADD COLUMN price_currency CHAR(3) NULL DEFAULT 'MXN' AFTER price_amount",
+        'price_updated_by' => "ALTER TABLE tickets ADD COLUMN price_updated_by INT UNSIGNED NULL AFTER price_currency",
+        'price_updated_at' => "ALTER TABLE tickets ADD COLUMN price_updated_at TIMESTAMP NULL DEFAULT NULL AFTER price_updated_by",
+    ];
+
+    foreach ($ticketColumns as $column => $sql) {
+        $escapedColumn = $conn->real_escape_string($column);
+        $result = $conn->query("SHOW COLUMNS FROM tickets LIKE '{$escapedColumn}'");
+        if ($result && $result->num_rows === 0) {
+            $conn->query($sql);
+        }
+    }
+
+    if (!customer_index_exists($conn, 'tickets', 'idx_tickets_price_updated_by')) {
+        $conn->query('ALTER TABLE tickets ADD INDEX idx_tickets_price_updated_by (price_updated_by)');
+    }
 
     $conn->query(
         "CREATE TABLE IF NOT EXISTS ticket_observations (
@@ -240,6 +264,37 @@ function normalize_phone_value($phone) {
 function is_valid_optional_email($email) {
     $email = trim((string) $email);
     return $email === '' || filter_var($email, FILTER_VALIDATE_EMAIL);
+}
+
+function normalize_ticket_price_input($price) {
+    $price = trim((string) $price);
+    if ($price === '') {
+        return ['ok' => true, 'value' => null, 'error' => ''];
+    }
+
+    $normalized = str_replace(['$', ',', ' '], '', $price);
+    if (!preg_match('/^\d+(?:\.\d{1,2})?$/', $normalized)) {
+        return ['ok' => false, 'value' => null, 'error' => 'Ingresa un precio válido en MXN con hasta 2 decimales.'];
+    }
+
+    $amount = (float) $normalized;
+    if ($amount < 0) {
+        return ['ok' => false, 'value' => null, 'error' => 'El precio no puede ser negativo.'];
+    }
+
+    return [
+        'ok' => true,
+        'value' => number_format($amount, 2, '.', ''),
+        'error' => '',
+    ];
+}
+
+function format_ticket_price($amount, $currency = 'MXN') {
+    if ($amount === null || $amount === '') {
+        return 'Sin precio asignado';
+    }
+
+    return trim((string) $currency) . ' ' . number_format((float) $amount, 2, '.', ',');
 }
 
 function customer_index_exists($conn, $table, $indexName) {
@@ -507,8 +562,12 @@ function create_support_ticket($conn, array $data) {
                 context_label,
                 subject,
                 message,
-                attachment_path
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                attachment_path,
+                price_amount,
+                price_currency,
+                price_updated_by,
+                price_updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -525,9 +584,13 @@ function create_support_ticket($conn, array $data) {
     $subject = $data['subject'] !== '' ? (string) $data['subject'] : null;
     $message = (string) $data['message'];
     $attachmentPath = $data['attachment_path'] !== '' ? (string) $data['attachment_path'] : null;
+    $priceAmount = isset($data['price_amount']) && $data['price_amount'] !== '' ? (string) $data['price_amount'] : null;
+    $priceCurrency = $priceAmount !== null ? 'MXN' : null;
+    $priceUpdatedBy = $priceAmount !== null && !empty($data['price_updated_by']) ? (int) $data['price_updated_by'] : null;
+    $priceUpdatedAt = $priceAmount !== null ? date('Y-m-d H:i:s') : null;
 
     $stmt->bind_param(
-        'isssiissss',
+        'isssiissssssis',
         $customerId,
         $consultationType,
         $status,
@@ -537,7 +600,11 @@ function create_support_ticket($conn, array $data) {
         $contextLabel,
         $subject,
         $message,
-        $attachmentPath
+        $attachmentPath,
+        $priceAmount,
+        $priceCurrency,
+        $priceUpdatedBy,
+        $priceUpdatedAt
     );
 
     if (!$stmt->execute()) {
@@ -562,9 +629,11 @@ function getTicketById($conn, $ticketId) {
                 c.name AS customer_name,
                 c.business_name AS customer_business_name,
                 c.email AS customer_email,
-                c.phone AS customer_phone
+                c.phone AS customer_phone,
+                price_editor.username AS price_updated_by_username
             FROM tickets t
             INNER JOIN customers c ON c.id = t.customer_id
+            LEFT JOIN users price_editor ON price_editor.id = t.price_updated_by
             WHERE t.id = ?
             LIMIT 1";
     $stmt = $conn->prepare($sql);
@@ -720,9 +789,11 @@ function getSupportTickets($conn, array $filters = [], $limit = null, $offset = 
                 c.name AS customer_name,
                 c.business_name AS customer_business_name,
                 c.email AS customer_email,
-                c.phone AS customer_phone
+                c.phone AS customer_phone,
+                price_editor.username AS price_updated_by_username
             FROM tickets t
-            INNER JOIN customers c ON c.id = t.customer_id";
+            INNER JOIN customers c ON c.id = t.customer_id
+            LEFT JOIN users price_editor ON price_editor.id = t.price_updated_by";
 
     if ($parts['conditions']) {
         $sql .= ' WHERE ' . implode(' AND ', $parts['conditions']);
@@ -754,6 +825,39 @@ function update_ticket_status($conn, $ticketId, $status) {
     $stmt = $conn->prepare('UPDATE tickets SET status = ? WHERE id = ?');
     $stmt->bind_param('si', $status, $ticketId);
     return $stmt->execute();
+}
+
+function update_ticket_price($conn, $ticketId, $priceAmount, $adminUserId) {
+    $ticketId = (int) $ticketId;
+    $adminUserId = (int) $adminUserId;
+    $normalizedPrice = normalize_ticket_price_input($priceAmount);
+
+    if ($ticketId <= 0) {
+        return ['ok' => false, 'error' => 'No se pudo identificar el ticket.', 'ticket' => null];
+    }
+
+    if (!$normalizedPrice['ok'] || $normalizedPrice['value'] === null) {
+        return ['ok' => false, 'error' => $normalizedPrice['error'] ?: 'Ingresa un precio válido.', 'ticket' => null];
+    }
+
+    $priceAmountValue = $normalizedPrice['value'];
+    $priceCurrency = 'MXN';
+    $updatedAt = date('Y-m-d H:i:s');
+    $stmt = $conn->prepare(
+        'UPDATE tickets SET price_amount = ?, price_currency = ?, price_updated_by = ?, price_updated_at = ? WHERE id = ?'
+    );
+
+    if (!$stmt) {
+        return ['ok' => false, 'error' => 'No se pudo preparar la actualización del precio.', 'ticket' => null];
+    }
+
+    $stmt->bind_param('ssisi', $priceAmountValue, $priceCurrency, $adminUserId, $updatedAt, $ticketId);
+
+    if (!$stmt->execute()) {
+        return ['ok' => false, 'error' => 'No se pudo actualizar el precio del ticket.', 'ticket' => null];
+    }
+
+    return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];
 }
 
 function build_customer_filter_parts($search = '') {

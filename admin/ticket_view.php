@@ -6,9 +6,12 @@ $allowedStatuses = ['Nuevo', 'En revision', 'En proceso', 'Pendiente de respuest
 $ticketId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $statusMessage = '';
 $statusError = '';
+$priceMessage = '';
+$priceError = '';
 $observationMessage = '';
 $observationError = '';
 $observationDraft = '';
+$priceDraft = trim((string) ($_POST['price_amount'] ?? ''));
 $returnUrl = trim((string) ($_GET['return'] ?? $_POST['return'] ?? 'tickets.php'));
 
 if ($returnUrl === '' || strpos($returnUrl, 'http') === 0) {
@@ -44,6 +47,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $observationDraft = '';
         } else {
             $observationError = 'No se pudo guardar la observación.';
+        }
+    } elseif ($action === 'update_price') {
+        $adminUserId = isset($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : 0;
+        $priceUpdate = update_ticket_price($conn, $ticketId, $priceDraft, $adminUserId);
+
+        if ($priceUpdate['ok']) {
+            $priceMessage = 'El precio del ticket se actualizó correctamente.';
+            $priceDraft = '';
+        } else {
+            $priceError = $priceUpdate['error'] ?: 'No se pudo actualizar el precio del ticket.';
         }
     } else {
         $status = trim((string) ($_POST['status'] ?? ''));
@@ -108,6 +121,25 @@ if (!$ticket) {
                 <div><strong>Canal:</strong> <?php echo e(ticket_origin_label($ticket['origin_type'])); ?></div>
                 <div><strong>Contexto:</strong> <?php echo e($ticket['context_label'] ?: 'Sin contexto adicional'); ?></div>
                 <div><strong>Asunto:</strong> <?php echo e($ticket['subject'] ?: 'Sin asunto'); ?></div>
+                <div>
+                    <strong>Precio:</strong>
+                    <span class="<?php echo $ticket['price_amount'] !== null ? 'ticket-price' : 'ticket-muted'; ?>">
+                        <?php echo e(format_ticket_price($ticket['price_amount'], $ticket['price_currency'] ?? 'MXN')); ?>
+                    </span>
+                </div>
+                <div>
+                    <strong>Última actualización de precio:</strong>
+                    <?php if ($ticket['price_amount'] !== null && $ticket['price_updated_at']): ?>
+                        <?php
+                        $priceEditorLabel = trim((string) ($ticket['price_updated_by_username'] ?? '')) !== ''
+                            ? $ticket['price_updated_by_username']
+                            : ($ticket['price_updated_by'] ? 'Admin #' . (int) $ticket['price_updated_by'] : 'Administrador');
+                        ?>
+                        <span><?php echo e($priceEditorLabel); ?> · <?php echo date('d/m/Y H:i', strtotime($ticket['price_updated_at'])); ?></span>
+                    <?php else: ?>
+                        <span class="ticket-muted">Sin precio asignado</span>
+                    <?php endif; ?>
+                </div>
                 <div><strong>Adjunto:</strong>
                     <?php if ($ticket['attachment_path']): ?>
                         <a href="../<?php echo e($ticket['attachment_path']); ?>" target="_blank" rel="noopener" class="ticket-attachment-link">
@@ -225,6 +257,14 @@ if (!$ticket) {
                 <div class="alert alert--error ticket-inline-alert"><?php echo e($statusError); ?></div>
             <?php endif; ?>
 
+            <?php if ($priceMessage): ?>
+                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($priceMessage); ?></div>
+            <?php endif; ?>
+
+            <?php if ($priceError): ?>
+                <div class="alert alert--error ticket-inline-alert"><?php echo e($priceError); ?></div>
+            <?php endif; ?>
+
             <form method="POST" class="admin-form">
                 <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
                 <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
@@ -238,6 +278,25 @@ if (!$ticket) {
                     </select>
                 </div>
                 <button type="submit" class="btn">Guardar estado</button>
+            </form>
+
+            <form method="POST" class="admin-form ticket-price-form">
+                <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
+                <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
+                <input type="hidden" name="ticket_action" value="update_price">
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="price_amount">Asignar / modificar precio (MXN)</label>
+                    <input
+                        type="text"
+                        id="price_amount"
+                        name="price_amount"
+                        class="admin-form__input"
+                        inputmode="decimal"
+                        value="<?php echo e($priceDraft !== '' ? $priceDraft : ($ticket['price_amount'] !== null ? number_format((float) $ticket['price_amount'], 2, '.', '') : '')); ?>"
+                        placeholder="0.00"
+                    >
+                </div>
+                <button type="submit" class="btn">Guardar precio</button>
             </form>
         </div>
     </div>

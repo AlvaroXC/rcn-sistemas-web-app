@@ -211,6 +211,7 @@ $paginationEnd = min($totalPages, $currentPage + 2);
             <tr>
                 <th>Ticket</th>
                 <th>Cliente</th>
+                <th>Precio</th>
                 <th>Estado</th>
                 <th>Canal</th>
                 <th>Contexto</th>
@@ -240,6 +241,13 @@ $paginationEnd = min($totalPages, $currentPage + 2);
                                 <div class="ticket-meta"><?php echo e($ticket['customer_email']); ?></div>
                             <?php endif; ?>
                         </td>
+                        <td>
+                            <?php if ($ticket['price_amount'] !== null): ?>
+                                <span class="ticket-price"><?php echo e(format_ticket_price($ticket['price_amount'], $ticket['price_currency'] ?? 'MXN')); ?></span>
+                            <?php else: ?>
+                                <span class="ticket-muted">Sin precio asignado</span>
+                            <?php endif; ?>
+                        </td>
                         <td><span class="ticket-status ticket-status--<?php echo strtolower(str_replace(' ', '-', $ticket['status'])); ?>"><span class="ticket-status__dot" aria-hidden="true"></span><?php echo e($ticket['status']); ?></span></td>
                         <td><?php echo e(ticket_origin_label($ticket['origin_type'])); ?></td>
                         <td><?php echo e($ticket['context_label'] ?: 'Sin contexto adicional'); ?></td>
@@ -252,7 +260,7 @@ $paginationEnd = min($totalPages, $currentPage + 2);
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="7">No se encontraron tickets con los filtros seleccionados.</td>
+                    <td colspan="8">No se encontraron tickets con los filtros seleccionados.</td>
                 </tr>
             <?php endif; ?>
         </tbody>
