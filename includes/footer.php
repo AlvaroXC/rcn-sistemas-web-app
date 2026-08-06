@@ -42,6 +42,7 @@
     </div>
 
     <!-- JS -->
-    <script src="js/main.js"></script>
+    <?php $mainScriptVersion = @filemtime(__DIR__ . '/../js/main.js') ?: time(); ?>
+    <script src="js/main.js?v=<?php echo $mainScriptVersion; ?>"></script>
 </body>
 </html>

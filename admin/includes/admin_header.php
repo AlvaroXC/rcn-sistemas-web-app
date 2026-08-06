@@ -11,7 +11,8 @@ if (!isset($_SESSION['admin_id'])) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Administrativo | RCN Sistemas</title>
-    <link rel="stylesheet" href="../css/styles.css">
+    <?php $adminStylesVersion = @filemtime(__DIR__ . '/../../css/styles.css') ?: time(); ?>
+    <link rel="stylesheet" href="../css/styles.css?v=<?php echo $adminStylesVersion; ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
@@ -27,6 +28,12 @@ if (!isset($_SESSION['admin_id'])) {
                 </a>
                 <a href="promotions.php" class="sidebar__link <?php echo basename($_SERVER['PHP_SELF']) == 'promotions.php' ? 'sidebar__link--active' : ''; ?>">
                     <i class="fas fa-tag"></i> Promociones
+                </a>
+                <a href="tickets.php" class="sidebar__link <?php echo basename($_SERVER['PHP_SELF']) == 'tickets.php' || basename($_SERVER['PHP_SELF']) == 'ticket_view.php' || basename($_SERVER['PHP_SELF']) == 'ticket_create.php' ? 'sidebar__link--active' : ''; ?>">
+                    <i class="fas fa-life-ring"></i> Tickets
+                </a>
+                <a href="customers.php" class="sidebar__link <?php echo basename($_SERVER['PHP_SELF']) == 'customers.php' || basename($_SERVER['PHP_SELF']) == 'customer_create.php' || basename($_SERVER['PHP_SELF']) == 'customer_view.php' || basename($_SERVER['PHP_SELF']) == 'customer_edit.php' ? 'sidebar__link--active' : ''; ?>">
+                    <i class="fas fa-address-book"></i> Clientes
                 </a>
                 <a href="logout.php" class="sidebar__link" style="margin-top: auto; color: #ff6b6b;">
                     <i class="fas fa-sign-out-alt"></i> Cerrar Sesión

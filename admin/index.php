@@ -1,5 +1,6 @@
 <?php include 'includes/admin_header.php'; ?>
 <?php require_once '../includes/db.php'; ?>
+<?php $ticketStats = getTicketStats($conn); ?>
 
 <header class="admin-header">
     <h2>Dashboard Overview</h2>
@@ -22,6 +23,21 @@
         <div class="stat-card__value"><?php echo $conn->query("SELECT COUNT(*) FROM testimonials")->fetch_row()[0]; ?></div>
         <p class="stat-card__label">Testimoniales</p>
     </div>
+    <div class="stat-card">
+        <i class="fas fa-life-ring stat-card__icon" style="color: #d97706;"></i>
+        <div class="stat-card__value"><?php echo $ticketStats['total']; ?></div>
+        <p class="stat-card__label">Tickets</p>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-user-friends stat-card__icon" style="color: #1d4ed8;"></i>
+        <div class="stat-card__value"><?php echo $ticketStats['customers']; ?></div>
+        <p class="stat-card__label">Clientes</p>
+    </div>
+    <div class="stat-card">
+        <i class="fas fa-hourglass-half stat-card__icon" style="color: #dc2626;"></i>
+        <div class="stat-card__value"><?php echo $ticketStats['open']; ?></div>
+        <p class="stat-card__label">Tickets Abiertos</p>
+    </div>
 </div>
 
 <div class="card" style="padding: 3rem;">
@@ -29,6 +45,9 @@
     <div style="display: flex; gap: 2rem; margin-top: 2rem; flex-wrap: wrap;">
         <a href="products.php?action=new" class="btn">Agregar Producto</a>
         <a href="promotions.php?action=new" class="btn btn--secondary">Nueva Promoción</a>
+        <a href="tickets.php" class="btn btn--secondary">Ver Tickets</a>
+        <a href="ticket_create.php" class="btn">Nuevo Ticket</a>
+        <a href="customer_create.php" class="btn btn--secondary">Nuevo Cliente</a>
     </div>
 </div>
 

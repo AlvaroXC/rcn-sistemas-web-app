@@ -9,6 +9,7 @@ $pageTitle = 'Contacto';
 $messageSent = false;
 $error = false;
 $contextLabel = '';
+$ticketCreated = null;
 
 $productContextId = isset($_GET['product']) ? (int) $_GET['product'] : (int) ($_POST['product_id'] ?? 0);
 $promoContextId = isset($_GET['promo']) ? (int) $_GET['promo'] : (int) ($_POST['promo_id'] ?? 0);
@@ -34,60 +35,113 @@ if ($productContextId > 0) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf_or_fail();
 
-    $nombre   = isset($_POST['nombre']) ? htmlspecialchars(trim($_POST['nombre'])) : null;
-    $email    = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
-    $telefono = isset($_POST['telefono']) ? htmlspecialchars(trim($_POST['telefono'])) : null;
-    $opcion   = isset($_POST['opcion']) ? htmlspecialchars(trim($_POST['opcion'])) : null;
-    $mensaje  = isset($_POST['mensaje']) ? htmlspecialchars(trim($_POST['mensaje'])) : null;
+    $nombre   = isset($_POST['nombre']) ? trim($_POST['nombre']) : null;
+    $email    = trim((string) ($_POST['email'] ?? ''));
+    $telefono = isset($_POST['telefono']) ? trim($_POST['telefono']) : null;
+    $opcion   = isset($_POST['opcion']) ? trim($_POST['opcion']) : null;
+    $mensaje  = isset($_POST['mensaje']) ? trim($_POST['mensaje']) : null;
     $allowedOptions = ['Compra', 'Soporte', 'Informacion'];
     $imageValidation = validate_uploaded_file('imagen', image_upload_rules());
     
     if (!$imageValidation['ok']) {
         $error = $imageValidation['error'];
-    } elseif ($nombre && $email && $opcion && is_allowed_choice($opcion, $allowedOptions) && $mensaje) {
-        $phpmailer = new PHPMailer();
-        $phpmailer->isSMTP();
-        
-        $phpmailer->Host = $_ENV['SMTP_HOST'] ?? 'localhost'; 
-        $phpmailer->SMTPAuth = true;
-        $phpmailer->Port = $_ENV['SMTP_PORT'] ?? 587;
-        $phpmailer->Username = $_ENV['SMTP_USER'] ?? '';
-        $phpmailer->Password = $_ENV['SMTP_PASS'] ?? '';
-        $phpmailer->SMTPSecure = $_ENV['SMTP_SECURE'] ?? 'tls';
+    } elseif ($nombre && $telefono && $opcion && is_allowed_choice($opcion, $allowedOptions) && $mensaje) {
+        if (!is_valid_optional_email($email)) {
+            $error = 'El formato del correo electrónico no es válido.';
+        }
+    }
 
-        $phpmailer->addAddress('contacto@rcnsistemas.com');
-        $phpmailer->setFrom('contacto@rcnsistemas.com', 'Web Contact');
-
+    if (!$error && $nombre && $telefono && $opcion && is_allowed_choice($opcion, $allowedOptions) && $mensaje) {
+        $attachmentPath = null;
         if ($imageValidation['file']) {
-            $phpmailer->addAttachment($imageValidation['file']['tmp_name'], $imageValidation['file']['name']);
+            $attachmentSave = save_ticket_attachment(
+                'imagen',
+                __DIR__ . '/uploads/tickets',
+                'uploads/tickets',
+                image_upload_rules()
+            );
+
+            if (!$attachmentSave['ok']) {
+                $error = $attachmentSave['error'];
+            } else {
+                $attachmentPath = $attachmentSave['path'];
+            }
         }
 
-        $phpmailer->Subject = 'Nuevo mensaje de contacto - Web RCN';
-        $phpmailer->isHTML(true);
-        $phpmailer->CharSet = 'UTF-8';
+        if (!$error) {
+            $customer = create_or_update_customer($conn, $nombre, $email, $telefono);
+            if (!$customer) {
+                $error = 'No se pudo registrar el cliente en este momento. Inténtalo más tarde.';
+            } else {
+                $originType = 'contact';
+                if ($productContextId > 0) {
+                    $originType = 'product';
+                } elseif ($promoContextId > 0) {
+                    $originType = 'promotion';
+                }
 
-        $contenido = '<html>';
-        $contenido.= '<h2>Nuevo mensaje de contacto</h2>';
-        $contenido.= '<p><strong>Nombre:</strong> '. $nombre .'</p>';
-        $contenido.= '<p><strong>Email:</strong> '. $email .'</p>';
-        $contenido.= '<p><strong>Teléfono:</strong> '. $telefono .'</p>';
-        $contenido.= '<p><strong>Opción:</strong> '. $opcion .'</p>';
-        if ($contextLabel) {
-            $contenido.= '<p><strong>Contexto:</strong> '. htmlspecialchars($contextLabel, ENT_QUOTES, 'UTF-8') .'</p>';
-        }
-        $contenido.= '<p><strong>Mensaje:</strong><br>'. nl2br($mensaje) .'</p>';
-        $contenido.= '</html>';
+                $subject = $contextLabel !== '' ? $contextLabel : 'Consulta desde formulario de contacto';
+                $ticketCreated = create_support_ticket($conn, [
+                    'customer_id' => $customer['id'],
+                    'consultation_type' => $opcion,
+                    'status' => 'Nuevo',
+                    'origin_type' => $originType,
+                    'product_id' => $productContextId,
+                    'promo_id' => $promoContextId,
+                    'context_label' => $contextLabel,
+                    'subject' => $subject,
+                    'message' => $mensaje,
+                    'attachment_path' => $attachmentPath ?? '',
+                ]);
 
-        $phpmailer->Body = $contenido;
-        
-        if ($phpmailer->send()) {
-            $messageSent = true;
-        } else {
-            error_log('Contact mail error: ' . $phpmailer->ErrorInfo);
-            $error = 'No se pudo enviar el mensaje en este momento. Inténtalo más tarde.';
+                if (!$ticketCreated) {
+                    $error = 'No se pudo crear el ticket en este momento. Inténtalo más tarde.';
+                } else {
+                    $phpmailer = new PHPMailer();
+                    $phpmailer->isSMTP();
+                    $phpmailer->Host = $_ENV['SMTP_HOST'] ?? 'localhost';
+                    $phpmailer->SMTPAuth = true;
+                    $phpmailer->Port = $_ENV['SMTP_PORT'] ?? 587;
+                    $phpmailer->Username = $_ENV['SMTP_USER'] ?? '';
+                    $phpmailer->Password = $_ENV['SMTP_PASS'] ?? '';
+                    $phpmailer->SMTPSecure = $_ENV['SMTP_SECURE'] ?? 'tls';
+
+                    $phpmailer->addAddress('contacto@rcnsistemas.com');
+                    $phpmailer->setFrom('contacto@rcnsistemas.com', 'Web Contact');
+
+                    if ($attachmentPath) {
+                        $phpmailer->addAttachment(__DIR__ . '/' . $attachmentPath, basename($attachmentPath));
+                    }
+
+                    $phpmailer->Subject = 'Nuevo ticket de contacto - Web RCN';
+                    $phpmailer->isHTML(true);
+                    $phpmailer->CharSet = 'UTF-8';
+
+                    $contenido = '<html>';
+                    $contenido.= '<h2>Nuevo ticket de contacto</h2>';
+                    $contenido.= '<p><strong>Ticket:</strong> #'. (int) $ticketCreated['id'] .'</p>';
+                    $contenido.= '<p><strong>Nombre:</strong> '. htmlspecialchars($nombre, ENT_QUOTES, 'UTF-8') .'</p>';
+                    $contenido.= '<p><strong>Email:</strong> '. htmlspecialchars($email !== '' ? $email : 'No proporcionado', ENT_QUOTES, 'UTF-8') .'</p>';
+                    $contenido.= '<p><strong>Teléfono:</strong> '. htmlspecialchars((string) $telefono, ENT_QUOTES, 'UTF-8') .'</p>';
+                    $contenido.= '<p><strong>Opción:</strong> '. htmlspecialchars($opcion, ENT_QUOTES, 'UTF-8') .'</p>';
+                    if ($contextLabel) {
+                        $contenido.= '<p><strong>Contexto:</strong> '. htmlspecialchars($contextLabel, ENT_QUOTES, 'UTF-8') .'</p>';
+                    }
+                    $contenido.= '<p><strong>Mensaje:</strong><br>'. nl2br(htmlspecialchars($mensaje, ENT_QUOTES, 'UTF-8')) .'</p>';
+                    $contenido.= '</html>';
+
+                    $phpmailer->Body = $contenido;
+
+                    if (!$phpmailer->send()) {
+                        error_log('Contact mail error: ' . $phpmailer->ErrorInfo);
+                    }
+
+                    $messageSent = true;
+                }
+            }
         }
     } else {
-        if (!$email && isset($_POST['email'])) {
+        if ($email !== '' && !is_valid_optional_email($email)) {
             $error = 'El formato del correo electrónico no es válido.';
         } elseif ($opcion && !is_allowed_choice($opcion, $allowedOptions)) {
             $error = 'Selecciona un tipo de consulta válido.';
@@ -142,10 +196,13 @@ include 'includes/header.php';
                 <div class="contact-form">
                     <div class="card form-card">
                         <?php if ($messageSent): ?>
-                            <div class="alert alert--success">
+                            <div class="alert alert--success" data-auto-dismiss="6000">
                                 <i class="fas fa-check-circle alert__icon" aria-hidden="true"></i>
                                 <h2>¡Mensaje Enviado!</h2>
                                 <p>Gracias por contactarnos. Un asesor se comunicará contigo muy pronto.</p>
+                                <?php if ($ticketCreated): ?>
+                                    <p><strong>Ticket generado:</strong> #<?php echo (int) $ticketCreated['id']; ?></p>
+                                <?php endif; ?>
                                 <a href="index.php" class="btn alert__action">Volver al Inicio</a>
                             </div>
                         <?php else: ?>
@@ -156,7 +213,7 @@ include 'includes/header.php';
                             <?php endif; ?>
 
                             <?php if ($contextLabel): ?>
-                                <div class="alert alert--info">
+                                <div class="alert alert--info" data-auto-dismiss="7000">
                                     <strong>Consulta relacionada:</strong> <?php echo e($contextLabel); ?>
                                 </div>
                             <?php endif; ?>
@@ -171,12 +228,12 @@ include 'includes/header.php';
                                 </div>
                                 <div class="form__row">
                                     <div class="form__group">
-                                        <label for="email" class="form__label">Correo Electrónico *</label>
-                                        <input type="email" id="email" name="email" class="form__input" required value="<?php echo e($_POST['email'] ?? ''); ?>">
+                                        <label for="email" class="form__label">Correo Electrónico</label>
+                                        <input type="email" id="email" name="email" class="form__input" value="<?php echo e($_POST['email'] ?? ''); ?>">
                                     </div>
                                     <div class="form__group">
-                                        <label for="telefono" class="form__label">Teléfono</label>
-                                        <input type="tel" id="telefono" name="telefono" class="form__input" value="<?php echo e($_POST['telefono'] ?? ''); ?>">
+                                        <label for="telefono" class="form__label">Teléfono *</label>
+                                        <input type="tel" id="telefono" name="telefono" class="form__input" required value="<?php echo e($_POST['telefono'] ?? ''); ?>">
                                     </div>
                                 </div>
                                 <div class="form__group">
