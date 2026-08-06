@@ -681,6 +681,34 @@ main .section--secondary,
     gap: 1rem;
     flex-wrap: wrap;
 }
+.ticket-scope-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin: 0 0 2.5rem;
+}
+.ticket-scope-tab {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 4.4rem;
+    padding: 0.9rem 1.6rem;
+    border-radius: 999px;
+    background: #fff;
+    border: 1px solid var(--border);
+    color: var(--primary);
+    font-weight: 800;
+    transition: var(--transition);
+}
+.ticket-scope-tab:hover {
+    border-color: var(--secondary);
+    color: var(--secondary);
+}
+.ticket-scope-tab--active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+}
 
 .ticket-status {
     display: inline-flex;

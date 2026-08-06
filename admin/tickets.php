@@ -4,10 +4,12 @@ require_once '../includes/db.php';
 
 $allowedStatuses = ['Nuevo', 'En revision', 'En proceso', 'Pendiente de respuesta', 'Por facturar', 'Resuelto', 'Cerrado'];
 $allowedTypes = ['Compra', 'Soporte', 'Informacion'];
+$allowedScopes = ['open', 'all'];
 $allowedPageSizes = [10, 25, 50];
 $defaultPageSize = 10;
 
 $filters = [
+    'scope' => trim((string) ($_GET['scope'] ?? 'open')),
     'customer' => trim((string) ($_GET['customer'] ?? '')),
     'status' => trim((string) ($_GET['status'] ?? '')),
     'consultation_type' => trim((string) ($_GET['consultation_type'] ?? '')),
@@ -23,6 +25,10 @@ if (!in_array($filters['status'], $allowedStatuses, true)) {
 
 if (!in_array($filters['consultation_type'], $allowedTypes, true)) {
     $filters['consultation_type'] = '';
+}
+
+if (!in_array($filters['scope'], $allowedScopes, true)) {
+    $filters['scope'] = 'open';
 }
 
 if (!in_array($perPage, $allowedPageSizes, true)) {
@@ -68,6 +74,7 @@ function ticket_origin_label($originType) {
 function build_ticket_page_url(array $filters, $page) {
     global $perPage, $defaultPageSize;
     $params = array_filter([
+        'scope' => ($filters['scope'] ?? 'open') !== 'open' ? $filters['scope'] : null,
         'customer' => $filters['customer'],
         'status' => $filters['status'],
         'consultation_type' => $filters['consultation_type'],
@@ -85,18 +92,48 @@ function build_ticket_page_url(array $filters, $page) {
 $backToListUrl = build_ticket_page_url($filters, $currentPage);
 $paginationStart = max(1, $currentPage - 2);
 $paginationEnd = min($totalPages, $currentPage + 2);
+$isOpenScope = $filters['scope'] === 'open';
+$scopeTitle = $isOpenScope ? 'Tickets abiertos' : 'Todos los tickets';
+$scopeDescription = $isOpenScope
+    ? 'Vista operativa con tickets cuyo estado no es Cerrado.'
+    : 'Vista histórica completa con tickets de todos los estados, incluidos Cerrado.';
+$clearFiltersUrl = build_ticket_page_url([
+    'scope' => $filters['scope'],
+    'customer' => '',
+    'status' => '',
+    'consultation_type' => '',
+    'date_from' => '',
+    'date_to' => '',
+], 1);
 ?>
 
 <header class="admin-header">
     <div>
-        <h2>Tickets de Soporte</h2>
-        <p>Seguimiento centralizado de solicitudes creadas desde el sitio y el panel administrativo.</p>
+        <h2><?php echo e($scopeTitle); ?></h2>
+        <p><?php echo e($scopeDescription); ?></p>
     </div>
     <div class="ticket-header-actions">
         <a href="ticket_create.php" class="btn">Nuevo ticket</a>
         <a href="customers.php" class="btn btn--secondary">Ver clientes</a>
     </div>
 </header>
+
+<nav class="ticket-scope-tabs" aria-label="Vistas de tickets">
+    <a
+        href="<?php echo e(build_ticket_page_url(array_merge($filters, ['scope' => 'open']), 1)); ?>"
+        class="ticket-scope-tab <?php echo $isOpenScope ? 'ticket-scope-tab--active' : ''; ?>"
+        <?php echo $isOpenScope ? 'aria-current="page"' : ''; ?>
+    >
+        Tickets abiertos
+    </a>
+    <a
+        href="<?php echo e(build_ticket_page_url(array_merge($filters, ['scope' => 'all']), 1)); ?>"
+        class="ticket-scope-tab <?php echo !$isOpenScope ? 'ticket-scope-tab--active' : ''; ?>"
+        <?php echo !$isOpenScope ? 'aria-current="page"' : ''; ?>
+    >
+        Todos los tickets
+    </a>
+</nav>
 
 <div class="stats">
     <div class="stat-card">
@@ -163,7 +200,7 @@ $paginationEnd = min($totalPages, $currentPage + 2);
         <div class="admin-form__row admin-form__row--actions">
             <div class="admin-form__group admin-form__actions admin-form__actions--tickets">
                 <button type="submit" class="btn">Filtrar</button>
-                <a href="tickets.php" class="btn btn--secondary">Limpiar</a>
+                <a href="<?php echo e($clearFiltersUrl); ?>" class="btn btn--secondary">Limpiar</a>
             </div>
         </div>
     </form>
@@ -171,7 +208,7 @@ $paginationEnd = min($totalPages, $currentPage + 2);
 
 <div class="ticket-toolbar">
     <div class="ticket-results-summary">
-        <strong><?php echo $totalTickets; ?></strong> ticket<?php echo $totalTickets === 1 ? '' : 's'; ?> encontrado<?php echo $totalTickets === 1 ? '' : 's'; ?>
+        <strong><?php echo $totalTickets; ?></strong> ticket<?php echo $totalTickets === 1 ? '' : 's'; ?> encontrado<?php echo $totalTickets === 1 ? '' : 's'; ?> en <?php echo e($scopeTitle); ?>
         <span class="ticket-results-summary__page">Pagina <?php echo $currentPage; ?> de <?php echo $totalPages; ?>, <?php echo $perPage; ?> por pagina</span>
     </div>
     <?php if ($activeFilters): ?>

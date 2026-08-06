@@ -704,7 +704,7 @@ function getTicketStats($conn) {
         $stats['total'] = (int) $result->fetch_row()[0];
     }
 
-    if ($result = $conn->query("SELECT COUNT(*) FROM tickets WHERE status NOT IN ('Resuelto', 'Cerrado')")) {
+    if ($result = $conn->query("SELECT COUNT(*) FROM tickets WHERE status <> 'Cerrado'")) {
         $stats['open'] = (int) $result->fetch_row()[0];
     }
 
@@ -719,6 +719,11 @@ function build_support_ticket_filter_parts(array $filters = []) {
     $conditions = [];
     $types = '';
     $params = [];
+
+    $scope = trim((string) ($filters['scope'] ?? 'open'));
+    if ($scope !== 'all') {
+        $conditions[] = "t.status <> 'Cerrado'";
+    }
 
     if (!empty($filters['customer'])) {
         $conditions[] = '(c.name LIKE ? OR c.business_name LIKE ? OR c.email LIKE ? OR c.phone LIKE ?)';
