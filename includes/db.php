@@ -40,6 +40,7 @@ try {
 }
 
 ensure_promotions_schema($conn);
+ensure_admin_users_schema($conn);
 ensure_support_tickets_schema($conn);
 
 function ensure_promotions_schema($conn) {
@@ -125,6 +126,44 @@ function getTestimonials($conn) {
     return $conn->query($sql);
 }
 
+function ensure_admin_users_schema($conn) {
+    $conn->query(
+        "CREATE TABLE IF NOT EXISTS users (
+            id INT(11) NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            username VARCHAR(50) NOT NULL,
+            password VARCHAR(255) NOT NULL,
+            display_name VARCHAR(120) NULL,
+            active TINYINT(1) NOT NULL DEFAULT 1,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_users_username (username),
+            KEY idx_users_active (active)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    $userColumns = [
+        'display_name' => "ALTER TABLE users ADD COLUMN display_name VARCHAR(120) NULL AFTER password",
+        'active' => "ALTER TABLE users ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1 AFTER display_name",
+    ];
+
+    foreach ($userColumns as $column => $sql) {
+        $escapedColumn = $conn->real_escape_string($column);
+        $result = $conn->query("SHOW COLUMNS FROM users LIKE '{$escapedColumn}'");
+        if ($result && $result->num_rows === 0) {
+            $conn->query($sql);
+        }
+    }
+
+    if (!customer_index_exists($conn, 'users', 'uniq_users_username')) {
+        $conn->query('ALTER TABLE users ADD UNIQUE INDEX uniq_users_username (username)');
+    }
+
+    if (!customer_index_exists($conn, 'users', 'idx_users_active')) {
+        $conn->query('ALTER TABLE users ADD INDEX idx_users_active (active)');
+    }
+
+    $conn->query("UPDATE users SET display_name = username WHERE (display_name IS NULL OR display_name = '')");
+}
+
 function ensure_support_tickets_schema($conn) {
     $conn->query(
         "CREATE TABLE IF NOT EXISTS customers (
@@ -196,6 +235,9 @@ function ensure_support_tickets_schema($conn) {
             price_currency CHAR(3) NULL DEFAULT 'MXN',
             price_updated_by INT UNSIGNED NULL,
             price_updated_at TIMESTAMP NULL DEFAULT NULL,
+            assigned_user_id INT UNSIGNED NULL,
+            assigned_by_user_id INT UNSIGNED NULL,
+            assigned_at TIMESTAMP NULL DEFAULT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             KEY idx_tickets_customer_id (customer_id),
@@ -203,7 +245,9 @@ function ensure_support_tickets_schema($conn) {
             KEY idx_tickets_consultation_type (consultation_type),
             KEY idx_tickets_created_at (created_at),
             KEY idx_tickets_origin_type (origin_type),
-            KEY idx_tickets_price_updated_by (price_updated_by)
+            KEY idx_tickets_price_updated_by (price_updated_by),
+            KEY idx_tickets_assigned_user_id (assigned_user_id),
+            KEY idx_tickets_assigned_by_user_id (assigned_by_user_id)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
 
@@ -212,6 +256,9 @@ function ensure_support_tickets_schema($conn) {
         'price_currency' => "ALTER TABLE tickets ADD COLUMN price_currency CHAR(3) NULL DEFAULT 'MXN' AFTER price_amount",
         'price_updated_by' => "ALTER TABLE tickets ADD COLUMN price_updated_by INT UNSIGNED NULL AFTER price_currency",
         'price_updated_at' => "ALTER TABLE tickets ADD COLUMN price_updated_at TIMESTAMP NULL DEFAULT NULL AFTER price_updated_by",
+        'assigned_user_id' => "ALTER TABLE tickets ADD COLUMN assigned_user_id INT UNSIGNED NULL AFTER price_updated_at",
+        'assigned_by_user_id' => "ALTER TABLE tickets ADD COLUMN assigned_by_user_id INT UNSIGNED NULL AFTER assigned_user_id",
+        'assigned_at' => "ALTER TABLE tickets ADD COLUMN assigned_at TIMESTAMP NULL DEFAULT NULL AFTER assigned_by_user_id",
     ];
 
     foreach ($ticketColumns as $column => $sql) {
@@ -224,6 +271,12 @@ function ensure_support_tickets_schema($conn) {
 
     if (!customer_index_exists($conn, 'tickets', 'idx_tickets_price_updated_by')) {
         $conn->query('ALTER TABLE tickets ADD INDEX idx_tickets_price_updated_by (price_updated_by)');
+    }
+    if (!customer_index_exists($conn, 'tickets', 'idx_tickets_assigned_user_id')) {
+        $conn->query('ALTER TABLE tickets ADD INDEX idx_tickets_assigned_user_id (assigned_user_id)');
+    }
+    if (!customer_index_exists($conn, 'tickets', 'idx_tickets_assigned_by_user_id')) {
+        $conn->query('ALTER TABLE tickets ADD INDEX idx_tickets_assigned_by_user_id (assigned_by_user_id)');
     }
 
     $conn->query(
@@ -297,12 +350,132 @@ function format_ticket_price($amount, $currency = 'MXN') {
     return trim((string) $currency) . ' ' . number_format((float) $amount, 2, '.', ',');
 }
 
+function normalize_admin_username($username) {
+    return trim((string) $username);
+}
+
+function normalize_admin_display_name($displayName, $fallbackUsername = '') {
+    $displayName = trim((string) $displayName);
+    $fallbackUsername = trim((string) $fallbackUsername);
+    return $displayName !== '' ? $displayName : $fallbackUsername;
+}
+
+function getAdminUserDisplayLabel(array $user) {
+    $displayName = trim((string) ($user['display_name'] ?? ''));
+    $username = trim((string) ($user['username'] ?? ''));
+    return $displayName !== '' ? $displayName : $username;
+}
+
 function customer_index_exists($conn, $table, $indexName) {
     $table = $conn->real_escape_string($table);
     $indexName = $conn->real_escape_string($indexName);
     $result = $conn->query("SHOW INDEX FROM {$table} WHERE Key_name = '{$indexName}'");
 
     return $result && $result->num_rows > 0;
+}
+
+function getAdminUserById($conn, $userId) {
+    $userId = (int) $userId;
+    if ($userId <= 0) {
+        return null;
+    }
+
+    $stmt = $conn->prepare('SELECT * FROM users WHERE id = ? LIMIT 1');
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result ? $result->fetch_assoc() : null;
+}
+
+function findAdminUserByUsername($conn, $username, $excludeUserId = 0) {
+    $username = normalize_admin_username($username);
+    $excludeUserId = (int) $excludeUserId;
+
+    if ($username === '') {
+        return null;
+    }
+
+    if ($excludeUserId > 0) {
+        $stmt = $conn->prepare('SELECT * FROM users WHERE username = ? AND id <> ? LIMIT 1');
+        $stmt->bind_param('si', $username, $excludeUserId);
+    } else {
+        $stmt = $conn->prepare('SELECT * FROM users WHERE username = ? LIMIT 1');
+        $stmt->bind_param('s', $username);
+    }
+
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result ? $result->fetch_assoc() : null;
+}
+
+function getAdminUsers($conn, $assignableOnly = false) {
+    $sql = 'SELECT * FROM users';
+    if ($assignableOnly) {
+        $sql .= ' WHERE active = 1';
+    }
+    $sql .= ' ORDER BY COALESCE(NULLIF(display_name, \'\'), username) ASC, id ASC';
+    return $conn->query($sql);
+}
+
+function create_admin_user($conn, $username, $password, $displayName = '', $active = 1) {
+    $username = normalize_admin_username($username);
+    $displayName = normalize_admin_display_name($displayName, $username);
+    $password = (string) $password;
+    $active = (int) $active === 1 ? 1 : 0;
+
+    if ($username === '' || $password === '') {
+        return ['ok' => false, 'error' => 'Usuario y contraseña son obligatorios.', 'user' => null];
+    }
+
+    if (findAdminUserByUsername($conn, $username)) {
+        return ['ok' => false, 'error' => 'Ya existe una cuenta con ese usuario.', 'user' => null];
+    }
+
+    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+    $stmt = $conn->prepare('INSERT INTO users (username, password, display_name, active) VALUES (?, ?, ?, ?)');
+    $stmt->bind_param('sssi', $username, $passwordHash, $displayName, $active);
+
+    if (!$stmt->execute()) {
+        return ['ok' => false, 'error' => 'No se pudo crear la cuenta administrativa.', 'user' => null];
+    }
+
+    return ['ok' => true, 'error' => '', 'user' => getAdminUserById($conn, (int) $conn->insert_id)];
+}
+
+function update_admin_user_by_id($conn, $userId, $username, $displayName = '', $active = 1, $password = '') {
+    $userId = (int) $userId;
+    $username = normalize_admin_username($username);
+    $displayName = normalize_admin_display_name($displayName, $username);
+    $password = (string) $password;
+    $active = (int) $active === 1 ? 1 : 0;
+
+    if ($userId <= 0 || $username === '') {
+        return ['ok' => false, 'error' => 'El usuario es obligatorio.', 'user' => null];
+    }
+
+    $currentUser = getAdminUserById($conn, $userId);
+    if (!$currentUser) {
+        return ['ok' => false, 'error' => 'La cuenta ya no existe.', 'user' => null];
+    }
+
+    if (findAdminUserByUsername($conn, $username, $userId)) {
+        return ['ok' => false, 'error' => 'Ya existe otra cuenta con ese usuario.', 'user' => null];
+    }
+
+    if ($password !== '') {
+        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $conn->prepare('UPDATE users SET username = ?, display_name = ?, active = ?, password = ? WHERE id = ?');
+        $stmt->bind_param('ssisi', $username, $displayName, $active, $passwordHash, $userId);
+    } else {
+        $stmt = $conn->prepare('UPDATE users SET username = ?, display_name = ?, active = ? WHERE id = ?');
+        $stmt->bind_param('ssii', $username, $displayName, $active, $userId);
+    }
+
+    if (!$stmt->execute()) {
+        return ['ok' => false, 'error' => 'No se pudo actualizar la cuenta administrativa.', 'user' => null];
+    }
+
+    return ['ok' => true, 'error' => '', 'user' => getAdminUserById($conn, $userId)];
 }
 
 function backfill_customer_identity_columns($conn) {
@@ -566,8 +739,11 @@ function create_support_ticket($conn, array $data) {
                 price_amount,
                 price_currency,
                 price_updated_by,
-                price_updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+                price_updated_at,
+                assigned_user_id,
+                assigned_by_user_id,
+                assigned_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -588,9 +764,12 @@ function create_support_ticket($conn, array $data) {
     $priceCurrency = $priceAmount !== null ? 'MXN' : null;
     $priceUpdatedBy = $priceAmount !== null && !empty($data['price_updated_by']) ? (int) $data['price_updated_by'] : null;
     $priceUpdatedAt = $priceAmount !== null ? date('Y-m-d H:i:s') : null;
+    $assignedUserId = isset($data['assigned_user_id']) && (int) $data['assigned_user_id'] > 0 ? (int) $data['assigned_user_id'] : null;
+    $assignedByUserId = $assignedUserId !== null && !empty($data['assigned_by_user_id']) ? (int) $data['assigned_by_user_id'] : null;
+    $assignedAt = $assignedUserId !== null ? date('Y-m-d H:i:s') : null;
 
     $stmt->bind_param(
-        'isssiissssssis',
+        'isssiissssssisiis',
         $customerId,
         $consultationType,
         $status,
@@ -604,7 +783,10 @@ function create_support_ticket($conn, array $data) {
         $priceAmount,
         $priceCurrency,
         $priceUpdatedBy,
-        $priceUpdatedAt
+        $priceUpdatedAt,
+        $assignedUserId,
+        $assignedByUserId,
+        $assignedAt
     );
 
     if (!$stmt->execute()) {
@@ -630,10 +812,17 @@ function getTicketById($conn, $ticketId) {
                 c.business_name AS customer_business_name,
                 c.email AS customer_email,
                 c.phone AS customer_phone,
-                price_editor.username AS price_updated_by_username
+                price_editor.username AS price_updated_by_username,
+                price_editor.display_name AS price_updated_by_display_name,
+                assigned_user.username AS assigned_username,
+                assigned_user.display_name AS assigned_display_name,
+                assigned_by_user.username AS assigned_by_username,
+                assigned_by_user.display_name AS assigned_by_display_name
             FROM tickets t
             INNER JOIN customers c ON c.id = t.customer_id
             LEFT JOIN users price_editor ON price_editor.id = t.price_updated_by
+            LEFT JOIN users assigned_user ON assigned_user.id = t.assigned_user_id
+            LEFT JOIN users assigned_by_user ON assigned_by_user.id = t.assigned_by_user_id
             WHERE t.id = ?
             LIMIT 1";
     $stmt = $conn->prepare($sql);
@@ -795,10 +984,14 @@ function getSupportTickets($conn, array $filters = [], $limit = null, $offset = 
                 c.business_name AS customer_business_name,
                 c.email AS customer_email,
                 c.phone AS customer_phone,
-                price_editor.username AS price_updated_by_username
+                price_editor.username AS price_updated_by_username,
+                price_editor.display_name AS price_updated_by_display_name,
+                assigned_user.username AS assigned_username,
+                assigned_user.display_name AS assigned_display_name
             FROM tickets t
             INNER JOIN customers c ON c.id = t.customer_id
-            LEFT JOIN users price_editor ON price_editor.id = t.price_updated_by";
+            LEFT JOIN users price_editor ON price_editor.id = t.price_updated_by
+            LEFT JOIN users assigned_user ON assigned_user.id = t.assigned_user_id";
 
     if ($parts['conditions']) {
         $sql .= ' WHERE ' . implode(' AND ', $parts['conditions']);
@@ -860,6 +1053,37 @@ function update_ticket_price($conn, $ticketId, $priceAmount, $adminUserId) {
 
     if (!$stmt->execute()) {
         return ['ok' => false, 'error' => 'No se pudo actualizar el precio del ticket.', 'ticket' => null];
+    }
+
+    return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];
+}
+
+function update_ticket_assignee($conn, $ticketId, $assignedUserId, $assignedByUserId) {
+    $ticketId = (int) $ticketId;
+    $assignedByUserId = (int) $assignedByUserId;
+    $assignedUserId = (int) $assignedUserId;
+
+    if ($ticketId <= 0) {
+        return ['ok' => false, 'error' => 'No se pudo identificar el ticket.', 'ticket' => null];
+    }
+
+    if ($assignedUserId <= 0) {
+        return ['ok' => false, 'error' => 'Selecciona un responsable válido.', 'ticket' => null];
+    }
+
+    $assignee = getAdminUserById($conn, $assignedUserId);
+    if (!$assignee || (int) ($assignee['active'] ?? 0) !== 1) {
+        return ['ok' => false, 'error' => 'El responsable seleccionado no está disponible para asignación.', 'ticket' => null];
+    }
+
+    $assignedAt = date('Y-m-d H:i:s');
+    $stmt = $conn->prepare(
+        'UPDATE tickets SET assigned_user_id = ?, assigned_by_user_id = ?, assigned_at = ? WHERE id = ?'
+    );
+    $stmt->bind_param('iisi', $assignedUserId, $assignedByUserId, $assignedAt, $ticketId);
+
+    if (!$stmt->execute()) {
+        return ['ok' => false, 'error' => 'No se pudo actualizar el responsable del ticket.', 'ticket' => null];
     }
 
     return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];

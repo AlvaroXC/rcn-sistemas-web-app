@@ -10,18 +10,18 @@ if (isset($_SESSION['admin_id'])) {
 $error = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = $_POST['username'];
+    $username = trim((string) ($_POST['username'] ?? ''));
     $password = $_POST['password'];
     
-    $stmt = $conn->prepare("SELECT id, password FROM users WHERE username = ?");
+    $stmt = $conn->prepare("SELECT id, username, password, display_name, active FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
     $stmt->execute();
     $result = $stmt->get_result();
     
     if ($user = $result->fetch_assoc()) {
-        if (password_verify($password, $user['password'])) {
+        if ((int) ($user['active'] ?? 1) === 1 && password_verify($password, $user['password'])) {
             $_SESSION['admin_id'] = $user['id'];
-            $_SESSION['admin_user'] = $username;
+            $_SESSION['admin_user'] = trim((string) ($user['display_name'] ?? '')) !== '' ? $user['display_name'] : $user['username'];
             header("Location: index.php");
             exit;
         }

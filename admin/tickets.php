@@ -248,6 +248,7 @@ $clearFiltersUrl = build_ticket_page_url([
             <tr>
                 <th>Ticket</th>
                 <th>Cliente</th>
+                <th>Responsable</th>
                 <th>Precio</th>
                 <th>Estado</th>
                 <th>Canal</th>
@@ -279,6 +280,18 @@ $clearFiltersUrl = build_ticket_page_url([
                             <?php endif; ?>
                         </td>
                         <td>
+                            <?php
+                            $assignedDisplayLabel = trim((string) ($ticket['assigned_display_name'] ?? '')) !== ''
+                                ? $ticket['assigned_display_name']
+                                : trim((string) ($ticket['assigned_username'] ?? ''));
+                            ?>
+                            <?php if ($ticket['assigned_user_id'] && $assignedDisplayLabel !== ''): ?>
+                                <span class="ticket-assignee"><?php echo e($assignedDisplayLabel); ?></span>
+                            <?php else: ?>
+                                <span class="ticket-muted">Sin responsable</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
                             <?php if ($ticket['price_amount'] !== null): ?>
                                 <span class="ticket-price"><?php echo e(format_ticket_price($ticket['price_amount'], $ticket['price_currency'] ?? 'MXN')); ?></span>
                             <?php else: ?>
@@ -297,7 +310,7 @@ $clearFiltersUrl = build_ticket_page_url([
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="8">No se encontraron tickets con los filtros seleccionados.</td>
+                    <td colspan="9">No se encontraron tickets con los filtros seleccionados.</td>
                 </tr>
             <?php endif; ?>
         </tbody>

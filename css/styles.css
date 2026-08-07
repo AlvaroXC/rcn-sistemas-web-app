@@ -773,6 +773,17 @@ main .section--secondary,
     font-weight: 800;
     color: #0f766e;
 }
+.ticket-assignee {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    border-radius: 999px;
+    background: #ecfeff;
+    color: #155e75;
+    font-size: 1.3rem;
+    font-weight: 800;
+    line-height: 1;
+}
 .ticket-inline-alert {
     margin: 0;
 }

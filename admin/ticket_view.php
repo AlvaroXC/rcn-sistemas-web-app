@@ -8,10 +8,13 @@ $statusMessage = '';
 $statusError = '';
 $priceMessage = '';
 $priceError = '';
+$assigneeMessage = '';
+$assigneeError = '';
 $observationMessage = '';
 $observationError = '';
 $observationDraft = '';
 $priceDraft = trim((string) ($_POST['price_amount'] ?? ''));
+$assignedUserDraft = (int) ($_POST['assigned_user_id'] ?? 0);
 $returnUrl = trim((string) ($_GET['return'] ?? $_POST['return'] ?? 'tickets.php'));
 
 if ($returnUrl === '' || strpos($returnUrl, 'http') === 0) {
@@ -58,6 +61,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $priceError = $priceUpdate['error'] ?: 'No se pudo actualizar el precio del ticket.';
         }
+    } elseif ($action === 'update_assignee') {
+        $adminUserId = isset($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : 0;
+        $assigneeUpdate = update_ticket_assignee($conn, $ticketId, $assignedUserDraft, $adminUserId);
+
+        if ($assigneeUpdate['ok']) {
+            $assigneeMessage = 'El responsable del ticket se actualizó correctamente.';
+        } else {
+            $assigneeError = $assigneeUpdate['error'] ?: 'No se pudo actualizar el responsable del ticket.';
+        }
     } else {
         $status = trim((string) ($_POST['status'] ?? ''));
 
@@ -75,6 +87,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 $ticket = $ticketId > 0 ? getTicketById($conn, $ticketId) : null;
 $observations = $ticketId > 0 ? getTicketObservations($conn, $ticketId) : false;
+$assignableUsers = getAdminUsers($conn, true);
 
 if (!$ticket) {
     ?>
@@ -121,6 +134,35 @@ if (!$ticket) {
                 <div><strong>Canal:</strong> <?php echo e(ticket_origin_label($ticket['origin_type'])); ?></div>
                 <div><strong>Contexto:</strong> <?php echo e($ticket['context_label'] ?: 'Sin contexto adicional'); ?></div>
                 <div><strong>Asunto:</strong> <?php echo e($ticket['subject'] ?: 'Sin asunto'); ?></div>
+                <div>
+                    <strong>Responsable:</strong>
+                    <?php
+                    $assignedDisplayLabel = trim((string) ($ticket['assigned_display_name'] ?? '')) !== ''
+                        ? $ticket['assigned_display_name']
+                        : trim((string) ($ticket['assigned_username'] ?? ''));
+                    ?>
+                    <?php if ($ticket['assigned_user_id'] && $assignedDisplayLabel !== ''): ?>
+                        <span><?php echo e($assignedDisplayLabel); ?></span>
+                    <?php else: ?>
+                        <span class="ticket-muted">Sin responsable asignado</span>
+                    <?php endif; ?>
+                </div>
+                <div>
+                    <strong>Última asignación:</strong>
+                    <?php
+                    $assignedByLabel = trim((string) ($ticket['assigned_by_display_name'] ?? '')) !== ''
+                        ? $ticket['assigned_by_display_name']
+                        : trim((string) ($ticket['assigned_by_username'] ?? ''));
+                    ?>
+                    <?php if ($ticket['assigned_user_id'] && $ticket['assigned_at']): ?>
+                        <span>
+                            <?php echo e($assignedByLabel !== '' ? $assignedByLabel : 'Administrador'); ?>
+                            · <?php echo date('d/m/Y H:i', strtotime($ticket['assigned_at'])); ?>
+                        </span>
+                    <?php else: ?>
+                        <span class="ticket-muted">Sin asignación registrada</span>
+                    <?php endif; ?>
+                </div>
                 <div>
                     <strong>Precio:</strong>
                     <span class="<?php echo $ticket['price_amount'] !== null ? 'ticket-price' : 'ticket-muted'; ?>">
@@ -265,6 +307,14 @@ if (!$ticket) {
                 <div class="alert alert--error ticket-inline-alert"><?php echo e($priceError); ?></div>
             <?php endif; ?>
 
+            <?php if ($assigneeMessage): ?>
+                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($assigneeMessage); ?></div>
+            <?php endif; ?>
+
+            <?php if ($assigneeError): ?>
+                <div class="alert alert--error ticket-inline-alert"><?php echo e($assigneeError); ?></div>
+            <?php endif; ?>
+
             <form method="POST" class="admin-form">
                 <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
                 <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
@@ -297,6 +347,31 @@ if (!$ticket) {
                     >
                 </div>
                 <button type="submit" class="btn">Guardar precio</button>
+            </form>
+
+            <form method="POST" class="admin-form ticket-price-form">
+                <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
+                <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
+                <input type="hidden" name="ticket_action" value="update_assignee">
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="assigned_user_id">Asignar / cambiar responsable</label>
+                    <select id="assigned_user_id" name="assigned_user_id" class="admin-form__input">
+                        <option value="">Selecciona un responsable</option>
+                        <?php if ($assignableUsers): ?>
+                            <?php while ($assignableUser = $assignableUsers->fetch_assoc()): ?>
+                                <?php
+                                $assignableUserId = (int) $assignableUser['id'];
+                                $assignableLabel = getAdminUserDisplayLabel($assignableUser);
+                                $selectedAssigneeId = $assignedUserDraft > 0 ? $assignedUserDraft : (int) ($ticket['assigned_user_id'] ?? 0);
+                                ?>
+                                <option value="<?php echo $assignableUserId; ?>" <?php echo $selectedAssigneeId === $assignableUserId ? 'selected' : ''; ?>>
+                                    <?php echo e($assignableLabel); ?>
+                                </option>
+                            <?php endwhile; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
+                <button type="submit" class="btn">Guardar responsable</button>
             </form>
         </div>
     </div>
