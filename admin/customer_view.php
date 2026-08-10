@@ -2,6 +2,9 @@
 include 'includes/admin_header.php';
 require_once '../includes/db.php';
 
+$viewerUserId = current_admin_id();
+$viewerRole = current_admin_role();
+
 $customerId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $customer = $customerId > 0 ? getCustomerById($conn, $customerId) : null;
 $returnUrl = trim((string) ($_GET['return'] ?? 'tickets.php'));
@@ -28,7 +31,7 @@ if (!$customer) {
     exit;
 }
 
-$tickets = getCustomerTickets($conn, $customerId);
+$tickets = getCustomerTickets($conn, $customerId, $viewerUserId, $viewerRole);
 $ticketCount = $tickets ? $tickets->num_rows : 0;
 $openCount = 0;
 $resolvedCount = 0;

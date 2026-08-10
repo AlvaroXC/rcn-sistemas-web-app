@@ -1,6 +1,8 @@
 <?php
-include 'includes/admin_header.php';
+require_once '../includes/security.php';
+require_admin_role();
 require_once '../includes/db.php';
+include 'includes/admin_header.php';
 
 $userId = (int) ($_GET['id'] ?? $_POST['id'] ?? 0);
 $adminUser = $userId > 0 ? getAdminUserById($conn, $userId) : null;
@@ -26,6 +28,7 @@ $error = '';
 $form = [
     'username' => trim((string) ($_POST['username'] ?? $adminUser['username'] ?? '')),
     'display_name' => trim((string) ($_POST['display_name'] ?? $adminUser['display_name'] ?? '')),
+    'role' => normalize_admin_role($_POST['role'] ?? $adminUser['role'] ?? 'admin'),
     'active' => (int) ($_POST['active'] ?? $adminUser['active'] ?? 1) === 1 ? 1 : 0,
 ];
 
@@ -33,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verify_csrf_or_fail();
 
     $password = (string) ($_POST['password'] ?? '');
-    $updateResult = update_admin_user_by_id($conn, $userId, $form['username'], $form['display_name'], $form['active'], $password);
+    $updateResult = update_admin_user_by_id($conn, $userId, $form['username'], $form['display_name'], $form['active'], $password, $form['role']);
     if ($updateResult['ok']) {
         redirect_to('users.php');
     }
@@ -75,6 +78,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label class="admin-form__label" for="password">Nueva contraseña</label>
                 <input type="password" id="password" name="password" class="admin-form__input" placeholder="Deja en blanco para conservar la actual">
             </div>
+            <div class="admin-form__group">
+                <label class="admin-form__label" for="role">Rol</label>
+                <select id="role" name="role" class="admin-form__input">
+                    <option value="admin" <?php echo $form['role'] === 'admin' ? 'selected' : ''; ?>>Administrador</option>
+                    <option value="agent" <?php echo $form['role'] === 'agent' ? 'selected' : ''; ?>>Operativo</option>
+                </select>
+            </div>
+        </div>
+        <div class="admin-form__row">
             <div class="admin-form__group">
                 <label class="admin-form__label" for="active">Estado</label>
                 <select id="active" name="active" class="admin-form__input">

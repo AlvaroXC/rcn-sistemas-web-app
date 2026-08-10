@@ -39,6 +39,34 @@ function start_secure_session($requireAdmin = false) {
     }
 }
 
+function current_admin_id() {
+    start_secure_session(false);
+    return isset($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : 0;
+}
+
+function current_admin_role() {
+    start_secure_session(false);
+    $role = trim((string) ($_SESSION['admin_role'] ?? 'admin'));
+    return $role !== '' ? $role : 'admin';
+}
+
+function current_admin_user_label() {
+    start_secure_session(false);
+    return trim((string) ($_SESSION['admin_user'] ?? ''));
+}
+
+function current_admin_is_supervisor() {
+    return current_admin_role() === 'admin';
+}
+
+function require_admin_role() {
+    start_secure_session(true);
+    if (!current_admin_is_supervisor()) {
+        http_response_code(403);
+        exit('No tienes permisos para acceder a esta sección.');
+    }
+}
+
 function csrf_token() {
     start_secure_session(false);
     if (empty($_SESSION['csrf_token'])) {

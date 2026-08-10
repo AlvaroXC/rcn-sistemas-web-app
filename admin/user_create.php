@@ -1,11 +1,14 @@
 <?php
-include 'includes/admin_header.php';
+require_once '../includes/security.php';
+require_admin_role();
 require_once '../includes/db.php';
+include 'includes/admin_header.php';
 
 $error = '';
 $form = [
     'username' => trim((string) ($_POST['username'] ?? '')),
     'display_name' => trim((string) ($_POST['display_name'] ?? '')),
+    'role' => normalize_admin_role($_POST['role'] ?? 'agent'),
     'active' => (int) ($_POST['active'] ?? 1) === 1 ? 1 : 0,
 ];
 
@@ -16,7 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($form['username'] === '' || $password === '') {
         $error = 'Usuario y contraseña son obligatorios.';
     } else {
-        $createResult = create_admin_user($conn, $form['username'], $password, $form['display_name'], $form['active']);
+        $createResult = create_admin_user($conn, $form['username'], $password, $form['display_name'], $form['active'], $form['role']);
         if ($createResult['ok'] && !empty($createResult['user'])) {
             redirect_to('users.php');
         }
@@ -57,6 +60,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label class="admin-form__label" for="password">Contraseña</label>
                 <input type="password" id="password" name="password" class="admin-form__input" required>
             </div>
+            <div class="admin-form__group">
+                <label class="admin-form__label" for="role">Rol</label>
+                <select id="role" name="role" class="admin-form__input">
+                    <option value="admin" <?php echo $form['role'] === 'admin' ? 'selected' : ''; ?>>Administrador</option>
+                    <option value="agent" <?php echo $form['role'] === 'agent' ? 'selected' : ''; ?>>Operativo</option>
+                </select>
+            </div>
+        </div>
+        <div class="admin-form__row">
             <div class="admin-form__group">
                 <label class="admin-form__label" for="active">Estado</label>
                 <select id="active" name="active" class="admin-form__input">

@@ -1,9 +1,8 @@
 <?php
-session_start();
-if (!isset($_SESSION['admin_id'])) {
-    header("Location: login.php");
-    exit;
-}
+require_once __DIR__ . '/../../includes/security.php';
+
+start_secure_session(true);
+$currentAdminIsSupervisor = current_admin_is_supervisor();
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -35,9 +34,11 @@ if (!isset($_SESSION['admin_id'])) {
                 <a href="customers.php" class="sidebar__link <?php echo basename($_SERVER['PHP_SELF']) == 'customers.php' || basename($_SERVER['PHP_SELF']) == 'customer_create.php' || basename($_SERVER['PHP_SELF']) == 'customer_view.php' || basename($_SERVER['PHP_SELF']) == 'customer_edit.php' ? 'sidebar__link--active' : ''; ?>">
                     <i class="fas fa-address-book"></i> Clientes
                 </a>
-                <a href="users.php" class="sidebar__link <?php echo basename($_SERVER['PHP_SELF']) == 'users.php' || basename($_SERVER['PHP_SELF']) == 'user_create.php' || basename($_SERVER['PHP_SELF']) == 'user_edit.php' ? 'sidebar__link--active' : ''; ?>">
-                    <i class="fas fa-users-cog"></i> Usuarios
-                </a>
+                <?php if ($currentAdminIsSupervisor): ?>
+                    <a href="users.php" class="sidebar__link <?php echo basename($_SERVER['PHP_SELF']) == 'users.php' || basename($_SERVER['PHP_SELF']) == 'user_create.php' || basename($_SERVER['PHP_SELF']) == 'user_edit.php' ? 'sidebar__link--active' : ''; ?>">
+                        <i class="fas fa-users-cog"></i> Usuarios
+                    </a>
+                <?php endif; ?>
                 <a href="logout.php" class="sidebar__link" style="margin-top: auto; color: #ff6b6b;">
                     <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
                 </a>

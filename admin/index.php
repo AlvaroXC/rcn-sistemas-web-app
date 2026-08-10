@@ -1,6 +1,6 @@
 <?php include 'includes/admin_header.php'; ?>
 <?php require_once '../includes/db.php'; ?>
-<?php $ticketStats = getTicketStats($conn); ?>
+<?php $ticketStats = getTicketStats($conn, current_admin_id(), current_admin_role()); ?>
 
 <header class="admin-header">
     <h2>Dashboard Overview</h2>

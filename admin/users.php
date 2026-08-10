@@ -1,4 +1,6 @@
 <?php
+require_once '../includes/security.php';
+require_admin_role();
 include 'includes/admin_header.php';
 require_once '../includes/db.php';
 
@@ -21,6 +23,7 @@ $users = getAdminUsers($conn, false);
             <tr>
                 <th>Nombre</th>
                 <th>Usuario</th>
+                <th>Rol</th>
                 <th>Estado</th>
                 <th>Creado</th>
                 <th>Acciones</th>
@@ -32,6 +35,7 @@ $users = getAdminUsers($conn, false);
                     <tr>
                         <td><strong><?php echo e(getAdminUserDisplayLabel($adminUser)); ?></strong></td>
                         <td><?php echo e($adminUser['username']); ?></td>
+                        <td><?php echo e(($adminUser['role'] ?? 'admin') === 'admin' ? 'Administrador' : 'Operativo'); ?></td>
                         <td>
                             <?php if ((int) ($adminUser['active'] ?? 0) === 1): ?>
                                 <span class="ticket-assignee">Activo</span>
@@ -47,7 +51,7 @@ $users = getAdminUsers($conn, false);
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="5">No hay usuarios administrativos registrados.</td>
+                    <td colspan="6">No hay usuarios administrativos registrados.</td>
                 </tr>
             <?php endif; ?>
         </tbody>
