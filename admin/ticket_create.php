@@ -2,7 +2,7 @@
 include 'includes/admin_header.php';
 require_once '../includes/db.php';
 
-$allowedStatuses = ['Nuevo', 'En revision', 'En proceso', 'Pendiente de respuesta', 'Por facturar', 'Resuelto', 'Cerrado'];
+$allowedStatuses = ['Nuevo', 'Agendado', 'En revision', 'En proceso', 'Pendiente de respuesta', 'Por facturar', 'Resuelto', 'Cerrado'];
 $allowedTypes = ['Compra', 'Soporte', 'Informacion'];
 
 $customerMode = trim((string) ($_POST['customer_mode'] ?? ($_GET['customer_id'] ?? 0 ? 'existing' : 'new')));
@@ -46,6 +46,9 @@ $ticketForm = [
     'context_label' => trim((string) ($_POST['context_label'] ?? '')),
     'message' => trim((string) ($_POST['message'] ?? '')),
     'price_amount' => trim((string) ($_POST['price_amount'] ?? '')),
+    'service_date' => trim((string) ($_POST['service_date'] ?? '')),
+    'service_start_time' => trim((string) ($_POST['service_start_time'] ?? '')),
+    'service_end_time' => trim((string) ($_POST['service_end_time'] ?? '')),
 ];
 
 $customerForm = [
@@ -74,6 +77,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $priceValidation = normalize_ticket_price_input($ticketForm['price_amount']);
         if (!$priceValidation['ok']) {
             $error = $priceValidation['error'];
+        }
+    }
+
+    if ($error === '') {
+        $scheduleValidation = normalize_ticket_schedule_inputs(
+            $ticketForm['service_date'],
+            $ticketForm['service_start_time'],
+            $ticketForm['service_end_time']
+        );
+
+        if (!$scheduleValidation['ok']) {
+            $error = $scheduleValidation['error'];
+        } else {
+            $programmedDateValidation = validate_ticket_programmed_date_requirement(
+                $ticketForm['status'],
+                $scheduleValidation['service_date']
+            );
+            if (!$programmedDateValidation['ok']) {
+                $error = $programmedDateValidation['error'];
+            }
         }
     }
 
@@ -142,6 +165,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'attachment_path' => $attachmentPath,
                 'price_amount' => $normalizedPriceAmount,
                 'price_updated_by' => $normalizedPriceAmount !== null ? $adminUserId : null,
+                'service_date' => $ticketForm['service_date'],
+                'service_start_time' => $ticketForm['service_start_time'],
+                'service_end_time' => $ticketForm['service_end_time'],
             ]);
 
             if ($ticket) {
@@ -394,6 +420,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="admin-form__group">
                     <label class="admin-form__label" for="attachment">Adjunto opcional</label>
                     <input type="file" id="attachment" name="attachment" class="admin-form__input" accept="image/*">
+                </div>
+            </div>
+            <div class="ticket-service-create">
+                <p class="ticket-observations__intro">Usa esta programación cuando el ticket represente una cita o visita. Si el estado es <strong>Agendado</strong>, la fecha programada es obligatoria.</p>
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="service_date">Fecha programada</label>
+                    <input type="date" id="service_date" name="service_date" class="admin-form__input" value="<?php echo e($ticketForm['service_date']); ?>">
+                </div>
+                <div class="admin-form__row ticket-service-schedule-row">
+                    <div class="admin-form__group">
+                        <label class="admin-form__label" for="service_start_time">Hora de inicio</label>
+                        <input type="time" id="service_start_time" name="service_start_time" class="admin-form__input" value="<?php echo e($ticketForm['service_start_time']); ?>">
+                    </div>
+                    <div class="admin-form__group">
+                        <label class="admin-form__label" for="service_end_time">Hora de finalización</label>
+                        <input type="time" id="service_end_time" name="service_end_time" class="admin-form__input" value="<?php echo e($ticketForm['service_end_time']); ?>">
+                    </div>
                 </div>
             </div>
         </section>

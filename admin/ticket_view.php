@@ -2,7 +2,10 @@
 include 'includes/admin_header.php';
 require_once '../includes/db.php';
 
-$allowedStatuses = ['Nuevo', 'En revision', 'En proceso', 'Pendiente de respuesta', 'Por facturar', 'Resuelto', 'Cerrado'];
+$viewerUserId = current_admin_id();
+$viewerRole = current_admin_role();
+
+$allowedStatuses = ['Nuevo', 'Agendado', 'En revision', 'En proceso', 'Pendiente de respuesta', 'Por facturar', 'Resuelto', 'Cerrado'];
 $ticketId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $statusMessage = '';
 $statusError = '';
@@ -10,11 +13,16 @@ $priceMessage = '';
 $priceError = '';
 $assigneeMessage = '';
 $assigneeError = '';
+$serviceMessage = '';
+$serviceError = '';
 $observationMessage = '';
 $observationError = '';
 $observationDraft = '';
 $priceDraft = trim((string) ($_POST['price_amount'] ?? ''));
 $assignedUserDraft = (int) ($_POST['assigned_user_id'] ?? 0);
+$serviceDateDraft = trim((string) ($_POST['service_date'] ?? ''));
+$serviceStartDraft = trim((string) ($_POST['service_start_time'] ?? ''));
+$serviceEndDraft = trim((string) ($_POST['service_end_time'] ?? ''));
 $returnUrl = trim((string) ($_GET['return'] ?? $_POST['return'] ?? 'tickets.php'));
 
 if ($returnUrl === '' || strpos($returnUrl, 'http') === 0) {
@@ -35,8 +43,11 @@ function ticket_origin_label($originType) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ticketId = (int) ($_POST['ticket_id'] ?? 0);
     $action = trim((string) ($_POST['ticket_action'] ?? 'update_status'));
+    $editableTicket = $ticketId > 0 ? getTicketById($conn, $ticketId) : null;
 
-    if ($action === 'add_observation') {
+    if (!$editableTicket || !can_admin_user_access_ticket($editableTicket, $viewerUserId, $viewerRole)) {
+        $statusError = 'No tienes permisos para modificar este ticket.';
+    } elseif ($action === 'add_observation') {
         $observationContent = trim((string) ($_POST['observation_content'] ?? ''));
         $observationDraft = $observationContent;
         $adminUserId = isset($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : null;
@@ -62,19 +73,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $priceError = $priceUpdate['error'] ?: 'No se pudo actualizar el precio del ticket.';
         }
     } elseif ($action === 'update_assignee') {
-        $adminUserId = isset($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : 0;
-        $assigneeUpdate = update_ticket_assignee($conn, $ticketId, $assignedUserDraft, $adminUserId);
-
-        if ($assigneeUpdate['ok']) {
-            $assigneeMessage = 'El responsable del ticket se actualizó correctamente.';
+        if ($viewerRole !== 'admin') {
+            $assigneeError = 'No tienes permisos para reasignar tickets.';
         } else {
-            $assigneeError = $assigneeUpdate['error'] ?: 'No se pudo actualizar el responsable del ticket.';
+            $adminUserId = isset($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : 0;
+            $assigneeUpdate = update_ticket_assignee($conn, $ticketId, $assignedUserDraft, $adminUserId);
+
+            if ($assigneeUpdate['ok']) {
+                $assigneeMessage = 'El responsable del ticket se actualizó correctamente.';
+            } else {
+                $assigneeError = $assigneeUpdate['error'] ?: 'No se pudo actualizar el responsable del ticket.';
+            }
+        }
+    } elseif ($action === 'update_service_schedule') {
+        $serviceUpdate = update_ticket_service_schedule($conn, $ticketId, $serviceDateDraft, $serviceStartDraft, $serviceEndDraft);
+
+        if ($serviceUpdate['ok']) {
+            $serviceMessage = 'La ejecución del servicio se actualizó correctamente.';
+            $serviceDateDraft = '';
+            $serviceStartDraft = '';
+            $serviceEndDraft = '';
+        } else {
+            $serviceError = $serviceUpdate['error'] ?: 'No se pudo actualizar la ejecución del servicio.';
         }
     } else {
         $status = trim((string) ($_POST['status'] ?? ''));
 
         if ($ticketId > 0 && in_array($status, $allowedStatuses, true)) {
-            if (update_ticket_status($conn, $ticketId, $status)) {
+            $existingTicket = $editableTicket;
+            $programmedDateValidation = validate_ticket_programmed_date_requirement($status, $existingTicket['service_date'] ?? null);
+
+            if (!$programmedDateValidation['ok']) {
+                $statusError = $programmedDateValidation['error'];
+            } elseif (update_ticket_status($conn, $ticketId, $status)) {
                 $statusMessage = 'El estado del ticket se actualizó correctamente.';
             } else {
                 $statusError = 'No se pudo actualizar el estado del ticket.';
@@ -89,14 +120,14 @@ $ticket = $ticketId > 0 ? getTicketById($conn, $ticketId) : null;
 $observations = $ticketId > 0 ? getTicketObservations($conn, $ticketId) : false;
 $assignableUsers = getAdminUsers($conn, true);
 
-if (!$ticket) {
+if (!$ticket || !can_admin_user_access_ticket($ticket, $viewerUserId, $viewerRole)) {
     ?>
     <header class="admin-header">
         <h2>Ticket no encontrado</h2>
         <a href="<?php echo e($returnUrl); ?>" class="btn btn--secondary">Volver a tickets</a>
     </header>
     <div class="card panel-card">
-        <p>El ticket solicitado no existe o ya no está disponible.</p>
+        <p>El ticket solicitado no existe, ya no está disponible o no tienes permisos para verlo.</p>
     </div>
     </main>
     </div>
@@ -119,6 +150,7 @@ if (!$ticket) {
         <p>Creado el <?php echo date('d/m/Y H:i', strtotime($ticket['created_at'])); ?></p>
     </div>
     <div class="ticket-header-actions">
+        <a href="ticket_service_order_pdf.php?id=<?php echo (int) $ticket['id']; ?>&return=<?php echo urlencode($returnUrl); ?>" class="btn">Exportar PDF</a>
         <a href="<?php echo e($returnUrl); ?>" class="btn btn--secondary">Volver a tickets</a>
         <a href="customer_view.php?id=<?php echo (int) $ticket['customer_id']; ?>&return=<?php echo urlencode($returnUrl); ?>" class="btn">Ver cliente</a>
     </div>
@@ -169,6 +201,10 @@ if (!$ticket) {
                         <?php echo e(format_ticket_price($ticket['price_amount'], $ticket['price_currency'] ?? 'MXN')); ?>
                     </span>
                 </div>
+                <div><strong>Fecha programada:</strong> <?php echo e(format_ticket_service_date($ticket['service_date'] ?? null)); ?></div>
+                <div><strong>Hora de inicio:</strong> <?php echo e(format_ticket_service_time($ticket['service_start_time'] ?? null)); ?></div>
+                <div><strong>Hora de finalización:</strong> <?php echo e(format_ticket_service_time($ticket['service_end_time'] ?? null)); ?></div>
+                <div><strong>Duración:</strong> <?php echo e(format_ticket_service_duration($ticket['service_start_time'] ?? null, $ticket['service_end_time'] ?? null)); ?></div>
                 <div>
                     <strong>Última actualización de precio:</strong>
                     <?php if ($ticket['price_amount'] !== null && $ticket['price_updated_at']): ?>
@@ -315,6 +351,14 @@ if (!$ticket) {
                 <div class="alert alert--error ticket-inline-alert"><?php echo e($assigneeError); ?></div>
             <?php endif; ?>
 
+            <?php if ($serviceMessage): ?>
+                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($serviceMessage); ?></div>
+            <?php endif; ?>
+
+            <?php if ($serviceError): ?>
+                <div class="alert alert--error ticket-inline-alert"><?php echo e($serviceError); ?></div>
+            <?php endif; ?>
+
             <form method="POST" class="admin-form">
                 <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
                 <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
@@ -349,29 +393,83 @@ if (!$ticket) {
                 <button type="submit" class="btn">Guardar precio</button>
             </form>
 
+            <?php if ($viewerRole === 'admin'): ?>
+                <form method="POST" class="admin-form ticket-price-form">
+                    <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
+                    <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
+                    <input type="hidden" name="ticket_action" value="update_assignee">
+                    <div class="admin-form__group">
+                        <label class="admin-form__label" for="assigned_user_id">Asignar / cambiar responsable</label>
+                        <select id="assigned_user_id" name="assigned_user_id" class="admin-form__input">
+                            <option value="">Selecciona un responsable</option>
+                            <?php if ($assignableUsers): ?>
+                                <?php while ($assignableUser = $assignableUsers->fetch_assoc()): ?>
+                                    <?php
+                                    $assignableUserId = (int) $assignableUser['id'];
+                                    $assignableLabel = getAdminUserDisplayLabel($assignableUser);
+                                    $selectedAssigneeId = $assignedUserDraft > 0 ? $assignedUserDraft : (int) ($ticket['assigned_user_id'] ?? 0);
+                                    ?>
+                                    <option value="<?php echo $assignableUserId; ?>" <?php echo $selectedAssigneeId === $assignableUserId ? 'selected' : ''; ?>>
+                                        <?php echo e($assignableLabel); ?>
+                                    </option>
+                                <?php endwhile; ?>
+                            <?php endif; ?>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">Guardar responsable</button>
+                </form>
+            <?php endif; ?>
+
             <form method="POST" class="admin-form ticket-price-form">
                 <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
                 <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
-                <input type="hidden" name="ticket_action" value="update_assignee">
+                <input type="hidden" name="ticket_action" value="update_service_schedule">
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="assigned_user_id">Asignar / cambiar responsable</label>
-                    <select id="assigned_user_id" name="assigned_user_id" class="admin-form__input">
-                        <option value="">Selecciona un responsable</option>
-                        <?php if ($assignableUsers): ?>
-                            <?php while ($assignableUser = $assignableUsers->fetch_assoc()): ?>
-                                <?php
-                                $assignableUserId = (int) $assignableUser['id'];
-                                $assignableLabel = getAdminUserDisplayLabel($assignableUser);
-                                $selectedAssigneeId = $assignedUserDraft > 0 ? $assignedUserDraft : (int) ($ticket['assigned_user_id'] ?? 0);
-                                ?>
-                                <option value="<?php echo $assignableUserId; ?>" <?php echo $selectedAssigneeId === $assignableUserId ? 'selected' : ''; ?>>
-                                    <?php echo e($assignableLabel); ?>
-                                </option>
-                            <?php endwhile; ?>
-                        <?php endif; ?>
-                    </select>
+                    <label class="admin-form__label" for="service_date">Fecha programada</label>
+                    <input
+                        type="date"
+                        id="service_date"
+                        name="service_date"
+                        class="admin-form__input"
+                        value="<?php echo e($serviceDateDraft !== '' ? $serviceDateDraft : (string) ($ticket['service_date'] ?? '')); ?>"
+                    >
                 </div>
-                <button type="submit" class="btn">Guardar responsable</button>
+                <div class="admin-form__row ticket-service-schedule-row">
+                    <div class="admin-form__group">
+                        <label class="admin-form__label" for="service_start_time">Hora de inicio</label>
+                        <input
+                            type="time"
+                            id="service_start_time"
+                            name="service_start_time"
+                            class="admin-form__input"
+                            value="<?php echo e($serviceStartDraft !== '' ? $serviceStartDraft : substr((string) ($ticket['service_start_time'] ?? ''), 0, 5)); ?>"
+                        >
+                    </div>
+                    <div class="admin-form__group">
+                        <label class="admin-form__label" for="service_end_time">Hora de finalización</label>
+                        <input
+                            type="time"
+                            id="service_end_time"
+                            name="service_end_time"
+                            class="admin-form__input"
+                            value="<?php echo e($serviceEndDraft !== '' ? $serviceEndDraft : substr((string) ($ticket['service_end_time'] ?? ''), 0, 5)); ?>"
+                        >
+                    </div>
+                </div>
+                <div class="ticket-service-schedule-summary">
+                    <label class="admin-form__label" for="service_duration_preview">Duración calculada</label>
+                    <input
+                        type="text"
+                        id="service_duration_preview"
+                        class="admin-form__input ticket-service-schedule-summary__input"
+                        value="<?php echo e(format_ticket_service_duration(
+                            $serviceStartDraft !== '' ? $serviceStartDraft : ($ticket['service_start_time'] ?? ''),
+                            $serviceEndDraft !== '' ? $serviceEndDraft : ($ticket['service_end_time'] ?? '')
+                        )); ?>"
+                        readonly
+                    >
+                </div>
+                <button type="submit" class="btn">Guardar programación</button>
             </form>
         </div>
     </div>

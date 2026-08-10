@@ -2,7 +2,10 @@
 include 'includes/admin_header.php';
 require_once '../includes/db.php';
 
-$allowedStatuses = ['Nuevo', 'En revision', 'En proceso', 'Pendiente de respuesta', 'Por facturar', 'Resuelto', 'Cerrado'];
+$viewerUserId = current_admin_id();
+$viewerRole = current_admin_role();
+
+$allowedStatuses = ['Nuevo', 'Agendado', 'En revision', 'En proceso', 'Pendiente de respuesta', 'Por facturar', 'Resuelto', 'Cerrado'];
 $allowedTypes = ['Compra', 'Soporte', 'Informacion'];
 $allowedScopes = ['open', 'all'];
 $allowedPageSizes = [10, 25, 50];
@@ -35,12 +38,12 @@ if (!in_array($perPage, $allowedPageSizes, true)) {
     $perPage = $defaultPageSize;
 }
 
-$ticketStats = getTicketStats($conn);
-$totalTickets = getSupportTicketsCount($conn, $filters);
+$ticketStats = getTicketStats($conn, $viewerUserId, $viewerRole);
+$totalTickets = getSupportTicketsCount($conn, $filters, $viewerUserId, $viewerRole);
 $totalPages = max(1, (int) ceil($totalTickets / $perPage));
 $currentPage = min($currentPage, $totalPages);
 $offset = ($currentPage - 1) * $perPage;
-$tickets = getSupportTickets($conn, $filters, $perPage, $offset);
+$tickets = getSupportTickets($conn, $filters, $perPage, $offset, $viewerUserId, $viewerRole);
 $ticketsCount = $tickets ? $tickets->num_rows : 0;
 $activeFilters = [];
 
@@ -95,8 +98,8 @@ $paginationEnd = min($totalPages, $currentPage + 2);
 $isOpenScope = $filters['scope'] === 'open';
 $scopeTitle = $isOpenScope ? 'Tickets abiertos' : 'Todos los tickets';
 $scopeDescription = $isOpenScope
-    ? 'Vista operativa con tickets cuyo estado no es Cerrado.'
-    : 'Vista histórica completa con tickets de todos los estados, incluidos Cerrado.';
+    ? 'Vista operativa con tickets cuyo estado no es Resuelto ni Cerrado.'
+    : 'Vista histórica completa con tickets de todos los estados, incluidos Resuelto y Cerrado.';
 $clearFiltersUrl = build_ticket_page_url([
     'scope' => $filters['scope'],
     'customer' => '',

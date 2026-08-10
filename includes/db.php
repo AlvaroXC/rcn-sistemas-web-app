@@ -133,15 +133,18 @@ function ensure_admin_users_schema($conn) {
             username VARCHAR(50) NOT NULL,
             password VARCHAR(255) NOT NULL,
             display_name VARCHAR(120) NULL,
+            role VARCHAR(20) NOT NULL DEFAULT 'admin',
             active TINYINT(1) NOT NULL DEFAULT 1,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             UNIQUE KEY uniq_users_username (username),
-            KEY idx_users_active (active)
+            KEY idx_users_active (active),
+            KEY idx_users_role (role)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
     );
 
     $userColumns = [
         'display_name' => "ALTER TABLE users ADD COLUMN display_name VARCHAR(120) NULL AFTER password",
+        'role' => "ALTER TABLE users ADD COLUMN role VARCHAR(20) NOT NULL DEFAULT 'admin' AFTER display_name",
         'active' => "ALTER TABLE users ADD COLUMN active TINYINT(1) NOT NULL DEFAULT 1 AFTER display_name",
     ];
 
@@ -161,7 +164,12 @@ function ensure_admin_users_schema($conn) {
         $conn->query('ALTER TABLE users ADD INDEX idx_users_active (active)');
     }
 
+    if (!customer_index_exists($conn, 'users', 'idx_users_role')) {
+        $conn->query('ALTER TABLE users ADD INDEX idx_users_role (role)');
+    }
+
     $conn->query("UPDATE users SET display_name = username WHERE (display_name IS NULL OR display_name = '')");
+    $conn->query("UPDATE users SET role = 'admin' WHERE role IS NULL OR role = ''");
 }
 
 function ensure_support_tickets_schema($conn) {
@@ -235,6 +243,9 @@ function ensure_support_tickets_schema($conn) {
             price_currency CHAR(3) NULL DEFAULT 'MXN',
             price_updated_by INT UNSIGNED NULL,
             price_updated_at TIMESTAMP NULL DEFAULT NULL,
+            service_date DATE NULL,
+            service_start_time TIME NULL,
+            service_end_time TIME NULL,
             assigned_user_id INT UNSIGNED NULL,
             assigned_by_user_id INT UNSIGNED NULL,
             assigned_at TIMESTAMP NULL DEFAULT NULL,
@@ -256,7 +267,10 @@ function ensure_support_tickets_schema($conn) {
         'price_currency' => "ALTER TABLE tickets ADD COLUMN price_currency CHAR(3) NULL DEFAULT 'MXN' AFTER price_amount",
         'price_updated_by' => "ALTER TABLE tickets ADD COLUMN price_updated_by INT UNSIGNED NULL AFTER price_currency",
         'price_updated_at' => "ALTER TABLE tickets ADD COLUMN price_updated_at TIMESTAMP NULL DEFAULT NULL AFTER price_updated_by",
-        'assigned_user_id' => "ALTER TABLE tickets ADD COLUMN assigned_user_id INT UNSIGNED NULL AFTER price_updated_at",
+        'service_date' => "ALTER TABLE tickets ADD COLUMN service_date DATE NULL AFTER price_updated_at",
+        'service_start_time' => "ALTER TABLE tickets ADD COLUMN service_start_time TIME NULL AFTER service_date",
+        'service_end_time' => "ALTER TABLE tickets ADD COLUMN service_end_time TIME NULL AFTER service_start_time",
+        'assigned_user_id' => "ALTER TABLE tickets ADD COLUMN assigned_user_id INT UNSIGNED NULL AFTER service_end_time",
         'assigned_by_user_id' => "ALTER TABLE tickets ADD COLUMN assigned_by_user_id INT UNSIGNED NULL AFTER assigned_user_id",
         'assigned_at' => "ALTER TABLE tickets ADD COLUMN assigned_at TIMESTAMP NULL DEFAULT NULL AFTER assigned_by_user_id",
     ];
@@ -350,6 +364,157 @@ function format_ticket_price($amount, $currency = 'MXN') {
     return trim((string) $currency) . ' ' . number_format((float) $amount, 2, '.', ',');
 }
 
+function normalize_ticket_service_date_input($serviceDate) {
+    $serviceDate = trim((string) $serviceDate);
+    if ($serviceDate === '') {
+        return ['ok' => true, 'value' => null, 'error' => ''];
+    }
+
+    $date = DateTime::createFromFormat('Y-m-d', $serviceDate);
+    if (!$date || $date->format('Y-m-d') !== $serviceDate) {
+        return ['ok' => false, 'value' => null, 'error' => 'Ingresa una fecha de servicio válida.'];
+    }
+
+    return ['ok' => true, 'value' => $serviceDate, 'error' => ''];
+}
+
+function normalize_ticket_service_time_input($serviceTime, $fieldLabel) {
+    $serviceTime = trim((string) $serviceTime);
+    $fieldLabel = trim((string) $fieldLabel);
+
+    if ($serviceTime === '') {
+        return ['ok' => true, 'value' => null, 'error' => ''];
+    }
+
+    if (!preg_match('/^\d{2}:\d{2}$/', $serviceTime)) {
+        return ['ok' => false, 'value' => null, 'error' => 'Ingresa una ' . strtolower($fieldLabel) . ' válida.'];
+    }
+
+    $time = DateTime::createFromFormat('H:i', $serviceTime);
+    if (!$time || $time->format('H:i') !== $serviceTime) {
+        return ['ok' => false, 'value' => null, 'error' => 'Ingresa una ' . strtolower($fieldLabel) . ' válida.'];
+    }
+
+    return ['ok' => true, 'value' => $time->format('H:i:s'), 'error' => ''];
+}
+
+function normalize_ticket_schedule_inputs($serviceDate, $startTime, $endTime) {
+    $normalizedDate = normalize_ticket_service_date_input($serviceDate);
+    if (!$normalizedDate['ok']) {
+        return ['ok' => false, 'error' => $normalizedDate['error'], 'service_date' => null, 'service_start_time' => null, 'service_end_time' => null];
+    }
+
+    $normalizedStart = normalize_ticket_service_time_input($startTime, 'hora de inicio');
+    if (!$normalizedStart['ok']) {
+        return ['ok' => false, 'error' => $normalizedStart['error'], 'service_date' => null, 'service_start_time' => null, 'service_end_time' => null];
+    }
+
+    $normalizedEnd = normalize_ticket_service_time_input($endTime, 'hora de finalización');
+    if (!$normalizedEnd['ok']) {
+        return ['ok' => false, 'error' => $normalizedEnd['error'], 'service_date' => null, 'service_start_time' => null, 'service_end_time' => null];
+    }
+
+    $serviceDateValue = $normalizedDate['value'];
+    $startValue = $normalizedStart['value'];
+    $endValue = $normalizedEnd['value'];
+
+    if (($startValue === null) !== ($endValue === null)) {
+        return ['ok' => false, 'error' => 'Captura tanto la hora de inicio como la hora de finalización para calcular la duración.', 'service_date' => null, 'service_start_time' => null, 'service_end_time' => null];
+    }
+
+    if ($startValue !== null && calculate_ticket_service_duration_minutes($startValue, $endValue) === null) {
+        return ['ok' => false, 'error' => 'La hora de finalización debe ser posterior o igual a la hora de inicio.', 'service_date' => null, 'service_start_time' => null, 'service_end_time' => null];
+    }
+
+    return [
+        'ok' => true,
+        'error' => '',
+        'service_date' => $serviceDateValue,
+        'service_start_time' => $startValue,
+        'service_end_time' => $endValue,
+    ];
+}
+
+function ticket_status_requires_programmed_date($status) {
+    return trim((string) $status) === 'Agendado';
+}
+
+function validate_ticket_programmed_date_requirement($status, $serviceDate) {
+    if (ticket_status_requires_programmed_date($status) && trim((string) $serviceDate) === '') {
+        return ['ok' => false, 'error' => 'El estado Agendado requiere una fecha programada.'];
+    }
+
+    return ['ok' => true, 'error' => ''];
+}
+
+function calculate_ticket_service_duration_minutes($startTime, $endTime) {
+    $startTime = trim((string) $startTime);
+    $endTime = trim((string) $endTime);
+
+    if ($startTime === '' || $endTime === '') {
+        return null;
+    }
+
+    try {
+        $start = new DateTime('1970-01-01 ' . $startTime);
+        $end = new DateTime('1970-01-01 ' . $endTime);
+    } catch (Exception $exception) {
+        return null;
+    }
+
+    if ($end < $start) {
+        return null;
+    }
+
+    return (int) round(($end->getTimestamp() - $start->getTimestamp()) / 60);
+}
+
+function format_ticket_service_date($serviceDate) {
+    $serviceDate = trim((string) $serviceDate);
+    if ($serviceDate === '') {
+        return 'Pendiente de registrar';
+    }
+
+    try {
+        return (new DateTime($serviceDate))->format('d/m/Y');
+    } catch (Exception $exception) {
+        return $serviceDate;
+    }
+}
+
+function format_ticket_service_time($serviceTime) {
+    $serviceTime = trim((string) $serviceTime);
+    if ($serviceTime === '') {
+        return 'Pendiente de registrar';
+    }
+
+    try {
+        return (new DateTime($serviceTime))->format('H:i');
+    } catch (Exception $exception) {
+        return $serviceTime;
+    }
+}
+
+function format_ticket_service_duration($startTime, $endTime) {
+    $minutes = calculate_ticket_service_duration_minutes($startTime, $endTime);
+    if ($minutes === null) {
+        return 'Pendiente de registrar';
+    }
+
+    $hours = intdiv($minutes, 60);
+    $remainingMinutes = $minutes % 60;
+
+    if ($hours > 0 && $remainingMinutes > 0) {
+        return $hours . ' h ' . $remainingMinutes . ' min';
+    }
+
+    if ($hours > 0) {
+        return $hours . ' h';
+    }
+
+    return $remainingMinutes . ' min';
+}
+
 function normalize_admin_username($username) {
     return trim((string) $username);
 }
@@ -358,6 +523,11 @@ function normalize_admin_display_name($displayName, $fallbackUsername = '') {
     $displayName = trim((string) $displayName);
     $fallbackUsername = trim((string) $fallbackUsername);
     return $displayName !== '' ? $displayName : $fallbackUsername;
+}
+
+function normalize_admin_role($role) {
+    $role = trim((string) $role);
+    return in_array($role, ['admin', 'agent'], true) ? $role : 'agent';
 }
 
 function getAdminUserDisplayLabel(array $user) {
@@ -417,11 +587,12 @@ function getAdminUsers($conn, $assignableOnly = false) {
     return $conn->query($sql);
 }
 
-function create_admin_user($conn, $username, $password, $displayName = '', $active = 1) {
+function create_admin_user($conn, $username, $password, $displayName = '', $active = 1, $role = 'agent') {
     $username = normalize_admin_username($username);
     $displayName = normalize_admin_display_name($displayName, $username);
     $password = (string) $password;
     $active = (int) $active === 1 ? 1 : 0;
+    $role = normalize_admin_role($role);
 
     if ($username === '' || $password === '') {
         return ['ok' => false, 'error' => 'Usuario y contraseña son obligatorios.', 'user' => null];
@@ -432,8 +603,8 @@ function create_admin_user($conn, $username, $password, $displayName = '', $acti
     }
 
     $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-    $stmt = $conn->prepare('INSERT INTO users (username, password, display_name, active) VALUES (?, ?, ?, ?)');
-    $stmt->bind_param('sssi', $username, $passwordHash, $displayName, $active);
+    $stmt = $conn->prepare('INSERT INTO users (username, password, display_name, role, active) VALUES (?, ?, ?, ?, ?)');
+    $stmt->bind_param('ssssi', $username, $passwordHash, $displayName, $role, $active);
 
     if (!$stmt->execute()) {
         return ['ok' => false, 'error' => 'No se pudo crear la cuenta administrativa.', 'user' => null];
@@ -442,12 +613,13 @@ function create_admin_user($conn, $username, $password, $displayName = '', $acti
     return ['ok' => true, 'error' => '', 'user' => getAdminUserById($conn, (int) $conn->insert_id)];
 }
 
-function update_admin_user_by_id($conn, $userId, $username, $displayName = '', $active = 1, $password = '') {
+function update_admin_user_by_id($conn, $userId, $username, $displayName = '', $active = 1, $password = '', $role = 'agent') {
     $userId = (int) $userId;
     $username = normalize_admin_username($username);
     $displayName = normalize_admin_display_name($displayName, $username);
     $password = (string) $password;
     $active = (int) $active === 1 ? 1 : 0;
+    $role = normalize_admin_role($role);
 
     if ($userId <= 0 || $username === '') {
         return ['ok' => false, 'error' => 'El usuario es obligatorio.', 'user' => null];
@@ -464,11 +636,11 @@ function update_admin_user_by_id($conn, $userId, $username, $displayName = '', $
 
     if ($password !== '') {
         $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-        $stmt = $conn->prepare('UPDATE users SET username = ?, display_name = ?, active = ?, password = ? WHERE id = ?');
-        $stmt->bind_param('ssisi', $username, $displayName, $active, $passwordHash, $userId);
+        $stmt = $conn->prepare('UPDATE users SET username = ?, display_name = ?, role = ?, active = ?, password = ? WHERE id = ?');
+        $stmt->bind_param('sssisi', $username, $displayName, $role, $active, $passwordHash, $userId);
     } else {
-        $stmt = $conn->prepare('UPDATE users SET username = ?, display_name = ?, active = ? WHERE id = ?');
-        $stmt->bind_param('ssii', $username, $displayName, $active, $userId);
+        $stmt = $conn->prepare('UPDATE users SET username = ?, display_name = ?, role = ?, active = ? WHERE id = ?');
+        $stmt->bind_param('sssii', $username, $displayName, $role, $active, $userId);
     }
 
     if (!$stmt->execute()) {
@@ -740,10 +912,13 @@ function create_support_ticket($conn, array $data) {
                 price_currency,
                 price_updated_by,
                 price_updated_at,
+                service_date,
+                service_start_time,
+                service_end_time,
                 assigned_user_id,
                 assigned_by_user_id,
                 assigned_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -764,12 +939,29 @@ function create_support_ticket($conn, array $data) {
     $priceCurrency = $priceAmount !== null ? 'MXN' : null;
     $priceUpdatedBy = $priceAmount !== null && !empty($data['price_updated_by']) ? (int) $data['price_updated_by'] : null;
     $priceUpdatedAt = $priceAmount !== null ? date('Y-m-d H:i:s') : null;
+    $scheduleValidation = normalize_ticket_schedule_inputs(
+        $data['service_date'] ?? null,
+        $data['service_start_time'] ?? null,
+        $data['service_end_time'] ?? null
+    );
+    if (!$scheduleValidation['ok']) {
+        return null;
+    }
+
+    $programmedDateValidation = validate_ticket_programmed_date_requirement($status, $scheduleValidation['service_date']);
+    if (!$programmedDateValidation['ok']) {
+        return null;
+    }
+
+    $serviceDate = $scheduleValidation['service_date'];
+    $serviceStartTime = $scheduleValidation['service_start_time'];
+    $serviceEndTime = $scheduleValidation['service_end_time'];
     $assignedUserId = isset($data['assigned_user_id']) && (int) $data['assigned_user_id'] > 0 ? (int) $data['assigned_user_id'] : null;
     $assignedByUserId = $assignedUserId !== null && !empty($data['assigned_by_user_id']) ? (int) $data['assigned_by_user_id'] : null;
     $assignedAt = $assignedUserId !== null ? date('Y-m-d H:i:s') : null;
 
     $stmt->bind_param(
-        'isssiissssssisiis',
+        'isssiisssssssssisiis',
         $customerId,
         $consultationType,
         $status,
@@ -784,6 +976,9 @@ function create_support_ticket($conn, array $data) {
         $priceCurrency,
         $priceUpdatedBy,
         $priceUpdatedAt,
+        $serviceDate,
+        $serviceStartTime,
+        $serviceEndTime,
         $assignedUserId,
         $assignedByUserId,
         $assignedAt
@@ -874,27 +1069,54 @@ function getTicketObservations($conn, $ticketId) {
     return $stmt->get_result();
 }
 
-function getCustomerTickets($conn, $customerId) {
-    $stmt = $conn->prepare('SELECT * FROM tickets WHERE customer_id = ? ORDER BY created_at DESC, id DESC');
-    $stmt->bind_param('i', $customerId);
+function getCustomerTickets($conn, $customerId, $viewerUserId = 0, $viewerRole = 'admin') {
+    $customerId = (int) $customerId;
+    $viewerUserId = (int) $viewerUserId;
+    $viewerRole = trim((string) $viewerRole);
+
+    if ($viewerRole === 'admin') {
+        $stmt = $conn->prepare('SELECT * FROM tickets WHERE customer_id = ? ORDER BY created_at DESC, id DESC');
+        $stmt->bind_param('i', $customerId);
+    } else {
+        $stmt = $conn->prepare('SELECT * FROM tickets WHERE customer_id = ? AND assigned_user_id = ? ORDER BY created_at DESC, id DESC');
+        $stmt->bind_param('ii', $customerId, $viewerUserId);
+    }
     $stmt->execute();
 
     return $stmt->get_result();
 }
 
-function getTicketStats($conn) {
+function getTicketStats($conn, $viewerUserId = 0, $viewerRole = 'admin') {
     $stats = [
         'total' => 0,
         'open' => 0,
         'customers' => 0,
     ];
+    $viewerUserId = (int) $viewerUserId;
+    $viewerRole = trim((string) $viewerRole);
 
-    if ($result = $conn->query('SELECT COUNT(*) FROM tickets')) {
-        $stats['total'] = (int) $result->fetch_row()[0];
-    }
+    if ($viewerRole === 'admin') {
+        if ($result = $conn->query('SELECT COUNT(*) FROM tickets')) {
+            $stats['total'] = (int) $result->fetch_row()[0];
+        }
 
-    if ($result = $conn->query("SELECT COUNT(*) FROM tickets WHERE status <> 'Cerrado'")) {
-        $stats['open'] = (int) $result->fetch_row()[0];
+        if ($result = $conn->query("SELECT COUNT(*) FROM tickets WHERE status NOT IN ('Resuelto', 'Cerrado')")) {
+            $stats['open'] = (int) $result->fetch_row()[0];
+        }
+    } else {
+        if ($stmt = $conn->prepare('SELECT COUNT(*) FROM tickets WHERE assigned_user_id = ?')) {
+            $stmt->bind_param('i', $viewerUserId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stats['total'] = $result ? (int) $result->fetch_row()[0] : 0;
+        }
+
+        if ($stmt = $conn->prepare("SELECT COUNT(*) FROM tickets WHERE assigned_user_id = ? AND status NOT IN ('Resuelto', 'Cerrado')")) {
+            $stmt->bind_param('i', $viewerUserId);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $stats['open'] = $result ? (int) $result->fetch_row()[0] : 0;
+        }
     }
 
     if ($result = $conn->query('SELECT COUNT(*) FROM customers')) {
@@ -904,14 +1126,22 @@ function getTicketStats($conn) {
     return $stats;
 }
 
-function build_support_ticket_filter_parts(array $filters = []) {
+function build_support_ticket_filter_parts(array $filters = [], $viewerUserId = 0, $viewerRole = 'admin') {
     $conditions = [];
     $types = '';
     $params = [];
+    $viewerUserId = (int) $viewerUserId;
+    $viewerRole = trim((string) $viewerRole);
 
     $scope = trim((string) ($filters['scope'] ?? 'open'));
     if ($scope !== 'all') {
-        $conditions[] = "t.status <> 'Cerrado'";
+        $conditions[] = "t.status NOT IN ('Resuelto', 'Cerrado')";
+    }
+
+    if ($viewerRole !== 'admin') {
+        $conditions[] = 't.assigned_user_id = ?';
+        $types .= 'i';
+        $params[] = $viewerUserId;
     }
 
     if (!empty($filters['customer'])) {
@@ -955,8 +1185,8 @@ function build_support_ticket_filter_parts(array $filters = []) {
     ];
 }
 
-function getSupportTicketsCount($conn, array $filters = []) {
-    $parts = build_support_ticket_filter_parts($filters);
+function getSupportTicketsCount($conn, array $filters = [], $viewerUserId = 0, $viewerRole = 'admin') {
+    $parts = build_support_ticket_filter_parts($filters, $viewerUserId, $viewerRole);
     $sql = "SELECT COUNT(*)
             FROM tickets t
             INNER JOIN customers c ON c.id = t.customer_id";
@@ -976,8 +1206,8 @@ function getSupportTicketsCount($conn, array $filters = []) {
     return $result ? (int) $result->fetch_row()[0] : 0;
 }
 
-function getSupportTickets($conn, array $filters = [], $limit = null, $offset = 0) {
-    $parts = build_support_ticket_filter_parts($filters);
+function getSupportTickets($conn, array $filters = [], $limit = null, $offset = 0, $viewerUserId = 0, $viewerRole = 'admin') {
+    $parts = build_support_ticket_filter_parts($filters, $viewerUserId, $viewerRole);
     $sql = "SELECT
                 t.*,
                 c.name AS customer_name,
@@ -1019,7 +1249,30 @@ function getSupportTickets($conn, array $filters = [], $limit = null, $offset = 
     return $stmt->get_result();
 }
 
+function can_admin_user_access_ticket(array $ticket, $viewerUserId, $viewerRole) {
+    $viewerUserId = (int) $viewerUserId;
+    $viewerRole = trim((string) $viewerRole);
+
+    if ($viewerRole === 'admin') {
+        return true;
+    }
+
+    return $viewerUserId > 0 && (int) ($ticket['assigned_user_id'] ?? 0) === $viewerUserId;
+}
+
 function update_ticket_status($conn, $ticketId, $status) {
+    $ticketId = (int) $ticketId;
+    $ticket = getTicketById($conn, $ticketId);
+
+    if (!$ticket) {
+        return false;
+    }
+
+    $programmedDateValidation = validate_ticket_programmed_date_requirement($status, $ticket['service_date'] ?? null);
+    if (!$programmedDateValidation['ok']) {
+        return false;
+    }
+
     $stmt = $conn->prepare('UPDATE tickets SET status = ? WHERE id = ?');
     $stmt->bind_param('si', $status, $ticketId);
     return $stmt->execute();
@@ -1084,6 +1337,51 @@ function update_ticket_assignee($conn, $ticketId, $assignedUserId, $assignedByUs
 
     if (!$stmt->execute()) {
         return ['ok' => false, 'error' => 'No se pudo actualizar el responsable del ticket.', 'ticket' => null];
+    }
+
+    return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];
+}
+
+function update_ticket_service_schedule($conn, $ticketId, $serviceDate, $startTime, $endTime) {
+    $ticketId = (int) $ticketId;
+
+    if ($ticketId <= 0) {
+        return ['ok' => false, 'error' => 'No se pudo identificar el ticket.', 'ticket' => null];
+    }
+
+    $ticket = getTicketById($conn, $ticketId);
+    if (!$ticket) {
+        return ['ok' => false, 'error' => 'El ticket ya no existe.', 'ticket' => null];
+    }
+
+    $scheduleValidation = normalize_ticket_schedule_inputs($serviceDate, $startTime, $endTime);
+    if (!$scheduleValidation['ok']) {
+        return ['ok' => false, 'error' => $scheduleValidation['error'], 'ticket' => null];
+    }
+
+    $programmedDateValidation = validate_ticket_programmed_date_requirement($ticket['status'] ?? '', $scheduleValidation['service_date']);
+    if (!$programmedDateValidation['ok']) {
+        return ['ok' => false, 'error' => $programmedDateValidation['error'], 'ticket' => null];
+    }
+
+    $stmt = $conn->prepare(
+        'UPDATE tickets SET service_date = ?, service_start_time = ?, service_end_time = ? WHERE id = ?'
+    );
+
+    if (!$stmt) {
+        return ['ok' => false, 'error' => 'No se pudo preparar la actualización de la orden de servicio.', 'ticket' => null];
+    }
+
+    $stmt->bind_param(
+        'sssi',
+        $scheduleValidation['service_date'],
+        $scheduleValidation['service_start_time'],
+        $scheduleValidation['service_end_time'],
+        $ticketId
+    );
+
+    if (!$stmt->execute()) {
+        return ['ok' => false, 'error' => 'No se pudo actualizar la ejecución del servicio.', 'ticket' => null];
     }
 
     return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];
