@@ -149,6 +149,26 @@ if (!$ticket || !can_admin_user_access_ticket($ticket, $viewerUserId, $viewerRol
     <?php
     exit;
 }
+
+$customerType = normalize_customer_type($ticket['customer_type'] ?? 'persona_fisica');
+$customerTypeLabel = $customerType === 'persona_moral' ? 'Persona moral' : 'Persona fisica';
+$assignedDisplayLabel = trim((string) ($ticket['assigned_display_name'] ?? '')) !== ''
+    ? $ticket['assigned_display_name']
+    : trim((string) ($ticket['assigned_username'] ?? ''));
+$assignedByLabel = trim((string) ($ticket['assigned_by_display_name'] ?? '')) !== ''
+    ? $ticket['assigned_by_display_name']
+    : trim((string) ($ticket['assigned_by_username'] ?? ''));
+$priceEditorLabel = trim((string) ($ticket['price_updated_by_username'] ?? '')) !== ''
+    ? $ticket['price_updated_by_username']
+    : ($ticket['price_updated_by'] ? 'Admin #' . (int) $ticket['price_updated_by'] : 'Administrador');
+$messageEditorLabel = trim((string) ($ticket['message_updated_by_display_name'] ?? '')) !== ''
+    ? $ticket['message_updated_by_display_name']
+    : trim((string) ($ticket['message_updated_by_username'] ?? ''));
+$selectedAssigneeId = $assignedUserDraft > 0 ? $assignedUserDraft : (int) ($ticket['assigned_user_id'] ?? 0);
+$effectivePriceAmount = get_ticket_effective_price_amount($ticket);
+$effectivePriceBaseAmount = get_ticket_effective_price_base_amount($ticket);
+$hasPriceBreakdown = ticket_has_price_breakdown($ticket);
+$hasAttachment = trim((string) ($ticket['attachment_path'] ?? '')) !== '';
 ?>
 
 <nav class="breadcrumbs" aria-label="Navegacion">
@@ -170,108 +190,182 @@ if (!$ticket || !can_admin_user_access_ticket($ticket, $viewerUserId, $viewerRol
 </header>
 
 <div class="ticket-detail-grid">
-    <div class="card panel-card">
-        <section class="ticket-section">
+    <div class="ticket-detail-main">
+        <section class="card panel-card ticket-section-card">
             <div class="ticket-section__eyebrow">Resumen</div>
-            <h3 class="ticket-section__title">Detalles del ticket</h3>
-            <div class="ticket-detail-list">
-                <div><strong>Tipo de consulta:</strong> <?php echo e($ticket['consultation_type']); ?></div>
-                <div><strong>Canal:</strong> <?php echo e(ticket_origin_label($ticket['origin_type'])); ?></div>
-                <div><strong>Contexto:</strong> <?php echo e($ticket['context_label'] ?: 'Sin contexto adicional'); ?></div>
-                <div><strong>Asunto:</strong> <?php echo e($ticket['subject'] ?: 'Sin asunto'); ?></div>
-                <div>
-                    <strong>Responsable:</strong>
-                    <?php
-                    $assignedDisplayLabel = trim((string) ($ticket['assigned_display_name'] ?? '')) !== ''
-                        ? $ticket['assigned_display_name']
-                        : trim((string) ($ticket['assigned_username'] ?? ''));
-                    ?>
-                    <?php if ($ticket['assigned_user_id'] && $assignedDisplayLabel !== ''): ?>
-                        <span><?php echo e($assignedDisplayLabel); ?></span>
-                    <?php else: ?>
-                        <span class="ticket-muted">Sin responsable asignado</span>
-                    <?php endif; ?>
+            <h3 class="ticket-section__title">Visión general del ticket</h3>
+            <div class="ticket-summary-grid">
+                <div class="ticket-kv">
+                    <span class="ticket-kv__label">Tipo de consulta</span>
+                    <strong class="ticket-kv__value"><?php echo e($ticket['consultation_type']); ?></strong>
                 </div>
-                <div>
-                    <strong>Última asignación:</strong>
-                    <?php
-                    $assignedByLabel = trim((string) ($ticket['assigned_by_display_name'] ?? '')) !== ''
-                        ? $ticket['assigned_by_display_name']
-                        : trim((string) ($ticket['assigned_by_username'] ?? ''));
-                    ?>
-                    <?php if ($ticket['assigned_user_id'] && $ticket['assigned_at']): ?>
-                        <span>
-                            <?php echo e($assignedByLabel !== '' ? $assignedByLabel : 'Administrador'); ?>
-                            · <?php echo date('d/m/Y H:i', strtotime($ticket['assigned_at'])); ?>
-                        </span>
-                    <?php else: ?>
-                        <span class="ticket-muted">Sin asignación registrada</span>
-                    <?php endif; ?>
+                <div class="ticket-kv">
+                    <span class="ticket-kv__label">Canal</span>
+                    <strong class="ticket-kv__value"><?php echo e(ticket_origin_label($ticket['origin_type'])); ?></strong>
                 </div>
-                <div>
-                    <strong>Precio:</strong>
-                    <span class="<?php echo $ticket['price_amount'] !== null ? 'ticket-price' : 'ticket-muted'; ?>">
-                        <?php echo e(format_ticket_price($ticket['price_amount'], $ticket['price_currency'] ?? 'MXN')); ?>
-                    </span>
+                <div class="ticket-kv">
+                    <span class="ticket-kv__label">Contexto</span>
+                    <span class="ticket-kv__value"><?php echo e($ticket['context_label'] ?: 'Sin contexto adicional'); ?></span>
                 </div>
-                <div><strong>Fecha programada:</strong> <?php echo e(format_ticket_service_date($ticket['service_date'] ?? null)); ?></div>
-                <div><strong>Hora de inicio:</strong> <?php echo e(format_ticket_service_time($ticket['service_start_time'] ?? null)); ?></div>
-                <div><strong>Hora de finalización:</strong> <?php echo e(format_ticket_service_time($ticket['service_end_time'] ?? null)); ?></div>
-                <div><strong>Duración:</strong> <?php echo e(format_ticket_service_duration($ticket['service_start_time'] ?? null, $ticket['service_end_time'] ?? null)); ?></div>
-                <div>
-                    <strong>Última actualización de precio:</strong>
-                    <?php if ($ticket['price_amount'] !== null && $ticket['price_updated_at']): ?>
-                        <?php
-                        $priceEditorLabel = trim((string) ($ticket['price_updated_by_username'] ?? '')) !== ''
-                            ? $ticket['price_updated_by_username']
-                            : ($ticket['price_updated_by'] ? 'Admin #' . (int) $ticket['price_updated_by'] : 'Administrador');
-                        ?>
-                        <span><?php echo e($priceEditorLabel); ?> · <?php echo date('d/m/Y H:i', strtotime($ticket['price_updated_at'])); ?></span>
-                    <?php else: ?>
-                        <span class="ticket-muted">Sin precio asignado</span>
-                    <?php endif; ?>
-                </div>
-                <div><strong>Adjunto:</strong>
-                    <?php if ($ticket['attachment_path']): ?>
-                        <a href="../<?php echo e($ticket['attachment_path']); ?>" target="_blank" rel="noopener" class="ticket-attachment-link">
-                            <i class="fas fa-paperclip" aria-hidden="true"></i>
-                            <span>Ver archivo</span>
-                        </a>
-                    <?php else: ?>
-                        <span class="ticket-muted">Sin adjunto</span>
-                    <?php endif; ?>
+                <div class="ticket-kv">
+                    <span class="ticket-kv__label">Asunto</span>
+                    <span class="ticket-kv__value"><?php echo e($ticket['subject'] ?: 'Sin asunto'); ?></span>
                 </div>
             </div>
         </section>
 
-        <section class="ticket-section">
+        <section class="card panel-card ticket-section-card">
+            <div class="ticket-section__eyebrow">Precio</div>
+            <div class="ticket-section-card__header">
+                <div>
+                    <h3 class="ticket-section__title">Resumen fiscal</h3>
+                    <p class="ticket-section-card__intro">El total final se calcula con base en el tipo de cliente actual.</p>
+                </div>
+                <?php if ($effectivePriceAmount !== null): ?>
+                    <div class="ticket-price-highlight">
+                        <span class="ticket-price-highlight__label">Total final</span>
+                        <span class="ticket-price"><?php echo e(format_ticket_price($effectivePriceAmount, $ticket['price_currency'] ?? 'MXN')); ?></span>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <?php if ($hasPriceBreakdown): ?>
+                <div class="ticket-summary-grid ticket-summary-grid--compact">
+                    <div class="ticket-kv">
+                        <span class="ticket-kv__label">Precio base</span>
+                        <span class="ticket-kv__value"><?php echo e(format_ticket_price($ticket['price_base_amount'], $ticket['price_currency'] ?? 'MXN')); ?></span>
+                    </div>
+                    <div class="ticket-kv">
+                        <span class="ticket-kv__label">IVA</span>
+                        <span class="ticket-kv__value"><?php echo e(format_ticket_price($ticket['price_iva_amount'], $ticket['price_currency'] ?? 'MXN')); ?></span>
+                    </div>
+                    <div class="ticket-kv">
+                        <span class="ticket-kv__label">ISR retenido</span>
+                        <span class="ticket-kv__value">
+                            <?php if ($customerType === 'persona_moral'): ?>
+                                <?php echo e(format_ticket_price($ticket['price_isr_withholding_amount'], $ticket['price_currency'] ?? 'MXN')); ?>
+                            <?php else: ?>
+                                No aplica
+                            <?php endif; ?>
+                        </span>
+                    </div>
+                    <div class="ticket-kv">
+                        <span class="ticket-kv__label">Tipo de cliente</span>
+                        <span class="ticket-kv__value"><?php echo e($customerTypeLabel); ?></span>
+                    </div>
+                </div>
+            <?php elseif ($effectivePriceAmount !== null): ?>
+                <div class="ticket-empty-state">
+                    <strong>Precio registrado:</strong>
+                    <span class="ticket-price"><?php echo e(format_ticket_price($effectivePriceAmount, $ticket['price_currency'] ?? 'MXN')); ?></span>
+                    <p>Este ticket conserva un precio heredado sin desglose fiscal almacenado.</p>
+                </div>
+            <?php else: ?>
+                <div class="ticket-empty-state">
+                    <strong>Sin precio asignado</strong>
+                    <p>Cuando captures un precio base, el total final se recalculará automáticamente.</p>
+                </div>
+            <?php endif; ?>
+
+            <div class="ticket-meta-note">
+                <strong>Última actualización:</strong>
+                <?php if ($effectivePriceAmount !== null && $ticket['price_updated_at']): ?>
+                    <span><?php echo e($priceEditorLabel); ?> · <?php echo date('d/m/Y H:i', strtotime($ticket['price_updated_at'])); ?></span>
+                <?php else: ?>
+                    <span class="ticket-muted">Sin precio asignado</span>
+                <?php endif; ?>
+            </div>
+        </section>
+
+        <div class="ticket-section-split">
+            <section class="card panel-card ticket-section-card">
+                <div class="ticket-section__eyebrow">Asignación</div>
+                <h3 class="ticket-section__title">Responsabilidad operativa</h3>
+                <div class="ticket-detail-list">
+                    <div class="ticket-kv">
+                        <span class="ticket-kv__label">Responsable actual</span>
+                        <?php if ($ticket['assigned_user_id'] && $assignedDisplayLabel !== ''): ?>
+                            <span class="ticket-assignee"><?php echo e($assignedDisplayLabel); ?></span>
+                        <?php else: ?>
+                            <span class="ticket-muted">Sin responsable asignado</span>
+                        <?php endif; ?>
+                    </div>
+                    <div class="ticket-kv">
+                        <span class="ticket-kv__label">Última asignación</span>
+                        <?php if ($ticket['assigned_user_id'] && $ticket['assigned_at']): ?>
+                            <span class="ticket-kv__value">
+                                <?php echo e($assignedByLabel !== '' ? $assignedByLabel : 'Administrador'); ?>
+                                · <?php echo date('d/m/Y H:i', strtotime($ticket['assigned_at'])); ?>
+                            </span>
+                        <?php else: ?>
+                            <span class="ticket-muted">Sin asignación registrada</span>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card panel-card ticket-section-card">
+                <div class="ticket-section__eyebrow">Programación</div>
+                <h3 class="ticket-section__title">Servicio programado</h3>
+                <div class="ticket-detail-list">
+                    <div class="ticket-kv">
+                        <span class="ticket-kv__label">Fecha programada</span>
+                        <span class="ticket-kv__value"><?php echo e(format_ticket_service_date($ticket['service_date'] ?? null)); ?></span>
+                    </div>
+                    <div class="ticket-kv">
+                        <span class="ticket-kv__label">Hora de inicio</span>
+                        <span class="ticket-kv__value"><?php echo e(format_ticket_service_time($ticket['service_start_time'] ?? null)); ?></span>
+                    </div>
+                    <div class="ticket-kv">
+                        <span class="ticket-kv__label">Hora de finalización</span>
+                        <span class="ticket-kv__value"><?php echo e(format_ticket_service_time($ticket['service_end_time'] ?? null)); ?></span>
+                    </div>
+                    <div class="ticket-kv">
+                        <span class="ticket-kv__label">Duración</span>
+                        <span class="ticket-kv__value"><?php echo e(format_ticket_service_duration($ticket['service_start_time'] ?? null, $ticket['service_end_time'] ?? null)); ?></span>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <section class="card panel-card ticket-section-card">
             <div class="ticket-section__eyebrow">Cliente</div>
             <h3 class="ticket-section__title">Datos de contacto</h3>
-            <div class="ticket-detail-list">
-                <div><strong>Nombre:</strong> <?php echo e($ticket['customer_name']); ?></div>
-                <div><strong>Razón social:</strong> <?php echo e(($ticket['customer_business_name'] ?? '') !== '' ? $ticket['customer_business_name'] : 'No proporcionada'); ?></div>
-                <div>
-                    <strong>Correo:</strong>
+            <div class="ticket-summary-grid ticket-summary-grid--compact">
+                <div class="ticket-kv">
+                    <span class="ticket-kv__label">Nombre</span>
+                    <span class="ticket-kv__value"><?php echo e($ticket['customer_name']); ?></span>
+                </div>
+                <div class="ticket-kv">
+                    <span class="ticket-kv__label">Tipo de cliente</span>
+                    <span class="ticket-kv__value"><?php echo e($customerTypeLabel); ?></span>
+                </div>
+                <div class="ticket-kv">
+                    <span class="ticket-kv__label">Razón social</span>
+                    <span class="ticket-kv__value"><?php echo e(($ticket['customer_business_name'] ?? '') !== '' ? $ticket['customer_business_name'] : 'No proporcionada'); ?></span>
+                </div>
+                <div class="ticket-kv">
+                    <span class="ticket-kv__label">Teléfono</span>
+                    <span class="ticket-kv__value"><?php echo e($ticket['customer_phone'] ?: 'No proporcionado'); ?></span>
+                </div>
+                <div class="ticket-kv ticket-kv--wide">
+                    <span class="ticket-kv__label">Correo</span>
                     <?php if (trim((string) ($ticket['customer_email'] ?? '')) !== ''): ?>
-                        <a href="mailto:<?php echo e($ticket['customer_email']); ?>"><?php echo e($ticket['customer_email']); ?></a>
+                        <a href="mailto:<?php echo e($ticket['customer_email']); ?>" class="ticket-kv__value ticket-kv__value--link"><?php echo e($ticket['customer_email']); ?></a>
                     <?php else: ?>
-                        No proporcionado
+                        <span class="ticket-kv__value">No proporcionado</span>
                     <?php endif; ?>
                 </div>
-                <div><strong>Teléfono:</strong> <?php echo e($ticket['customer_phone'] ?: 'No proporcionado'); ?></div>
             </div>
         </section>
 
-        <section class="ticket-section ticket-message">
+        <section class="card panel-card ticket-section-card ticket-message">
             <div class="ticket-section__eyebrow">Mensaje</div>
             <h3 class="ticket-section__title">Solicitud del cliente</h3>
-            <p class="ticket-message__content"><?php echo nl2br(e($ticket['message'])); ?></p>
+            <div class="ticket-message-display">
+                <p class="ticket-message__content"><?php echo nl2br(e($ticket['message'])); ?></p>
+            </div>
 
-            <?php
-            $messageEditorLabel = trim((string) ($ticket['message_updated_by_display_name'] ?? '')) !== ''
-                ? $ticket['message_updated_by_display_name']
-                : trim((string) ($ticket['message_updated_by_username'] ?? ''));
-            ?>
             <?php if ($ticket['message_updated_at']): ?>
                 <p class="ticket-message__meta">
                     Última edición:
@@ -282,34 +376,28 @@ if (!$ticket || !can_admin_user_access_ticket($ticket, $viewerUserId, $viewerRol
                     </time>
                 </p>
             <?php endif; ?>
-
-            <?php if ($ticketMessageStatus): ?>
-                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($ticketMessageStatus); ?></div>
-            <?php endif; ?>
-
-            <?php if ($ticketMessageError): ?>
-                <div class="alert alert--error ticket-inline-alert"><?php echo e($ticketMessageError); ?></div>
-            <?php endif; ?>
-
-            <form method="POST" class="admin-form ticket-message-form">
-                <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
-                <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
-                <input type="hidden" name="ticket_action" value="update_message">
-                <div class="admin-form__group">
-                    <label class="admin-form__label" for="ticket_message">Editar mensaje principal</label>
-                    <textarea
-                        id="ticket_message"
-                        name="ticket_message"
-                        class="admin-form__input admin-form__input--textarea"
-                        rows="6"
-                        required
-                    ><?php echo e($ticketMessageDraft !== '' ? $ticketMessageDraft : $ticket['message']); ?></textarea>
-                </div>
-                <button type="submit" class="btn ticket-message-form__submit">Guardar mensaje</button>
-            </form>
         </section>
 
-        <section class="ticket-section ticket-observations">
+        <section class="card panel-card ticket-section-card">
+            <div class="ticket-section__eyebrow">Adjunto</div>
+            <h3 class="ticket-section__title">Archivo relacionado</h3>
+            <?php if ($hasAttachment): ?>
+                <div class="ticket-attachment-card">
+                    <p class="ticket-section-card__intro">El archivo adjunto del ticket se mantiene disponible para consulta administrativa.</p>
+                    <a href="../<?php echo e($ticket['attachment_path']); ?>" target="_blank" rel="noopener" class="ticket-attachment-link">
+                        <i class="fas fa-paperclip" aria-hidden="true"></i>
+                        <span>Ver archivo</span>
+                    </a>
+                </div>
+            <?php else: ?>
+                <div class="ticket-empty-state">
+                    <strong>Sin adjunto</strong>
+                    <p>Este ticket no tiene archivo relacionado.</p>
+                </div>
+            <?php endif; ?>
+        </section>
+
+        <section class="card panel-card ticket-section-card ticket-observations">
             <div class="ticket-section__eyebrow">Interno</div>
             <h3 class="ticket-section__title">Observaciones</h3>
             <p class="ticket-observations__intro">Documenta seguimiento interno del caso. Estas observaciones solo se muestran en el panel administrativo.</p>
@@ -370,24 +458,48 @@ if (!$ticket || !can_admin_user_access_ticket($ticket, $viewerUserId, $viewerRol
         </section>
     </div>
 
-    <div class="card panel-card ticket-status-card">
-        <div class="ticket-status-panel">
-            <div>
-                <div class="ticket-section__eyebrow">Seguimiento</div>
-                <h3 style="margin-bottom: 1rem;">Estado actual</h3>
-                <div class="ticket-status-panel__current">
-                    <span class="ticket-status ticket-status--<?php echo strtolower(str_replace(' ', '-', $ticket['status'])); ?>"><span class="ticket-status__dot" aria-hidden="true"></span><?php echo e($ticket['status']); ?></span>
+    <aside class="ticket-detail-sidebar">
+        <div class="card panel-card ticket-status-card">
+            <div class="ticket-status-panel">
+                <div>
+                    <div class="ticket-section__eyebrow">Seguimiento</div>
+                    <h3 class="ticket-section__title ticket-section__title--compact">Estado actual</h3>
+                    <div class="ticket-status-panel__current">
+                        <span class="ticket-status ticket-status--<?php echo strtolower(str_replace(' ', '-', $ticket['status'])); ?>"><span class="ticket-status__dot" aria-hidden="true"></span><?php echo e($ticket['status']); ?></span>
+                    </div>
+                    <p class="ticket-status-panel__hint">Actualiza el estado para reflejar el avance operativo del ticket.</p>
                 </div>
-                <p class="ticket-status-panel__hint">Actualiza el estado para reflejar el avance operativo del ticket.</p>
+
+                <?php if ($statusMessage): ?>
+                    <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($statusMessage); ?></div>
+                <?php endif; ?>
+
+                <?php if ($statusError): ?>
+                    <div class="alert alert--error ticket-inline-alert"><?php echo e($statusError); ?></div>
+                <?php endif; ?>
+
+                <form method="POST" class="admin-form">
+                    <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
+                    <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
+                    <input type="hidden" name="ticket_action" value="update_status">
+                    <div class="admin-form__group">
+                        <label class="admin-form__label" for="status">Actualizar estado</label>
+                        <select id="status" name="status" class="admin-form__input">
+                            <?php foreach ($allowedStatuses as $status): ?>
+                                <option value="<?php echo e($status); ?>" <?php echo $ticket['status'] === $status ? 'selected' : ''; ?>><?php echo e($status); ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn">Guardar estado</button>
+                </form>
             </div>
+        </div>
 
-            <?php if ($statusMessage): ?>
-                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($statusMessage); ?></div>
-            <?php endif; ?>
-
-            <?php if ($statusError): ?>
-                <div class="alert alert--error ticket-inline-alert"><?php echo e($statusError); ?></div>
-            <?php endif; ?>
+        <div class="card panel-card ticket-action-card">
+            <div class="ticket-action-card__header">
+                <div class="ticket-section__eyebrow">Acciones</div>
+                <h3 class="ticket-section__title ticket-section__title--compact">Precio</h3>
+            </div>
 
             <?php if ($priceMessage): ?>
                 <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($priceMessage); ?></div>
@@ -397,58 +509,41 @@ if (!$ticket || !can_admin_user_access_ticket($ticket, $viewerUserId, $viewerRol
                 <div class="alert alert--error ticket-inline-alert"><?php echo e($priceError); ?></div>
             <?php endif; ?>
 
-            <?php if ($assigneeMessage): ?>
-                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($assigneeMessage); ?></div>
-            <?php endif; ?>
-
-            <?php if ($assigneeError): ?>
-                <div class="alert alert--error ticket-inline-alert"><?php echo e($assigneeError); ?></div>
-            <?php endif; ?>
-
-            <?php if ($serviceMessage): ?>
-                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($serviceMessage); ?></div>
-            <?php endif; ?>
-
-            <?php if ($serviceError): ?>
-                <div class="alert alert--error ticket-inline-alert"><?php echo e($serviceError); ?></div>
-            <?php endif; ?>
-
-            <form method="POST" class="admin-form">
-                <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
-                <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
-                <input type="hidden" name="ticket_action" value="update_status">
-                <div class="admin-form__group">
-                    <label class="admin-form__label" for="status">Actualizar estado</label>
-                    <select id="status" name="status" class="admin-form__input">
-                        <?php foreach ($allowedStatuses as $status): ?>
-                            <option value="<?php echo e($status); ?>" <?php echo $ticket['status'] === $status ? 'selected' : ''; ?>><?php echo e($status); ?></option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-                <button type="submit" class="btn">Guardar estado</button>
-            </form>
-
-            <form method="POST" class="admin-form ticket-price-form">
+            <form method="POST" class="admin-form ticket-price-form ticket-price-form--first">
                 <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
                 <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
                 <input type="hidden" name="ticket_action" value="update_price">
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="price_amount">Asignar / modificar precio (MXN)</label>
+                    <label class="admin-form__label" for="price_amount">Asignar / modificar precio base (MXN)</label>
                     <input
                         type="text"
                         id="price_amount"
                         name="price_amount"
                         class="admin-form__input"
                         inputmode="decimal"
-                        value="<?php echo e($priceDraft !== '' ? $priceDraft : ($ticket['price_amount'] !== null ? number_format((float) $ticket['price_amount'], 2, '.', '') : '')); ?>"
+                        value="<?php echo e($priceDraft !== '' ? $priceDraft : ($effectivePriceBaseAmount !== null ? number_format((float) $effectivePriceBaseAmount, 2, '.', '') : '')); ?>"
                         placeholder="0.00"
                     >
+                    <div class="ticket-meta">El total final se recalcula automaticamente segun el tipo de cliente actual.</div>
                 </div>
                 <button type="submit" class="btn">Guardar precio</button>
             </form>
+        </div>
 
-            <?php if ($viewerRole === 'admin'): ?>
-                <form method="POST" class="admin-form ticket-price-form">
+        <?php if ($viewerRole === 'admin'): ?>
+            <div class="card panel-card ticket-action-card">
+                <div class="ticket-section__eyebrow">Acciones</div>
+                <h3 class="ticket-section__title ticket-section__title--compact">Responsable</h3>
+
+                <?php if ($assigneeMessage): ?>
+                    <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($assigneeMessage); ?></div>
+                <?php endif; ?>
+
+                <?php if ($assigneeError): ?>
+                    <div class="alert alert--error ticket-inline-alert"><?php echo e($assigneeError); ?></div>
+                <?php endif; ?>
+
+                <form method="POST" class="admin-form ticket-price-form ticket-price-form--first">
                     <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
                     <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
                     <input type="hidden" name="ticket_action" value="update_assignee">
@@ -461,7 +556,6 @@ if (!$ticket || !can_admin_user_access_ticket($ticket, $viewerUserId, $viewerRol
                                     <?php
                                     $assignableUserId = (int) $assignableUser['id'];
                                     $assignableLabel = getAdminUserDisplayLabel($assignableUser);
-                                    $selectedAssigneeId = $assignedUserDraft > 0 ? $assignedUserDraft : (int) ($ticket['assigned_user_id'] ?? 0);
                                     ?>
                                     <option value="<?php echo $assignableUserId; ?>" <?php echo $selectedAssigneeId === $assignableUserId ? 'selected' : ''; ?>>
                                         <?php echo e($assignableLabel); ?>
@@ -472,9 +566,24 @@ if (!$ticket || !can_admin_user_access_ticket($ticket, $viewerUserId, $viewerRol
                     </div>
                     <button type="submit" class="btn">Guardar responsable</button>
                 </form>
+            </div>
+        <?php endif; ?>
+
+        <div class="card panel-card ticket-action-card">
+            <div class="ticket-action-card__header">
+                <div class="ticket-section__eyebrow">Acciones</div>
+                <h3 class="ticket-section__title ticket-section__title--compact">Programación</h3>
+            </div>
+
+            <?php if ($serviceMessage): ?>
+                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($serviceMessage); ?></div>
             <?php endif; ?>
 
-            <form method="POST" class="admin-form ticket-price-form">
+            <?php if ($serviceError): ?>
+                <div class="alert alert--error ticket-inline-alert"><?php echo e($serviceError); ?></div>
+            <?php endif; ?>
+
+            <form method="POST" class="admin-form ticket-price-form ticket-price-form--first">
                 <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
                 <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
                 <input type="hidden" name="ticket_action" value="update_service_schedule">
@@ -526,7 +635,39 @@ if (!$ticket || !can_admin_user_access_ticket($ticket, $viewerUserId, $viewerRol
                 <button type="submit" class="btn">Guardar programación</button>
             </form>
         </div>
-    </div>
+
+        <div class="card panel-card ticket-action-card ticket-message-edit-card">
+            <div class="ticket-action-card__header">
+                <div class="ticket-section__eyebrow">Acciones</div>
+                <h3 class="ticket-section__title ticket-section__title--compact">Editar mensaje</h3>
+            </div>
+
+            <?php if ($ticketMessageStatus): ?>
+                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($ticketMessageStatus); ?></div>
+            <?php endif; ?>
+
+            <?php if ($ticketMessageError): ?>
+                <div class="alert alert--error ticket-inline-alert"><?php echo e($ticketMessageError); ?></div>
+            <?php endif; ?>
+
+            <form method="POST" class="admin-form ticket-message-form ticket-price-form--first">
+                <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
+                <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
+                <input type="hidden" name="ticket_action" value="update_message">
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="ticket_message">Editar mensaje principal</label>
+                    <textarea
+                        id="ticket_message"
+                        name="ticket_message"
+                        class="admin-form__input admin-form__input--textarea"
+                        rows="6"
+                        required
+                    ><?php echo e($ticketMessageDraft !== '' ? $ticketMessageDraft : $ticket['message']); ?></textarea>
+                </div>
+                <button type="submit" class="btn ticket-message-form__submit">Guardar mensaje</button>
+            </form>
+        </div>
+    </aside>
 </div>
 
 </main>
