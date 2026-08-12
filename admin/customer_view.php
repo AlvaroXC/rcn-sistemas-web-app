@@ -90,6 +90,7 @@ if ($tickets && $tickets->num_rows > 0) {
     <h3 class="ticket-section__title">Datos de contacto</h3>
     <div class="ticket-detail-list">
         <div><strong>Nombre:</strong> <?php echo e($customer['name']); ?></div>
+        <div><strong>Tipo de persona:</strong> <?php echo e(customer_type_label($customer['customer_type'] ?? 'persona_fisica')); ?></div>
         <div><strong>Razón social:</strong> <?php echo e(($customer['business_name'] ?? '') !== '' ? $customer['business_name'] : 'No proporcionada'); ?></div>
         <div>
             <strong>Correo:</strong>

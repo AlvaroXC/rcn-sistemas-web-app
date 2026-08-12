@@ -128,6 +128,7 @@ $paginationEnd = min($totalPages, $currentPage + 2);
         <thead>
             <tr>
                 <th>Cliente</th>
+                <th>Tipo</th>
                 <th>Razón social</th>
                 <th>Correo</th>
                 <th>Teléfono</th>
@@ -140,6 +141,7 @@ $paginationEnd = min($totalPages, $currentPage + 2);
                 <?php while ($customer = $customers->fetch_assoc()): ?>
                     <tr>
                         <td><strong><?php echo e($customer['name']); ?></strong></td>
+                        <td><?php echo e(customer_type_label($customer['customer_type'] ?? 'persona_fisica')); ?></td>
                         <td><?php echo e($customer['business_name'] ?: 'No proporcionada'); ?></td>
                         <td><?php echo e(trim((string) ($customer['email'] ?? '')) !== '' ? $customer['email'] : 'No proporcionado'); ?></td>
                         <td><?php echo e($customer['phone'] ?: 'No proporcionado'); ?></td>
@@ -153,7 +155,7 @@ $paginationEnd = min($totalPages, $currentPage + 2);
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="6">No se encontraron clientes con los criterios seleccionados.</td>
+                    <td colspan="7">No se encontraron clientes con los criterios seleccionados.</td>
                 </tr>
             <?php endif; ?>
         </tbody>

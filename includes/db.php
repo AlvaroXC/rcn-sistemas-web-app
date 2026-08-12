@@ -178,6 +178,7 @@ function ensure_support_tickets_schema($conn) {
             id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
             name VARCHAR(255) NOT NULL,
             business_name VARCHAR(255) NULL,
+            customer_type VARCHAR(30) NOT NULL DEFAULT 'persona_fisica',
             email VARCHAR(255) NULL,
             email_normalized VARCHAR(255) NULL,
             phone VARCHAR(50) NOT NULL,
@@ -192,6 +193,7 @@ function ensure_support_tickets_schema($conn) {
 
     $customerColumns = [
         'business_name' => "ALTER TABLE customers ADD COLUMN business_name VARCHAR(255) NULL AFTER name",
+        'customer_type' => "ALTER TABLE customers ADD COLUMN customer_type VARCHAR(30) NOT NULL DEFAULT 'persona_fisica' AFTER business_name",
         'phone_normalized' => "ALTER TABLE customers ADD COLUMN phone_normalized VARCHAR(50) NULL AFTER phone",
     ];
 
@@ -205,6 +207,9 @@ function ensure_support_tickets_schema($conn) {
 
     $conn->query("ALTER TABLE customers MODIFY COLUMN email VARCHAR(255) NULL");
     $conn->query("ALTER TABLE customers MODIFY COLUMN email_normalized VARCHAR(255) NULL");
+    $conn->query("ALTER TABLE customers MODIFY COLUMN customer_type VARCHAR(30) NOT NULL DEFAULT 'persona_fisica'");
+    $conn->query("UPDATE customers SET customer_type = 'persona_fisica' WHERE customer_type IS NULL OR customer_type = ''");
+    $conn->query("UPDATE customers SET customer_type = 'persona_fisica' WHERE customer_type NOT IN ('persona_fisica', 'persona_moral')");
 
     if (customer_index_exists($conn, 'customers', 'uniq_customers_email_normalized')) {
         $conn->query('ALTER TABLE customers DROP INDEX uniq_customers_email_normalized');
@@ -239,6 +244,10 @@ function ensure_support_tickets_schema($conn) {
             subject VARCHAR(255) NULL,
             message TEXT NOT NULL,
             attachment_path VARCHAR(255) NULL,
+            price_base_amount DECIMAL(10,2) NULL,
+            price_iva_amount DECIMAL(10,2) NULL,
+            price_isr_withholding_amount DECIMAL(10,2) NULL,
+            price_total_amount DECIMAL(10,2) NULL,
             price_amount DECIMAL(10,2) NULL,
             price_currency CHAR(3) NULL DEFAULT 'MXN',
             price_updated_by INT UNSIGNED NULL,
@@ -263,6 +272,10 @@ function ensure_support_tickets_schema($conn) {
     );
 
     $ticketColumns = [
+        'price_base_amount' => "ALTER TABLE tickets ADD COLUMN price_base_amount DECIMAL(10,2) NULL AFTER attachment_path",
+        'price_iva_amount' => "ALTER TABLE tickets ADD COLUMN price_iva_amount DECIMAL(10,2) NULL AFTER price_base_amount",
+        'price_isr_withholding_amount' => "ALTER TABLE tickets ADD COLUMN price_isr_withholding_amount DECIMAL(10,2) NULL AFTER price_iva_amount",
+        'price_total_amount' => "ALTER TABLE tickets ADD COLUMN price_total_amount DECIMAL(10,2) NULL AFTER price_isr_withholding_amount",
         'price_amount' => "ALTER TABLE tickets ADD COLUMN price_amount DECIMAL(10,2) NULL AFTER attachment_path",
         'price_currency' => "ALTER TABLE tickets ADD COLUMN price_currency CHAR(3) NULL DEFAULT 'MXN' AFTER price_amount",
         'price_updated_by' => "ALTER TABLE tickets ADD COLUMN price_updated_by INT UNSIGNED NULL AFTER price_currency",
@@ -333,6 +346,41 @@ function normalize_phone_value($phone) {
     return $digits !== '' ? $digits : null;
 }
 
+function normalize_customer_type($customerType = null) {
+    $customerType = trim((string) ($customerType ?? ''));
+
+    if ($customerType === '') {
+        return 'persona_fisica';
+    }
+
+    return in_array($customerType, ['persona_fisica', 'persona_moral'], true)
+        ? $customerType
+        : 'persona_fisica';
+}
+
+function customer_type_label($customerType = null) {
+    return normalize_customer_type($customerType) === 'persona_moral'
+        ? 'Persona moral'
+        : 'Persona fisica';
+}
+
+function validate_customer_payload($name, $phone, $businessName = null, $customerType = null) {
+    $name = trim((string) $name);
+    $businessName = trim((string) ($businessName ?? ''));
+    $normalizedPhone = normalize_phone_value($phone);
+    $customerType = normalize_customer_type($customerType);
+
+    if ($name === '' || $normalizedPhone === null) {
+        return 'Nombre y teléfono son obligatorios.';
+    }
+
+    if ($customerType === 'persona_moral' && $businessName === '') {
+        return 'La razón social es obligatoria para persona moral.';
+    }
+
+    return '';
+}
+
 function is_valid_optional_email($email) {
     $email = trim((string) $email);
     return $email === '' || filter_var($email, FILTER_VALIDATE_EMAIL);
@@ -359,6 +407,76 @@ function normalize_ticket_price_input($price) {
         'value' => number_format($amount, 2, '.', ''),
         'error' => '',
     ];
+}
+
+function round_ticket_money($amount) {
+    return number_format(round((float) $amount, 2), 2, '.', '');
+}
+
+function calculate_ticket_price_components($baseAmount, $customerType = null) {
+    $normalizedPrice = normalize_ticket_price_input($baseAmount);
+
+    if (!$normalizedPrice['ok'] || $normalizedPrice['value'] === null) {
+        return [
+            'ok' => false,
+            'error' => $normalizedPrice['error'] ?: 'Ingresa un precio base válido.',
+            'components' => null,
+        ];
+    }
+
+    $customerType = normalize_customer_type($customerType);
+    $baseAmountValue = round_ticket_money($normalizedPrice['value']);
+    $ivaAmount = round_ticket_money((float) $baseAmountValue * 0.16);
+    $subtotalWithIva = round_ticket_money((float) $baseAmountValue + (float) $ivaAmount);
+    $isrWithholdingAmount = $customerType === 'persona_moral'
+        ? round_ticket_money((float) $baseAmountValue * 0.0125)
+        : null;
+    $totalAmount = $customerType === 'persona_moral'
+        ? round_ticket_money((float) $subtotalWithIva - (float) $isrWithholdingAmount)
+        : $subtotalWithIva;
+
+    return [
+        'ok' => true,
+        'error' => '',
+        'components' => [
+            'base_amount' => $baseAmountValue,
+            'iva_amount' => $ivaAmount,
+            'isr_withholding_amount' => $isrWithholdingAmount,
+            'total_amount' => $totalAmount,
+            'customer_type' => $customerType,
+        ],
+    ];
+}
+
+function get_ticket_effective_price_amount($ticket) {
+    if (!is_array($ticket)) {
+        return null;
+    }
+
+    if (isset($ticket['price_total_amount']) && $ticket['price_total_amount'] !== null && $ticket['price_total_amount'] !== '') {
+        return $ticket['price_total_amount'];
+    }
+
+    return $ticket['price_amount'] ?? null;
+}
+
+function get_ticket_effective_price_base_amount($ticket) {
+    if (!is_array($ticket)) {
+        return null;
+    }
+
+    return $ticket['price_base_amount'] ?? null;
+}
+
+function ticket_has_price_breakdown($ticket) {
+    if (!is_array($ticket)) {
+        return false;
+    }
+
+    return isset($ticket['price_base_amount'], $ticket['price_iva_amount'], $ticket['price_total_amount'])
+        && $ticket['price_base_amount'] !== null
+        && $ticket['price_iva_amount'] !== null
+        && $ticket['price_total_amount'] !== null;
 }
 
 function format_ticket_price($amount, $currency = 'MXN') {
@@ -812,15 +930,16 @@ function find_customer_by_phone_excluding_id($conn, $phone, $excludeCustomerId) 
     return $result ? $result->fetch_assoc() : null;
 }
 
-function create_or_update_customer($conn, $name, $email = null, $phone = null, $businessName = null) {
+function create_or_update_customer($conn, $name, $email = null, $phone = null, $businessName = null, $customerType = 'persona_fisica') {
     $normalizedEmail = normalize_email_value($email);
     $normalizedPhone = normalize_phone_value($phone);
     $name = trim((string) $name);
     $email = trim((string) ($email ?? ''));
     $phone = trim((string) ($phone ?? ''));
     $businessName = trim((string) ($businessName ?? ''));
+    $customerType = normalize_customer_type($customerType);
 
-    if ($name === '' || $normalizedPhone === null) {
+    if (validate_customer_payload($name, $phone, $businessName, $customerType) !== '') {
         return null;
     }
 
@@ -831,6 +950,7 @@ function create_or_update_customer($conn, $name, $email = null, $phone = null, $
         $nextPhone = (string) ($existing['phone'] ?? '');
         $nextEmail = (string) ($existing['email'] ?? '');
         $nextNormalizedEmail = normalize_email_value($nextEmail);
+        $nextCustomerType = normalize_customer_type($existing['customer_type'] ?? 'persona_fisica');
 
         if ($name !== '' && $name !== $existing['name']) {
             $nextName = $name;
@@ -844,14 +964,22 @@ function create_or_update_customer($conn, $name, $email = null, $phone = null, $
             $nextBusinessName = $businessName;
         }
 
+        if ($customerType !== $nextCustomerType) {
+            $nextCustomerType = $customerType;
+        }
+
         if ($normalizedEmail !== null) {
             $nextEmail = $email;
             $nextNormalizedEmail = $normalizedEmail;
         }
 
         $nextNormalizedPhone = normalize_phone_value($nextPhone);
-        $stmt = $conn->prepare('UPDATE customers SET name = ?, business_name = ?, email = ?, email_normalized = ?, phone = ?, phone_normalized = ? WHERE id = ?');
-        $stmt->bind_param('ssssssi', $nextName, $nextBusinessName, $nextEmail, $nextNormalizedEmail, $nextPhone, $nextNormalizedPhone, $existing['id']);
+        if (validate_customer_payload($nextName, $nextPhone, $nextBusinessName, $nextCustomerType) !== '') {
+            return null;
+        }
+
+        $stmt = $conn->prepare('UPDATE customers SET name = ?, business_name = ?, customer_type = ?, email = ?, email_normalized = ?, phone = ?, phone_normalized = ? WHERE id = ?');
+        $stmt->bind_param('sssssssi', $nextName, $nextBusinessName, $nextCustomerType, $nextEmail, $nextNormalizedEmail, $nextPhone, $nextNormalizedPhone, $existing['id']);
         if (!$stmt->execute()) {
             return null;
         }
@@ -859,8 +987,8 @@ function create_or_update_customer($conn, $name, $email = null, $phone = null, $
         return getCustomerById($conn, (int) $existing['id']);
     }
 
-    $stmt = $conn->prepare('INSERT INTO customers (name, business_name, email, email_normalized, phone, phone_normalized) VALUES (?, ?, ?, ?, ?, ?)');
-    $stmt->bind_param('ssssss', $name, $businessName, $email, $normalizedEmail, $phone, $normalizedPhone);
+    $stmt = $conn->prepare('INSERT INTO customers (name, business_name, customer_type, email, email_normalized, phone, phone_normalized) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    $stmt->bind_param('sssssss', $name, $businessName, $customerType, $email, $normalizedEmail, $phone, $normalizedPhone);
     if (!$stmt->execute()) {
         return null;
     }
@@ -868,17 +996,23 @@ function create_or_update_customer($conn, $name, $email = null, $phone = null, $
     return getCustomerById($conn, (int) $conn->insert_id);
 }
 
-function update_customer_by_id($conn, $customerId, $name, $email = null, $phone = null, $businessName = null) {
+function update_customer_by_id($conn, $customerId, $name, $email = null, $phone = null, $businessName = null, $customerType = 'persona_fisica') {
     $customerId = (int) $customerId;
     $normalizedEmail = normalize_email_value($email);
-    $normalizedPhone = normalize_phone_value($phone);
     $name = trim((string) $name);
     $email = trim((string) ($email ?? ''));
     $phone = trim((string) ($phone ?? ''));
     $businessName = trim((string) ($businessName ?? ''));
+    $customerType = normalize_customer_type($customerType);
+    $normalizedPhone = normalize_phone_value($phone);
 
-    if ($customerId <= 0 || $name === '' || $normalizedPhone === null) {
+    if ($customerId <= 0) {
         return ['ok' => false, 'error' => 'Nombre y teléfono son obligatorios.', 'customer' => null];
+    }
+
+    $validationError = validate_customer_payload($name, $phone, $businessName, $customerType);
+    if ($validationError !== '') {
+        return ['ok' => false, 'error' => $validationError, 'customer' => null];
     }
 
     $currentCustomer = getCustomerById($conn, $customerId);
@@ -891,8 +1025,8 @@ function update_customer_by_id($conn, $customerId, $name, $email = null, $phone 
         return ['ok' => false, 'error' => 'Ya existe otro cliente con ese número de teléfono.', 'customer' => null];
     }
 
-    $stmt = $conn->prepare('UPDATE customers SET name = ?, business_name = ?, email = ?, email_normalized = ?, phone = ?, phone_normalized = ? WHERE id = ?');
-    $stmt->bind_param('ssssssi', $name, $businessName, $email, $normalizedEmail, $phone, $normalizedPhone, $customerId);
+    $stmt = $conn->prepare('UPDATE customers SET name = ?, business_name = ?, customer_type = ?, email = ?, email_normalized = ?, phone = ?, phone_normalized = ? WHERE id = ?');
+    $stmt->bind_param('sssssssi', $name, $businessName, $customerType, $email, $normalizedEmail, $phone, $normalizedPhone, $customerId);
 
     if (!$stmt->execute()) {
         return ['ok' => false, 'error' => 'No se pudo actualizar el cliente.', 'customer' => null];
@@ -913,6 +1047,10 @@ function create_support_ticket($conn, array $data) {
                 subject,
                 message,
                 attachment_path,
+                price_base_amount,
+                price_iva_amount,
+                price_isr_withholding_amount,
+                price_total_amount,
                 price_amount,
                 price_currency,
                 price_updated_by,
@@ -923,7 +1061,7 @@ function create_support_ticket($conn, array $data) {
                 assigned_user_id,
                 assigned_by_user_id,
                 assigned_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -940,10 +1078,36 @@ function create_support_ticket($conn, array $data) {
     $subject = $data['subject'] !== '' ? (string) $data['subject'] : null;
     $message = (string) $data['message'];
     $attachmentPath = $data['attachment_path'] !== '' ? (string) $data['attachment_path'] : null;
-    $priceAmount = isset($data['price_amount']) && $data['price_amount'] !== '' ? (string) $data['price_amount'] : null;
-    $priceCurrency = $priceAmount !== null ? 'MXN' : null;
-    $priceUpdatedBy = $priceAmount !== null && !empty($data['price_updated_by']) ? (int) $data['price_updated_by'] : null;
-    $priceUpdatedAt = $priceAmount !== null ? date('Y-m-d H:i:s') : null;
+    $customer = getCustomerById($conn, $customerId);
+    if (!$customer) {
+        return null;
+    }
+
+    $priceBaseAmount = null;
+    $priceIvaAmount = null;
+    $priceIsrWithholdingAmount = null;
+    $priceTotalAmount = null;
+    $priceAmount = null;
+    $priceCurrency = null;
+    $priceUpdatedBy = null;
+    $priceUpdatedAt = null;
+
+    if (isset($data['price_amount']) && $data['price_amount'] !== '') {
+        $priceCalculation = calculate_ticket_price_components($data['price_amount'], $customer['customer_type'] ?? 'persona_fisica');
+        if (!$priceCalculation['ok']) {
+            return null;
+        }
+
+        $components = $priceCalculation['components'];
+        $priceBaseAmount = $components['base_amount'];
+        $priceIvaAmount = $components['iva_amount'];
+        $priceIsrWithholdingAmount = $components['isr_withholding_amount'];
+        $priceTotalAmount = $components['total_amount'];
+        $priceAmount = $priceTotalAmount;
+        $priceCurrency = 'MXN';
+        $priceUpdatedBy = !empty($data['price_updated_by']) ? (int) $data['price_updated_by'] : null;
+        $priceUpdatedAt = date('Y-m-d H:i:s');
+    }
     $scheduleValidation = normalize_ticket_schedule_inputs(
         $data['service_date'] ?? null,
         $data['service_start_time'] ?? null,
@@ -966,7 +1130,7 @@ function create_support_ticket($conn, array $data) {
     $assignedAt = $assignedUserId !== null ? date('Y-m-d H:i:s') : null;
 
     $stmt->bind_param(
-        'isssiisssssssssisiis',
+        'isssiisssssssssssssisiis',
         $customerId,
         $consultationType,
         $status,
@@ -977,6 +1141,10 @@ function create_support_ticket($conn, array $data) {
         $subject,
         $message,
         $attachmentPath,
+        $priceBaseAmount,
+        $priceIvaAmount,
+        $priceIsrWithholdingAmount,
+        $priceTotalAmount,
         $priceAmount,
         $priceCurrency,
         $priceUpdatedBy,
@@ -1009,6 +1177,7 @@ function getTicketById($conn, $ticketId) {
     $sql = "SELECT
                 t.*,
                 c.name AS customer_name,
+                c.customer_type AS customer_type,
                 c.business_name AS customer_business_name,
                 c.email AS customer_email,
                 c.phone AS customer_phone,
@@ -1219,6 +1388,7 @@ function getSupportTickets($conn, array $filters = [], $limit = null, $offset = 
     $sql = "SELECT
                 t.*,
                 c.name AS customer_name,
+                c.customer_type AS customer_type,
                 c.business_name AS customer_business_name,
                 c.email AS customer_email,
                 c.phone AS customer_phone,
@@ -1289,28 +1459,46 @@ function update_ticket_status($conn, $ticketId, $status) {
 function update_ticket_price($conn, $ticketId, $priceAmount, $adminUserId) {
     $ticketId = (int) $ticketId;
     $adminUserId = (int) $adminUserId;
-    $normalizedPrice = normalize_ticket_price_input($priceAmount);
+    $ticket = getTicketById($conn, $ticketId);
 
     if ($ticketId <= 0) {
         return ['ok' => false, 'error' => 'No se pudo identificar el ticket.', 'ticket' => null];
     }
 
-    if (!$normalizedPrice['ok'] || $normalizedPrice['value'] === null) {
-        return ['ok' => false, 'error' => $normalizedPrice['error'] ?: 'Ingresa un precio válido.', 'ticket' => null];
+    if (!$ticket) {
+        return ['ok' => false, 'error' => 'El ticket ya no existe.', 'ticket' => null];
     }
 
-    $priceAmountValue = $normalizedPrice['value'];
+    $priceCalculation = calculate_ticket_price_components($priceAmount, $ticket['customer_type'] ?? 'persona_fisica');
+    if (!$priceCalculation['ok']) {
+        return ['ok' => false, 'error' => $priceCalculation['error'] ?: 'Ingresa un precio base válido.', 'ticket' => null];
+    }
+
+    $components = $priceCalculation['components'];
     $priceCurrency = 'MXN';
     $updatedAt = date('Y-m-d H:i:s');
     $stmt = $conn->prepare(
-        'UPDATE tickets SET price_amount = ?, price_currency = ?, price_updated_by = ?, price_updated_at = ? WHERE id = ?'
+        'UPDATE tickets
+         SET price_base_amount = ?, price_iva_amount = ?, price_isr_withholding_amount = ?, price_total_amount = ?, price_amount = ?, price_currency = ?, price_updated_by = ?, price_updated_at = ?
+         WHERE id = ?'
     );
 
     if (!$stmt) {
         return ['ok' => false, 'error' => 'No se pudo preparar la actualización del precio.', 'ticket' => null];
     }
 
-    $stmt->bind_param('ssisi', $priceAmountValue, $priceCurrency, $adminUserId, $updatedAt, $ticketId);
+    $stmt->bind_param(
+        'ssssssisi',
+        $components['base_amount'],
+        $components['iva_amount'],
+        $components['isr_withholding_amount'],
+        $components['total_amount'],
+        $components['total_amount'],
+        $priceCurrency,
+        $adminUserId,
+        $updatedAt,
+        $ticketId
+    );
 
     if (!$stmt->execute()) {
         return ['ok' => false, 'error' => 'No se pudo actualizar el precio del ticket.', 'ticket' => null];

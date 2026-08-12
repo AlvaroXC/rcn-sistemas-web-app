@@ -34,7 +34,7 @@ function get_ticket_service_order_summary_lines(array $ticket) {
         'Fecha de creacion: ' . date('d/m/Y H:i', strtotime((string) $ticket['created_at'])),
         'Asunto: ' . trim((string) (($ticket['subject'] ?? '') !== '' ? $ticket['subject'] : 'Sin asunto')),
         'Contexto: ' . trim((string) (($ticket['context_label'] ?? '') !== '' ? $ticket['context_label'] : 'Sin contexto adicional')),
-        'Precio: ' . format_ticket_price($ticket['price_amount'] ?? null, $ticket['price_currency'] ?? 'MXN'),
+        'Precio: ' . format_ticket_price(get_ticket_effective_price_amount($ticket), $ticket['price_currency'] ?? 'MXN'),
         '',
         'Ejecucion del servicio',
         'Fecha programada: ' . format_ticket_service_date($ticket['service_date'] ?? null),
@@ -72,7 +72,7 @@ function build_ticket_service_order_text_lines(array $ticket) {
 
 function render_ticket_service_order_html(array $ticket) {
     $responsibleLabel = get_ticket_service_order_responsible_label($ticket);
-    $priceLabel = format_ticket_price($ticket['price_amount'] ?? null, $ticket['price_currency'] ?? 'MXN');
+    $priceLabel = format_ticket_price(get_ticket_effective_price_amount($ticket), $ticket['price_currency'] ?? 'MXN');
     $serviceDateLabel = format_ticket_service_date($ticket['service_date'] ?? null);
     $serviceStartLabel = format_ticket_service_time($ticket['service_start_time'] ?? null);
     $serviceEndLabel = format_ticket_service_time($ticket['service_end_time'] ?? null);

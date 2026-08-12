@@ -29,6 +29,7 @@ if ($customers && $customers->num_rows > 0) {
             'id' => (int) $customer['id'],
             'name' => trim((string) ($customer['name'] ?? '')),
             'business_name' => trim((string) ($customer['business_name'] ?? '')),
+            'customer_type' => normalize_customer_type($customer['customer_type'] ?? 'persona_fisica'),
             'email' => trim((string) ($customer['email'] ?? '')),
             'phone' => trim((string) ($customer['phone'] ?? '')),
         ];

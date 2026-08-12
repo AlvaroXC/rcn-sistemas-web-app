@@ -54,6 +54,7 @@ $ticketForm = [
 $customerForm = [
     'name' => trim((string) ($_POST['customer_name'] ?? '')),
     'business_name' => trim((string) ($_POST['customer_business_name'] ?? '')),
+    'customer_type' => normalize_customer_type($_POST['customer_type'] ?? 'persona_fisica'),
     'email' => trim((string) ($_POST['customer_email'] ?? '')),
     'phone' => trim((string) ($_POST['customer_phone'] ?? '')),
 ];
@@ -116,8 +117,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         } else {
-            if ($customerForm['name'] === '' || $customerForm['phone'] === '') {
-                $error = 'Para crear un cliente nuevo debes capturar nombre y teléfono.';
+            $validationError = validate_customer_payload(
+                $customerForm['name'],
+                $customerForm['phone'],
+                $customerForm['business_name'],
+                $customerForm['customer_type']
+            );
+
+            if ($validationError !== '') {
+                $error = $validationError === 'Nombre y teléfono son obligatorios.'
+                    ? 'Para crear un cliente nuevo debes capturar nombre y teléfono.'
+                    : $validationError;
             } elseif (!is_valid_optional_email($customerForm['email'])) {
                 $error = 'El correo del cliente no es válido.';
             } else {
@@ -126,7 +136,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $customerForm['name'],
                     $customerForm['email'],
                     $customerForm['phone'],
-                    $customerForm['business_name']
+                    $customerForm['business_name'],
+                    $customerForm['customer_type']
                 );
 
                 if (!$customer) {
@@ -361,11 +372,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="text" id="customer_name" name="customer_name" class="admin-form__input" data-customer-new-required value="<?php echo e($customerForm['name']); ?>">
                 </div>
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="customer_business_name">Razón social</label>
-                    <input type="text" id="customer_business_name" name="customer_business_name" class="admin-form__input" value="<?php echo e($customerForm['business_name']); ?>">
+                    <label class="admin-form__label" for="customer_type">Tipo de persona</label>
+                    <select id="customer_type" name="customer_type" class="admin-form__input">
+                        <option value="persona_fisica" <?php echo $customerForm['customer_type'] === 'persona_fisica' ? 'selected' : ''; ?>>Persona física</option>
+                        <option value="persona_moral" <?php echo $customerForm['customer_type'] === 'persona_moral' ? 'selected' : ''; ?>>Persona moral</option>
+                    </select>
                 </div>
             </div>
             <div class="admin-form__row">
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="customer_business_name">Razón social</label>
+                    <input type="text" id="customer_business_name" name="customer_business_name" class="admin-form__input" value="<?php echo e($customerForm['business_name']); ?>">
+                </div>
                 <div class="admin-form__group">
                     <label class="admin-form__label" for="customer_email">Correo electrónico</label>
                     <input type="email" id="customer_email" name="customer_email" class="admin-form__input" value="<?php echo e($customerForm['email']); ?>">
@@ -414,8 +432,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="admin-form__row">
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="price_amount">Precio opcional (MXN)</label>
+                    <label class="admin-form__label" for="price_amount">Precio base opcional (MXN)</label>
                     <input type="text" id="price_amount" name="price_amount" class="admin-form__input" value="<?php echo e($ticketForm['price_amount']); ?>" inputmode="decimal" placeholder="0.00">
+                    <div class="ticket-meta">El total final se calcula automaticamente segun el tipo de cliente.</div>
                 </div>
                 <div class="admin-form__group">
                     <label class="admin-form__label" for="attachment">Adjunto opcional</label>

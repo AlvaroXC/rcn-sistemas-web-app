@@ -295,8 +295,8 @@ $clearFiltersUrl = build_ticket_page_url([
                             <?php endif; ?>
                         </td>
                         <td>
-                            <?php if ($ticket['price_amount'] !== null): ?>
-                                <span class="ticket-price"><?php echo e(format_ticket_price($ticket['price_amount'], $ticket['price_currency'] ?? 'MXN')); ?></span>
+                            <?php if (get_ticket_effective_price_amount($ticket) !== null): ?>
+                                <span class="ticket-price"><?php echo e(format_ticket_price(get_ticket_effective_price_amount($ticket), $ticket['price_currency'] ?? 'MXN')); ?></span>
                             <?php else: ?>
                                 <span class="ticket-muted">Sin precio asignado</span>
                             <?php endif; ?>
