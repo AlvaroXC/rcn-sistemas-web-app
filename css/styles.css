@@ -814,10 +814,23 @@ main .section--secondary,
     padding-top: 2rem;
     border-top: 1px solid var(--border);
 }
-.ticket-message p {
+.ticket-message__content {
     margin-top: 1rem;
     color: var(--text-muted);
     line-height: 1.8;
+}
+.ticket-message__meta {
+    margin: 1.2rem 0 0;
+    color: var(--text-muted);
+    font-size: 1.4rem;
+}
+.ticket-message-form {
+    gap: 1.4rem;
+    margin-top: 1.8rem;
+}
+.ticket-message-form__submit {
+    width: fit-content;
+    min-width: 24rem;
 }
 .ticket-observations {
     display: grid;
@@ -1228,6 +1241,7 @@ main .section--secondary,
 }
 
 @media (max-width: 767px) {
+    .ticket-message-form__submit,
     .ticket-observation-form__submit {
         width: 100%;
         min-width: 0;

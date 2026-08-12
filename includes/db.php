@@ -267,6 +267,8 @@ function ensure_support_tickets_schema($conn) {
         'price_currency' => "ALTER TABLE tickets ADD COLUMN price_currency CHAR(3) NULL DEFAULT 'MXN' AFTER price_amount",
         'price_updated_by' => "ALTER TABLE tickets ADD COLUMN price_updated_by INT UNSIGNED NULL AFTER price_currency",
         'price_updated_at' => "ALTER TABLE tickets ADD COLUMN price_updated_at TIMESTAMP NULL DEFAULT NULL AFTER price_updated_by",
+        'message_updated_by' => "ALTER TABLE tickets ADD COLUMN message_updated_by INT UNSIGNED NULL AFTER message",
+        'message_updated_at' => "ALTER TABLE tickets ADD COLUMN message_updated_at TIMESTAMP NULL DEFAULT NULL AFTER message_updated_by",
         'service_date' => "ALTER TABLE tickets ADD COLUMN service_date DATE NULL AFTER price_updated_at",
         'service_start_time' => "ALTER TABLE tickets ADD COLUMN service_start_time TIME NULL AFTER service_date",
         'service_end_time' => "ALTER TABLE tickets ADD COLUMN service_end_time TIME NULL AFTER service_start_time",
@@ -285,6 +287,9 @@ function ensure_support_tickets_schema($conn) {
 
     if (!customer_index_exists($conn, 'tickets', 'idx_tickets_price_updated_by')) {
         $conn->query('ALTER TABLE tickets ADD INDEX idx_tickets_price_updated_by (price_updated_by)');
+    }
+    if (!customer_index_exists($conn, 'tickets', 'idx_tickets_message_updated_by')) {
+        $conn->query('ALTER TABLE tickets ADD INDEX idx_tickets_message_updated_by (message_updated_by)');
     }
     if (!customer_index_exists($conn, 'tickets', 'idx_tickets_assigned_user_id')) {
         $conn->query('ALTER TABLE tickets ADD INDEX idx_tickets_assigned_user_id (assigned_user_id)');
@@ -1007,6 +1012,8 @@ function getTicketById($conn, $ticketId) {
                 c.business_name AS customer_business_name,
                 c.email AS customer_email,
                 c.phone AS customer_phone,
+                message_editor.username AS message_updated_by_username,
+                message_editor.display_name AS message_updated_by_display_name,
                 price_editor.username AS price_updated_by_username,
                 price_editor.display_name AS price_updated_by_display_name,
                 assigned_user.username AS assigned_username,
@@ -1015,6 +1022,7 @@ function getTicketById($conn, $ticketId) {
                 assigned_by_user.display_name AS assigned_by_display_name
             FROM tickets t
             INNER JOIN customers c ON c.id = t.customer_id
+            LEFT JOIN users message_editor ON message_editor.id = t.message_updated_by
             LEFT JOIN users price_editor ON price_editor.id = t.price_updated_by
             LEFT JOIN users assigned_user ON assigned_user.id = t.assigned_user_id
             LEFT JOIN users assigned_by_user ON assigned_by_user.id = t.assigned_by_user_id
@@ -1306,6 +1314,42 @@ function update_ticket_price($conn, $ticketId, $priceAmount, $adminUserId) {
 
     if (!$stmt->execute()) {
         return ['ok' => false, 'error' => 'No se pudo actualizar el precio del ticket.', 'ticket' => null];
+    }
+
+    return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];
+}
+
+function update_ticket_message($conn, $ticketId, $message, $adminUserId = null) {
+    $ticketId = (int) $ticketId;
+    $message = trim((string) $message);
+    $adminUserId = $adminUserId !== null ? (int) $adminUserId : null;
+
+    if ($ticketId <= 0) {
+        return ['ok' => false, 'error' => 'No se pudo identificar el ticket.', 'ticket' => null];
+    }
+
+    if ($message === '') {
+        return ['ok' => false, 'error' => 'El mensaje del ticket es obligatorio.', 'ticket' => null];
+    }
+
+    $ticket = getTicketById($conn, $ticketId);
+    if (!$ticket) {
+        return ['ok' => false, 'error' => 'El ticket ya no existe.', 'ticket' => null];
+    }
+
+    $updatedAt = date('Y-m-d H:i:s');
+    $stmt = $conn->prepare(
+        'UPDATE tickets SET message = ?, message_updated_by = ?, message_updated_at = ? WHERE id = ?'
+    );
+
+    if (!$stmt) {
+        return ['ok' => false, 'error' => 'No se pudo preparar la actualización del mensaje.', 'ticket' => null];
+    }
+
+    $stmt->bind_param('sisi', $message, $adminUserId, $updatedAt, $ticketId);
+
+    if (!$stmt->execute()) {
+        return ['ok' => false, 'error' => 'No se pudo actualizar el mensaje del ticket.', 'ticket' => null];
     }
 
     return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];

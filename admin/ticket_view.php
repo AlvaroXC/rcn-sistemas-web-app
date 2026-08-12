@@ -9,6 +9,8 @@ $allowedStatuses = ['Nuevo', 'Agendado', 'En revision', 'En proceso', 'Pendiente
 $ticketId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $statusMessage = '';
 $statusError = '';
+$ticketMessageStatus = '';
+$ticketMessageError = '';
 $priceMessage = '';
 $priceError = '';
 $assigneeMessage = '';
@@ -18,6 +20,7 @@ $serviceError = '';
 $observationMessage = '';
 $observationError = '';
 $observationDraft = '';
+$ticketMessageDraft = trim((string) ($_POST['ticket_message'] ?? ''));
 $priceDraft = trim((string) ($_POST['price_amount'] ?? ''));
 $assignedUserDraft = (int) ($_POST['assigned_user_id'] ?? 0);
 $serviceDateDraft = trim((string) ($_POST['service_date'] ?? ''));
@@ -47,6 +50,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if (!$editableTicket || !can_admin_user_access_ticket($editableTicket, $viewerUserId, $viewerRole)) {
         $statusError = 'No tienes permisos para modificar este ticket.';
+    } elseif ($action === 'update_message') {
+        $adminUserId = isset($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : null;
+        $messageUpdate = update_ticket_message($conn, $ticketId, $ticketMessageDraft, $adminUserId);
+
+        if ($messageUpdate['ok']) {
+            $ticketMessageStatus = 'El mensaje del ticket se actualizó correctamente.';
+            $ticketMessageDraft = '';
+        } else {
+            $ticketMessageError = $messageUpdate['error'] ?: 'No se pudo actualizar el mensaje del ticket.';
+        }
     } elseif ($action === 'add_observation') {
         $observationContent = trim((string) ($_POST['observation_content'] ?? ''));
         $observationDraft = $observationContent;
@@ -252,7 +265,48 @@ if (!$ticket || !can_admin_user_access_ticket($ticket, $viewerUserId, $viewerRol
         <section class="ticket-section ticket-message">
             <div class="ticket-section__eyebrow">Mensaje</div>
             <h3 class="ticket-section__title">Solicitud del cliente</h3>
-            <p><?php echo nl2br(e($ticket['message'])); ?></p>
+            <p class="ticket-message__content"><?php echo nl2br(e($ticket['message'])); ?></p>
+
+            <?php
+            $messageEditorLabel = trim((string) ($ticket['message_updated_by_display_name'] ?? '')) !== ''
+                ? $ticket['message_updated_by_display_name']
+                : trim((string) ($ticket['message_updated_by_username'] ?? ''));
+            ?>
+            <?php if ($ticket['message_updated_at']): ?>
+                <p class="ticket-message__meta">
+                    Última edición:
+                    <strong><?php echo e($messageEditorLabel !== '' ? $messageEditorLabel : ($ticket['message_updated_by'] ? 'Admin #' . (int) $ticket['message_updated_by'] : 'Administrador')); ?></strong>
+                    ·
+                    <time datetime="<?php echo e($ticket['message_updated_at']); ?>">
+                        <?php echo date('d/m/Y H:i', strtotime($ticket['message_updated_at'])); ?>
+                    </time>
+                </p>
+            <?php endif; ?>
+
+            <?php if ($ticketMessageStatus): ?>
+                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($ticketMessageStatus); ?></div>
+            <?php endif; ?>
+
+            <?php if ($ticketMessageError): ?>
+                <div class="alert alert--error ticket-inline-alert"><?php echo e($ticketMessageError); ?></div>
+            <?php endif; ?>
+
+            <form method="POST" class="admin-form ticket-message-form">
+                <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
+                <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
+                <input type="hidden" name="ticket_action" value="update_message">
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="ticket_message">Editar mensaje principal</label>
+                    <textarea
+                        id="ticket_message"
+                        name="ticket_message"
+                        class="admin-form__input admin-form__input--textarea"
+                        rows="6"
+                        required
+                    ><?php echo e($ticketMessageDraft !== '' ? $ticketMessageDraft : $ticket['message']); ?></textarea>
+                </div>
+                <button type="submit" class="btn ticket-message-form__submit">Guardar mensaje</button>
+            </form>
         </section>
 
         <section class="ticket-section ticket-observations">
