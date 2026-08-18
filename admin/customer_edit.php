@@ -4,11 +4,7 @@ require_once '../includes/db.php';
 
 $customerId = isset($_GET['id']) ? (int) $_GET['id'] : (int) ($_POST['id'] ?? 0);
 $customer = $customerId > 0 ? getCustomerById($conn, $customerId) : null;
-$returnUrl = trim((string) ($_GET['return'] ?? $_POST['return'] ?? 'customers.php'));
-
-if ($returnUrl === '' || strpos($returnUrl, 'http') === 0) {
-    $returnUrl = 'customers.php';
-}
+$returnUrl = normalize_return_url($_GET['return'] ?? $_POST['return'] ?? 'customers.php', 'customers.php');
 
 if (!$customer) {
     ?>
@@ -57,11 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
 
         if ($updateResult['ok'] && !empty($updateResult['customer'])) {
-            redirect_to(
-                'customer_view.php?id=' . (int) $customerId
-                . '&return=' . urlencode($returnUrl)
-                . '&updated=1'
-            );
+            set_flash_message('customer_notice', 'Los datos del cliente se actualizaron correctamente.', 'success');
+            redirect_to('customer_view.php?id=' . (int) $customerId . '&return=' . urlencode($returnUrl));
         }
 
         $error = $updateResult['error'] ?: 'No se pudo actualizar el cliente en este momento.';

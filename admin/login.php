@@ -10,6 +10,12 @@ if (isset($_SESSION['admin_id'])) {
 }
 
 $error = false;
+$loginFlash = get_flash_message('login_notice');
+$loginNotice = trim((string) ($loginFlash['message'] ?? ''));
+$loginNoticeType = trim((string) ($loginFlash['type'] ?? 'error'));
+if (!in_array($loginNoticeType, ['success', 'error'], true)) {
+    $loginNoticeType = 'error';
+}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim((string) ($_POST['username'] ?? ''));
@@ -47,10 +53,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="card login-card">
         <h1 style="text-align: center; margin-bottom: 4rem; font-size: 3rem;">Admin<span>RCN</span></h1>
+
+        <?php if($loginNotice !== ''): ?>
+            <div class="alert alert--<?php echo e($loginNoticeType); ?>">
+                <?php echo e($loginNotice); ?>
+            </div>
+        <?php endif; ?>
         
         <?php if($error): ?>
-            <div style="background: #f8d7da; color: #721c24; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem; font-size: 1.4rem;">
-                <?php echo $error; ?>
+            <div class="alert alert--error">
+                <?php echo e($error); ?>
             </div>
         <?php endif; ?>
 

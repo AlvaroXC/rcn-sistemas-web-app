@@ -7,11 +7,12 @@ $viewerRole = current_admin_role();
 
 $customerId = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $customer = $customerId > 0 ? getCustomerById($conn, $customerId) : null;
-$returnUrl = trim((string) ($_GET['return'] ?? 'tickets.php'));
-$updated = (int) ($_GET['updated'] ?? 0) === 1;
-
-if ($returnUrl === '' || strpos($returnUrl, 'http') === 0) {
-    $returnUrl = 'tickets.php';
+$returnUrl = normalize_return_url($_GET['return'] ?? 'tickets.php', 'tickets.php');
+$customerFlash = get_flash_message('customer_notice');
+$customerNotice = trim((string) ($customerFlash['message'] ?? ''));
+$customerNoticeType = trim((string) ($customerFlash['type'] ?? 'success'));
+if (!in_array($customerNoticeType, ['success', 'error'], true)) {
+    $customerNoticeType = 'success';
 }
 
 if (!$customer) {
@@ -71,8 +72,8 @@ if ($tickets && $tickets->num_rows > 0) {
     </div>
 </header>
 
-<?php if ($updated): ?>
-    <div class="alert alert--success" data-auto-dismiss="4000">Los datos del cliente se actualizaron correctamente.</div>
+<?php if ($customerNotice !== ''): ?>
+    <div class="alert alert--<?php echo e($customerNoticeType); ?>" data-auto-dismiss="4000"><?php echo e($customerNotice); ?></div>
 <?php endif; ?>
 
 <div class="ticket-toolbar" style="margin-bottom: 2rem;">

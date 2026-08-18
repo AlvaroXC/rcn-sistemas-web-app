@@ -4,65 +4,91 @@ require_once '../includes/db.php';
 
 $action = isset($_GET['action']) ? $_GET['action'] : 'list';
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
-$msg = "";
+$error = '';
+$productFlash = get_flash_message('product_notice');
+$productNotice = trim((string) ($productFlash['message'] ?? ''));
+$productNoticeType = trim((string) ($productFlash['type'] ?? 'success'));
 
-if ($action == 'delete' && $id > 0) {
-    $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
-    $stmt->bind_param("i", $id);
-    if ($stmt->execute()) {
-        header("Location: products.php?msg=deleted");
-        exit;
-    }
+if (!in_array($action, ['list', 'new', 'edit'], true)) {
+    $action = 'list';
+}
+
+if (!in_array($productNoticeType, ['success', 'error'], true)) {
+    $productNoticeType = 'success';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $name = $_POST['name'];
-    $short_desc = $_POST['short_description'];
-    $long_desc = $_POST['long_description'];
-    $video = $_POST['video_link'];
-    
-    $pdf_path = $_POST['current_pdf'] ?? "";
-    if (isset($_FILES['pdf']) && $_FILES['pdf']['error'] == 0) {
-        $pdf_name = time() . "_" . $_FILES['pdf']['name'];
-        $target = "../uploads/pdfs/" . $pdf_name;
-        if (move_uploaded_file($_FILES['pdf']['tmp_name'], $target)) {
-            $pdf_path = "uploads/pdfs/" . $pdf_name;
-        }
-    }
+    verify_csrf_or_fail();
+    $formAction = trim((string) ($_POST['form_action'] ?? 'save'));
 
-    $img_path = $_POST['current_img'] ?? "";
-    if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-        $img_name = time() . "_" . $_FILES['image']['name'];
-        $target = "../uploads/images/" . $img_name;
-        if (move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
-            $img_path = "uploads/images/" . $img_name;
-        }
-    }
+    if ($formAction === 'delete') {
+        $deleteId = (int) ($_POST['id'] ?? 0);
+        if ($deleteId > 0) {
+            $stmt = $conn->prepare("DELETE FROM products WHERE id = ?");
+            $stmt->bind_param("i", $deleteId);
 
-    if ($id > 0) {
-        $stmt = $conn->prepare("UPDATE products SET name=?, short_description=?, long_description=?, video_link=?, pdf_path=?, image_path=? WHERE id=?");
-        $stmt->bind_param("ssssssi", $name, $short_desc, $long_desc, $video, $pdf_path, $img_path, $id);
-    } else {
-        $stmt = $conn->prepare("INSERT INTO products (name, short_description, long_description, video_link, pdf_path, image_path) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->bind_param("ssssss", $name, $short_desc, $long_desc, $video, $pdf_path, $img_path);
-    }
-
-    if ($stmt->execute()) {
-        $product_id = $id > 0 ? $id : $conn->insert_id;
-        if ($id > 0) $conn->query("DELETE FROM benefits WHERE product_id = $id");
-        
-        if (isset($_POST['benefit_titles'])) {
-            foreach ($_POST['benefit_titles'] as $key => $title) {
-                if (!empty($title)) {
-                    $desc = $_POST['benefit_descs'][$key];
-                    $b_stmt = $conn->prepare("INSERT INTO benefits (product_id, title, description) VALUES (?, ?, ?)");
-                    $b_stmt->bind_param("iss", $product_id, $title, $desc);
-                    $b_stmt->execute();
-                }
+            if ($stmt->execute()) {
+                set_flash_message('product_notice', 'El producto se eliminó correctamente.', 'success');
+                redirect_to('products.php');
             }
         }
-        header("Location: products.php?msg=success");
-        exit;
+
+        $error = 'No se pudo borrar el producto.';
+    } else {
+        $name = trim((string) ($_POST['name'] ?? ''));
+        $short_desc = trim((string) ($_POST['short_description'] ?? ''));
+        $long_desc = trim((string) ($_POST['long_description'] ?? ''));
+        $video = trim((string) ($_POST['video_link'] ?? ''));
+    
+        $pdf_path = $_POST['current_pdf'] ?? "";
+        if (isset($_FILES['pdf']) && $_FILES['pdf']['error'] == 0) {
+            $pdf_name = time() . "_" . $_FILES['pdf']['name'];
+            $target = "../uploads/pdfs/" . $pdf_name;
+            if (move_uploaded_file($_FILES['pdf']['tmp_name'], $target)) {
+                $pdf_path = "uploads/pdfs/" . $pdf_name;
+            }
+        }
+
+        $img_path = $_POST['current_img'] ?? "";
+        if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
+            $img_name = time() . "_" . $_FILES['image']['name'];
+            $target = "../uploads/images/" . $img_name;
+            if (move_uploaded_file($_FILES['image']['tmp_name'], $target)) {
+                $img_path = "uploads/images/" . $img_name;
+            }
+        }
+
+        if ($id > 0) {
+            $stmt = $conn->prepare("UPDATE products SET name=?, short_description=?, long_description=?, video_link=?, pdf_path=?, image_path=? WHERE id=?");
+            $stmt->bind_param("ssssssi", $name, $short_desc, $long_desc, $video, $pdf_path, $img_path, $id);
+        } else {
+            $stmt = $conn->prepare("INSERT INTO products (name, short_description, long_description, video_link, pdf_path, image_path) VALUES (?, ?, ?, ?, ?, ?)");
+            $stmt->bind_param("ssssss", $name, $short_desc, $long_desc, $video, $pdf_path, $img_path);
+        }
+
+        if ($stmt->execute()) {
+            $product_id = $id > 0 ? $id : $conn->insert_id;
+            if ($id > 0) {
+                $deleteBenefitsStmt = $conn->prepare("DELETE FROM benefits WHERE product_id = ?");
+                $deleteBenefitsStmt->bind_param("i", $id);
+                $deleteBenefitsStmt->execute();
+            }
+            
+            if (isset($_POST['benefit_titles'])) {
+                foreach ($_POST['benefit_titles'] as $key => $title) {
+                    if (!empty($title)) {
+                        $desc = $_POST['benefit_descs'][$key];
+                        $b_stmt = $conn->prepare("INSERT INTO benefits (product_id, title, description) VALUES (?, ?, ?)");
+                        $b_stmt->bind_param("iss", $product_id, $title, $desc);
+                        $b_stmt->execute();
+                    }
+                }
+            }
+            set_flash_message('product_notice', 'El producto se guardó correctamente.', 'success');
+            redirect_to('products.php');
+        }
+
+        $error = 'No se pudo guardar el producto.';
     }
 }
 
@@ -84,6 +110,14 @@ if ($id > 0) {
         <a href="products.php" class="btn btn--secondary">Volver al Listado</a>
     <?php endif; ?>
 </header>
+
+<?php if($productNotice !== ''): ?>
+    <div class="alert alert--<?php echo e($productNoticeType); ?>" data-auto-dismiss="5000"><?php echo e($productNotice); ?></div>
+<?php endif; ?>
+
+<?php if($error !== ''): ?>
+    <div class="alert alert--error"><?php echo e($error); ?></div>
+<?php endif; ?>
 
 <?php if($action == 'list'): ?>
     <div class="table-wrapper">
@@ -107,7 +141,12 @@ if ($id > 0) {
                     <td><strong><?php echo $row['name']; ?></strong></td>
                     <td>
                         <a href="products.php?action=edit&id=<?php echo $row['id']; ?>" style="color: var(--secondary); margin-right: 1.5rem;"><i class="fas fa-edit"></i> Editar</a>
-                        <a href="products.php?action=delete&id=<?php echo $row['id']; ?>" style="color: #ff6b6b;" onclick="return confirm('¿Seguro?')"><i class="fas fa-trash"></i> Borrar</a>
+                        <form action="products.php" method="POST" class="inline-form" onsubmit="return confirm('¿Seguro?')">
+                            <?php echo csrf_field(); ?>
+                            <input type="hidden" name="form_action" value="delete">
+                            <input type="hidden" name="id" value="<?php echo (int) $row['id']; ?>">
+                            <button type="submit" class="table__action table__action--danger table__action-button"><i class="fas fa-trash"></i> Borrar</button>
+                        </form>
                     </td>
                 </tr>
                 <?php endwhile; ?>
@@ -118,6 +157,8 @@ if ($id > 0) {
 <?php else: ?>
     <div class="card" style="padding: 3rem;">
         <form method="POST" enctype="multipart/form-data" class="admin-form">
+            <?php echo csrf_field(); ?>
+            <input type="hidden" name="form_action" value="save">
             <div class="admin-form__row">
                 <div class="admin-form__group">
                     <label class="admin-form__label">Nombre del Producto</label>

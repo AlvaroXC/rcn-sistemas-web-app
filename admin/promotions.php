@@ -5,8 +5,14 @@ require_once '../includes/db.php';
 $action = isset($_GET['action']) ? $_GET['action'] : 'list';
 $id = isset($_GET['id']) ? (int) $_GET['id'] : 0;
 $error = '';
+$promotionFlash = get_flash_message('promotion_notice');
+$promotionNotice = trim((string) ($promotionFlash['message'] ?? ''));
+$promotionNoticeType = trim((string) ($promotionFlash['type'] ?? 'success'));
 if (!in_array($action, ['list', 'new', 'edit'], true)) {
     $action = 'list';
+}
+if (!in_array($promotionNoticeType, ['success', 'error'], true)) {
+    $promotionNoticeType = 'success';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -18,7 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare('DELETE FROM promotions WHERE id = ?');
         $stmt->bind_param('i', $postId);
         if ($stmt->execute()) {
-            redirect_to('promotions.php?msg=deleted');
+            set_flash_message('promotion_notice', 'La promoción se eliminó correctamente.', 'success');
+            redirect_to('promotions.php');
         }
         $error = 'No se pudo borrar la promoción.';
     }
@@ -70,7 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 if ($stmt->execute()) {
-                    redirect_to('promotions.php?msg=success');
+                    set_flash_message('promotion_notice', 'La promoción se guardó correctamente.', 'success');
+                    redirect_to('promotions.php');
                 }
                 $error = 'No se pudo guardar la promoción.';
             }
@@ -107,6 +115,10 @@ if ($id > 0) {
         <a href="promotions.php" class="btn btn--secondary">Volver al Listado</a>
     <?php endif; ?>
 </header>
+
+<?php if ($promotionNotice !== ''): ?>
+    <div class="alert alert--<?php echo e($promotionNoticeType); ?>" data-auto-dismiss="5000"><?php echo e($promotionNotice); ?></div>
+<?php endif; ?>
 
 <?php if ($error): ?>
     <div class="alert alert--error"><?php echo e($error); ?></div>
