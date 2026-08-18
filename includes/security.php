@@ -31,7 +31,9 @@ function start_secure_session($requireAdmin = false) {
         if ($lastActivity && time() - $lastActivity > ADMIN_SESSION_TIMEOUT) {
             $_SESSION = [];
             session_destroy();
-            header("Location: login.php?timeout=1");
+            start_secure_session(false);
+            set_flash_message('login_notice', 'Tu sesión expiró por inactividad. Inicia sesión de nuevo.', 'error');
+            header("Location: login.php");
             exit;
         }
 
@@ -97,6 +99,74 @@ function verify_csrf_or_fail() {
 function redirect_to($url) {
     header("Location: " . $url);
     exit;
+}
+
+function normalize_return_url($url, $default = 'index.php') {
+    $url = trim((string) $url);
+    $default = trim((string) $default) !== '' ? trim((string) $default) : 'index.php';
+
+    if ($url === '') {
+        return $default;
+    }
+
+    $parts = parse_url($url);
+    if ($parts === false) {
+        return $default;
+    }
+
+    if (isset($parts['scheme']) || isset($parts['host']) || str_starts_with($url, '//')) {
+        return $default;
+    }
+
+    if (!isset($parts['path']) || $parts['path'] === '') {
+        return $default;
+    }
+
+    if (str_starts_with($parts['path'], '/')) {
+        return $default;
+    }
+
+    return $url;
+}
+
+function set_flash_message($key, $message, $type = 'success') {
+    start_secure_session(false);
+
+    $key = trim((string) $key);
+    $message = trim((string) $message);
+    $type = trim((string) $type);
+
+    if ($key === '' || $message === '') {
+        return;
+    }
+
+    $_SESSION['_flash_messages'][$key] = [
+        'message' => $message,
+        'type' => $type !== '' ? $type : 'success',
+    ];
+}
+
+function get_flash_message($key) {
+    start_secure_session(false);
+
+    $key = trim((string) $key);
+    if ($key === '') {
+        return null;
+    }
+
+    $flash = $_SESSION['_flash_messages'][$key] ?? null;
+    if ($flash !== null) {
+        unset($_SESSION['_flash_messages'][$key]);
+    }
+
+    if (!is_array($flash)) {
+        return null;
+    }
+
+    return [
+        'message' => trim((string) ($flash['message'] ?? '')),
+        'type' => trim((string) ($flash['type'] ?? 'success')) ?: 'success',
+    ];
 }
 
 function is_allowed_choice($value, array $allowed) {

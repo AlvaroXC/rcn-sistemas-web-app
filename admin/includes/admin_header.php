@@ -11,8 +11,10 @@ $currentAdminIsSupervisor = current_admin_is_supervisor();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Panel Administrativo | RCN Sistemas</title>
     <?php $adminStylesVersion = @filemtime(__DIR__ . '/../../css/styles.css') ?: time(); ?>
+    <?php $adminScriptVersion = @filemtime(__DIR__ . '/../../js/main.js') ?: time(); ?>
     <link rel="stylesheet" href="../css/styles.css?v=<?php echo $adminStylesVersion; ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="../js/main.js?v=<?php echo $adminScriptVersion; ?>" defer></script>
 </head>
 <body>
     <div class="admin-layout">
