@@ -1309,6 +1309,7 @@ function build_support_ticket_filter_parts(array $filters = [], $viewerUserId = 
     $params = [];
     $viewerUserId = (int) $viewerUserId;
     $viewerRole = trim((string) $viewerRole);
+    $assignedUserFilter = trim((string) ($filters['assigned_user_id'] ?? ''));
 
     $scope = trim((string) ($filters['scope'] ?? 'open'));
     if ($scope !== 'all') {
@@ -1319,6 +1320,16 @@ function build_support_ticket_filter_parts(array $filters = [], $viewerUserId = 
         $conditions[] = 't.assigned_user_id = ?';
         $types .= 'i';
         $params[] = $viewerUserId;
+    }
+
+    if ($viewerRole === 'admin' && $assignedUserFilter !== '') {
+        if ($assignedUserFilter === 'unassigned') {
+            $conditions[] = 't.assigned_user_id IS NULL';
+        } elseif (ctype_digit($assignedUserFilter) && (int) $assignedUserFilter > 0) {
+            $conditions[] = 't.assigned_user_id = ?';
+            $types .= 'i';
+            $params[] = (int) $assignedUserFilter;
+        }
     }
 
     if (!empty($filters['customer'])) {
@@ -1438,22 +1449,50 @@ function can_admin_user_access_ticket(array $ticket, $viewerUserId, $viewerRole)
     return $viewerUserId > 0 && (int) ($ticket['assigned_user_id'] ?? 0) === $viewerUserId;
 }
 
+function can_admin_user_reassign_ticket(array $ticket, $viewerUserId, $viewerRole) {
+    $viewerUserId = (int) $viewerUserId;
+    $viewerRole = trim((string) $viewerRole);
+
+    if ($viewerRole === 'admin') {
+        return true;
+    }
+
+    return $viewerUserId > 0 && (int) ($ticket['assigned_user_id'] ?? 0) === $viewerUserId;
+}
+
 function update_ticket_status($conn, $ticketId, $status) {
     $ticketId = (int) $ticketId;
     $ticket = getTicketById($conn, $ticketId);
 
+    if ($ticketId <= 0) {
+        return ['ok' => false, 'error' => 'No se pudo identificar el ticket.', 'ticket' => null];
+    }
+
     if (!$ticket) {
-        return false;
+        return ['ok' => false, 'error' => 'El ticket ya no existe.', 'ticket' => null];
+    }
+
+    if (trim((string) ($ticket['status'] ?? '')) === 'Cerrado') {
+        return ['ok' => false, 'error' => 'Los tickets cerrados no pueden cambiar de estado.', 'ticket' => $ticket];
     }
 
     $programmedDateValidation = validate_ticket_programmed_date_requirement($status, $ticket['service_date'] ?? null);
     if (!$programmedDateValidation['ok']) {
-        return false;
+        return ['ok' => false, 'error' => $programmedDateValidation['error'], 'ticket' => $ticket];
     }
 
     $stmt = $conn->prepare('UPDATE tickets SET status = ? WHERE id = ?');
+    if (!$stmt) {
+        return ['ok' => false, 'error' => 'No se pudo preparar la actualización del estado.', 'ticket' => $ticket];
+    }
+
     $stmt->bind_param('si', $status, $ticketId);
-    return $stmt->execute();
+
+    if (!$stmt->execute()) {
+        return ['ok' => false, 'error' => 'No se pudo actualizar el estado del ticket.', 'ticket' => $ticket];
+    }
+
+    return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];
 }
 
 function update_ticket_price($conn, $ticketId, $priceAmount, $adminUserId) {
@@ -1543,10 +1582,11 @@ function update_ticket_message($conn, $ticketId, $message, $adminUserId = null) 
     return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];
 }
 
-function update_ticket_assignee($conn, $ticketId, $assignedUserId, $assignedByUserId) {
+function update_ticket_assignee($conn, $ticketId, $assignedUserId, $assignedByUserId, $assignedByUserRole = 'admin') {
     $ticketId = (int) $ticketId;
     $assignedByUserId = (int) $assignedByUserId;
     $assignedUserId = (int) $assignedUserId;
+    $assignedByUserRole = trim((string) $assignedByUserRole);
 
     if ($ticketId <= 0) {
         return ['ok' => false, 'error' => 'No se pudo identificar el ticket.', 'ticket' => null];
@@ -1554,6 +1594,15 @@ function update_ticket_assignee($conn, $ticketId, $assignedUserId, $assignedByUs
 
     if ($assignedUserId <= 0) {
         return ['ok' => false, 'error' => 'Selecciona un responsable válido.', 'ticket' => null];
+    }
+
+    $ticket = getTicketById($conn, $ticketId);
+    if (!$ticket) {
+        return ['ok' => false, 'error' => 'El ticket ya no existe.', 'ticket' => null];
+    }
+
+    if (!can_admin_user_reassign_ticket($ticket, $assignedByUserId, $assignedByUserRole)) {
+        return ['ok' => false, 'error' => 'No tienes permisos para reasignar este ticket.', 'ticket' => null];
     }
 
     $assignee = getAdminUserById($conn, $assignedUserId);

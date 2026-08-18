@@ -26,11 +26,7 @@ $assignedUserDraft = (int) ($_POST['assigned_user_id'] ?? 0);
 $serviceDateDraft = trim((string) ($_POST['service_date'] ?? ''));
 $serviceStartDraft = trim((string) ($_POST['service_start_time'] ?? ''));
 $serviceEndDraft = trim((string) ($_POST['service_end_time'] ?? ''));
-$returnUrl = trim((string) ($_GET['return'] ?? $_POST['return'] ?? 'tickets.php'));
-
-if ($returnUrl === '' || strpos($returnUrl, 'http') === 0) {
-    $returnUrl = 'tickets.php';
-}
+$returnUrl = normalize_return_url($_GET['return'] ?? $_POST['return'] ?? 'tickets.php', 'tickets.php');
 
 function ticket_origin_label($originType) {
     $map = [
@@ -86,17 +82,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $priceError = $priceUpdate['error'] ?: 'No se pudo actualizar el precio del ticket.';
         }
     } elseif ($action === 'update_assignee') {
-        if ($viewerRole !== 'admin') {
-            $assigneeError = 'No tienes permisos para reasignar tickets.';
-        } else {
-            $adminUserId = isset($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : 0;
-            $assigneeUpdate = update_ticket_assignee($conn, $ticketId, $assignedUserDraft, $adminUserId);
+        $adminUserId = isset($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : 0;
+        $assigneeUpdate = update_ticket_assignee($conn, $ticketId, $assignedUserDraft, $adminUserId, $viewerRole);
 
-            if ($assigneeUpdate['ok']) {
-                $assigneeMessage = 'El responsable del ticket se actualizó correctamente.';
+        if ($assigneeUpdate['ok']) {
+            if ($viewerRole !== 'admin') {
+                set_flash_message(
+                    'ticket_notice',
+                    'Transferiste el ticket correctamente. Ya no aparecerá en tu bandeja porque quedó asignado a otro responsable.',
+                    'success'
+                );
+                redirect_to($returnUrl);
             } else {
-                $assigneeError = $assigneeUpdate['error'] ?: 'No se pudo actualizar el responsable del ticket.';
+                $assigneeMessage = 'El responsable del ticket se actualizó correctamente.';
             }
+        } else {
+            $assigneeError = $assigneeUpdate['error'] ?: 'No se pudo actualizar el responsable del ticket.';
         }
     } elseif ($action === 'update_service_schedule') {
         $serviceUpdate = update_ticket_service_schedule($conn, $ticketId, $serviceDateDraft, $serviceStartDraft, $serviceEndDraft);
@@ -113,15 +114,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $status = trim((string) ($_POST['status'] ?? ''));
 
         if ($ticketId > 0 && in_array($status, $allowedStatuses, true)) {
-            $existingTicket = $editableTicket;
-            $programmedDateValidation = validate_ticket_programmed_date_requirement($status, $existingTicket['service_date'] ?? null);
+            $statusUpdate = update_ticket_status($conn, $ticketId, $status);
 
-            if (!$programmedDateValidation['ok']) {
-                $statusError = $programmedDateValidation['error'];
-            } elseif (update_ticket_status($conn, $ticketId, $status)) {
+            if ($statusUpdate['ok']) {
                 $statusMessage = 'El estado del ticket se actualizó correctamente.';
             } else {
-                $statusError = 'No se pudo actualizar el estado del ticket.';
+                $statusError = $statusUpdate['error'] ?: 'No se pudo actualizar el estado del ticket.';
             }
         } else {
             $statusError = 'Selecciona un estado válido.';
@@ -169,6 +167,7 @@ $effectivePriceAmount = get_ticket_effective_price_amount($ticket);
 $effectivePriceBaseAmount = get_ticket_effective_price_base_amount($ticket);
 $hasPriceBreakdown = ticket_has_price_breakdown($ticket);
 $hasAttachment = trim((string) ($ticket['attachment_path'] ?? '')) !== '';
+$isClosedTicket = trim((string) ($ticket['status'] ?? '')) === 'Cerrado';
 ?>
 
 <nav class="breadcrumbs" aria-label="Navegacion">
@@ -467,7 +466,13 @@ $hasAttachment = trim((string) ($ticket['attachment_path'] ?? '')) !== '';
                     <div class="ticket-status-panel__current">
                         <span class="ticket-status ticket-status--<?php echo strtolower(str_replace(' ', '-', $ticket['status'])); ?>"><span class="ticket-status__dot" aria-hidden="true"></span><?php echo e($ticket['status']); ?></span>
                     </div>
-                    <p class="ticket-status-panel__hint">Actualiza el estado para reflejar el avance operativo del ticket.</p>
+                    <p class="ticket-status-panel__hint">
+                        <?php if ($isClosedTicket): ?>
+                            Este ticket está cerrado y ya no admite cambios de estado.
+                        <?php else: ?>
+                            Actualiza el estado para reflejar el avance operativo del ticket.
+                        <?php endif; ?>
+                    </p>
                 </div>
 
                 <?php if ($statusMessage): ?>
@@ -478,20 +483,26 @@ $hasAttachment = trim((string) ($ticket['attachment_path'] ?? '')) !== '';
                     <div class="alert alert--error ticket-inline-alert"><?php echo e($statusError); ?></div>
                 <?php endif; ?>
 
-                <form method="POST" class="admin-form">
-                    <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
-                    <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
-                    <input type="hidden" name="ticket_action" value="update_status">
-                    <div class="admin-form__group">
-                        <label class="admin-form__label" for="status">Actualizar estado</label>
-                        <select id="status" name="status" class="admin-form__input">
-                            <?php foreach ($allowedStatuses as $status): ?>
-                                <option value="<?php echo e($status); ?>" <?php echo $ticket['status'] === $status ? 'selected' : ''; ?>><?php echo e($status); ?></option>
-                            <?php endforeach; ?>
-                        </select>
+                <?php if ($isClosedTicket): ?>
+                    <div class="alert alert--info ticket-inline-alert">
+                        El ticket permanece disponible para consulta, pero el estado `Cerrado` es final y no puede modificarse.
                     </div>
-                    <button type="submit" class="btn">Guardar estado</button>
-                </form>
+                <?php else: ?>
+                    <form method="POST" class="admin-form">
+                        <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
+                        <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
+                        <input type="hidden" name="ticket_action" value="update_status">
+                        <div class="admin-form__group">
+                            <label class="admin-form__label" for="status">Actualizar estado</label>
+                            <select id="status" name="status" class="admin-form__input">
+                                <?php foreach ($allowedStatuses as $status): ?>
+                                    <option value="<?php echo e($status); ?>" <?php echo $ticket['status'] === $status ? 'selected' : ''; ?>><?php echo e($status); ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn">Guardar estado</button>
+                    </form>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -530,7 +541,7 @@ $hasAttachment = trim((string) ($ticket['attachment_path'] ?? '')) !== '';
             </form>
         </div>
 
-        <?php if ($viewerRole === 'admin'): ?>
+        <?php if (can_admin_user_reassign_ticket($ticket, $viewerUserId, $viewerRole)): ?>
             <div class="card panel-card ticket-action-card">
                 <div class="ticket-section__eyebrow">Acciones</div>
                 <h3 class="ticket-section__title ticket-section__title--compact">Responsable</h3>
@@ -563,6 +574,9 @@ $hasAttachment = trim((string) ($ticket['attachment_path'] ?? '')) !== '';
                                 <?php endwhile; ?>
                             <?php endif; ?>
                         </select>
+                        <?php if ($viewerRole !== 'admin'): ?>
+                            <div class="ticket-meta">Al transferir este ticket dejará de aparecer en tu bandeja y quedará disponible solo para el nuevo responsable.</div>
+                        <?php endif; ?>
                     </div>
                     <button type="submit" class="btn">Guardar responsable</button>
                 </form>
@@ -672,7 +686,5 @@ $hasAttachment = trim((string) ($ticket['attachment_path'] ?? '')) !== '';
 
 </main>
 </div>
-<?php $ticketScriptVersion = @filemtime(__DIR__ . '/../js/main.js') ?: time(); ?>
-<script src="../js/main.js?v=<?php echo $ticketScriptVersion; ?>"></script>
 </body>
 </html>

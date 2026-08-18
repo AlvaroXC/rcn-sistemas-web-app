@@ -10,12 +10,15 @@ $allowedTypes = ['Compra', 'Soporte', 'Informacion'];
 $allowedScopes = ['open', 'all'];
 $allowedPageSizes = [10, 25, 50];
 $defaultPageSize = 10;
+$unassignedResponsibleFilter = 'unassigned';
+$assignableUsers = [];
 
 $filters = [
     'scope' => trim((string) ($_GET['scope'] ?? 'open')),
     'customer' => trim((string) ($_GET['customer'] ?? '')),
     'status' => trim((string) ($_GET['status'] ?? '')),
     'consultation_type' => trim((string) ($_GET['consultation_type'] ?? '')),
+    'assigned_user_id' => trim((string) ($_GET['assigned_user_id'] ?? '')),
     'date_from' => trim((string) ($_GET['date_from'] ?? '')),
     'date_to' => trim((string) ($_GET['date_to'] ?? '')),
 ];
@@ -32,6 +35,20 @@ if (!in_array($filters['consultation_type'], $allowedTypes, true)) {
 
 if (!in_array($filters['scope'], $allowedScopes, true)) {
     $filters['scope'] = 'open';
+}
+
+if ($viewerRole === 'admin') {
+    $assignableUsersResult = getAdminUsers($conn, true);
+    while ($assignableUsersResult && $user = $assignableUsersResult->fetch_assoc()) {
+        $assignableUsers[(string) $user['id']] = $user;
+    }
+
+    $selectedResponsible = $filters['assigned_user_id'];
+    if ($selectedResponsible !== '' && $selectedResponsible !== $unassignedResponsibleFilter && !isset($assignableUsers[$selectedResponsible])) {
+        $filters['assigned_user_id'] = '';
+    }
+} else {
+    $filters['assigned_user_id'] = '';
 }
 
 if (!in_array($perPage, $allowedPageSizes, true)) {
@@ -55,6 +72,17 @@ if ($filters['status'] !== '') {
 }
 if ($filters['consultation_type'] !== '') {
     $activeFilters[] = 'Tipo: ' . $filters['consultation_type'];
+}
+if ($filters['assigned_user_id'] !== '') {
+    if ($filters['assigned_user_id'] === $unassignedResponsibleFilter) {
+        $activeFilters[] = 'Responsable: Sin responsable';
+    } elseif (isset($assignableUsers[$filters['assigned_user_id']])) {
+        $responsible = $assignableUsers[$filters['assigned_user_id']];
+        $responsibleName = trim((string) ($responsible['display_name'] ?? '')) !== ''
+            ? (string) $responsible['display_name']
+            : (string) ($responsible['username'] ?? '');
+        $activeFilters[] = 'Responsable: ' . $responsibleName;
+    }
 }
 if ($filters['date_from'] !== '') {
     $activeFilters[] = 'Desde: ' . $filters['date_from'];
@@ -81,6 +109,7 @@ function build_ticket_page_url(array $filters, $page) {
         'customer' => $filters['customer'],
         'status' => $filters['status'],
         'consultation_type' => $filters['consultation_type'],
+        'assigned_user_id' => $filters['assigned_user_id'],
         'date_from' => $filters['date_from'],
         'date_to' => $filters['date_to'],
         'per_page' => $perPage !== $defaultPageSize ? $perPage : null,
@@ -105,9 +134,16 @@ $clearFiltersUrl = build_ticket_page_url([
     'customer' => '',
     'status' => '',
     'consultation_type' => '',
+    'assigned_user_id' => '',
     'date_from' => '',
     'date_to' => '',
 ], 1);
+$ticketFlash = get_flash_message('ticket_notice');
+$ticketNotice = trim((string) ($ticketFlash['message'] ?? ''));
+$ticketNoticeType = trim((string) ($ticketFlash['type'] ?? 'success'));
+if (!in_array($ticketNoticeType, ['success', 'error'], true)) {
+    $ticketNoticeType = 'success';
+}
 ?>
 
 <header class="admin-header">
@@ -137,6 +173,10 @@ $clearFiltersUrl = build_ticket_page_url([
         Todos los tickets
     </a>
 </nav>
+
+<?php if ($ticketNotice !== ''): ?>
+    <div class="alert alert--<?php echo e($ticketNoticeType); ?>" data-auto-dismiss="5000"><?php echo e($ticketNotice); ?></div>
+<?php endif; ?>
 
 <div class="stats">
     <div class="stat-card">
@@ -191,15 +231,48 @@ $clearFiltersUrl = build_ticket_page_url([
                 <label class="admin-form__label" for="date_to">Hasta</label>
                 <input type="date" id="date_to" name="date_to" class="admin-form__input" value="<?php echo e($filters['date_to']); ?>">
             </div>
-            <div class="admin-form__group">
-                <label class="admin-form__label" for="per_page">Mostrar</label>
-                <select id="per_page" name="per_page" class="admin-form__input">
-                    <?php foreach ($allowedPageSizes as $pageSize): ?>
-                        <option value="<?php echo $pageSize; ?>" <?php echo $perPage === $pageSize ? 'selected' : ''; ?>><?php echo $pageSize; ?> por pagina</option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
+            <?php if ($viewerRole === 'admin'): ?>
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="assigned_user_id">Responsable</label>
+                    <select id="assigned_user_id" name="assigned_user_id" class="admin-form__input">
+                        <option value="">Todos</option>
+                        <option value="<?php echo e($unassignedResponsibleFilter); ?>" <?php echo $filters['assigned_user_id'] === $unassignedResponsibleFilter ? 'selected' : ''; ?>>Sin responsable</option>
+                        <?php foreach ($assignableUsers as $assignableUser): ?>
+                            <?php
+                                $assignableUserId = (string) ($assignableUser['id'] ?? '');
+                                $assignableUserLabel = trim((string) ($assignableUser['display_name'] ?? '')) !== ''
+                                    ? (string) $assignableUser['display_name']
+                                    : (string) ($assignableUser['username'] ?? '');
+                            ?>
+                            <option value="<?php echo e($assignableUserId); ?>" <?php echo $filters['assigned_user_id'] === $assignableUserId ? 'selected' : ''; ?>>
+                                <?php echo e($assignableUserLabel); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php else: ?>
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="per_page">Mostrar</label>
+                    <select id="per_page" name="per_page" class="admin-form__input">
+                        <?php foreach ($allowedPageSizes as $pageSize): ?>
+                            <option value="<?php echo $pageSize; ?>" <?php echo $perPage === $pageSize ? 'selected' : ''; ?>><?php echo $pageSize; ?> por pagina</option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
         </div>
+        <?php if ($viewerRole === 'admin'): ?>
+            <div class="admin-form__row admin-form__row--triple">
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="per_page">Mostrar</label>
+                    <select id="per_page" name="per_page" class="admin-form__input">
+                        <?php foreach ($allowedPageSizes as $pageSize): ?>
+                            <option value="<?php echo $pageSize; ?>" <?php echo $perPage === $pageSize ? 'selected' : ''; ?>><?php echo $pageSize; ?> por pagina</option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+        <?php endif; ?>
         <div class="admin-form__row admin-form__row--actions">
             <div class="admin-form__group admin-form__actions admin-form__actions--tickets">
                 <button type="submit" class="btn">Filtrar</button>
