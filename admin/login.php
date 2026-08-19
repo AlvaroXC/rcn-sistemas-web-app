@@ -20,6 +20,7 @@ if (!in_array($loginNoticeType, ['success', 'error'], true)) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim((string) ($_POST['username'] ?? ''));
     $password = $_POST['password'];
+    $rememberMe = isset($_POST['remember_me']) && $_POST['remember_me'] === '1';
     
     $stmt = $conn->prepare("SELECT id, username, password, display_name, role, active FROM users WHERE username = ?");
     $stmt->bind_param("s", $username);
@@ -28,9 +29,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($user = $result->fetch_assoc()) {
         if ((int) ($user['active'] ?? 1) === 1 && password_verify($password, $user['password'])) {
-            $_SESSION['admin_id'] = $user['id'];
-            $_SESSION['admin_user'] = trim((string) ($user['display_name'] ?? '')) !== '' ? $user['display_name'] : $user['username'];
-            $_SESSION['admin_role'] = trim((string) ($user['role'] ?? 'admin')) !== '' ? $user['role'] : 'admin';
+            set_admin_authenticated_session($user);
+            if ($rememberMe) {
+                issue_admin_remember_me_token($conn, (int) $user['id']);
+            } else {
+                revoke_current_admin_remember_me($conn);
+            }
             header("Location: index.php");
             exit;
         }
@@ -75,6 +79,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <label style="font-weight: 700; font-size: 1.3rem;">Contraseña</label>
                 <input type="password" name="password" required style="padding: 1.2rem; border: 1px solid var(--border); border-radius: 8px;">
             </div>
+            <label style="display: inline-flex; align-items: center; gap: 1rem; font-size: 1.4rem; color: var(--text-dark);">
+                <input type="checkbox" name="remember_me" value="1" style="width: 1.6rem; height: 1.6rem;">
+                Mantener sesión iniciada
+            </label>
             <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Entrar al Panel</button>
         </form>
         <p style="text-align: center; margin-top: 3rem; font-size: 1.3rem; color: var(--text-muted);">

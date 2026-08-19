@@ -148,6 +148,8 @@ if (!$ticket || !can_admin_user_access_ticket($ticket, $viewerUserId, $viewerRol
     exit;
 }
 
+mark_ticket_assignment_notifications_as_read($conn, $viewerUserId, (int) $ticket['id']);
+
 $customerType = normalize_customer_type($ticket['customer_type'] ?? 'persona_fisica');
 $customerTypeLabel = $customerType === 'persona_moral' ? 'Persona moral' : 'Persona fisica';
 $assignedDisplayLabel = trim((string) ($ticket['assigned_display_name'] ?? '')) !== ''

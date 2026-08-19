@@ -4,21 +4,221 @@ if (!defined('ADMIN_SESSION_TIMEOUT')) {
     define('ADMIN_SESSION_TIMEOUT', 1800);
 }
 
+if (!defined('ADMIN_REMEMBER_ME_COOKIE')) {
+    define('ADMIN_REMEMBER_ME_COOKIE', 'admin_remember_me');
+}
+
+if (!defined('ADMIN_REMEMBER_ME_LIFETIME')) {
+    define('ADMIN_REMEMBER_ME_LIFETIME', 60 * 60 * 24 * 30);
+}
+
 function is_https_request() {
     return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
         || (isset($_SERVER['SERVER_PORT']) && (int) $_SERVER['SERVER_PORT'] === 443);
 }
 
-function start_secure_session($requireAdmin = false) {
+function start_admin_php_session() {
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        return;
+    }
+
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'secure' => is_https_request(),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
+    session_start();
+}
+
+function admin_remember_me_cookie_name() {
+    return ADMIN_REMEMBER_ME_COOKIE;
+}
+
+function admin_remember_me_cookie_options($expiresAt) {
+    return [
+        'expires' => (int) $expiresAt,
+        'path' => '/',
+        'secure' => is_https_request(),
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ];
+}
+
+function clear_admin_remember_me_cookie() {
+    setcookie(admin_remember_me_cookie_name(), '', admin_remember_me_cookie_options(time() - 3600));
+    unset($_COOKIE[admin_remember_me_cookie_name()]);
+}
+
+function set_admin_remember_me_cookie($selector, $token, $expiresAt) {
+    $selector = trim((string) $selector);
+    $token = trim((string) $token);
+    if ($selector === '' || $token === '') {
+        clear_admin_remember_me_cookie();
+        return;
+    }
+
+    $cookieValue = $selector . ':' . $token;
+    setcookie(admin_remember_me_cookie_name(), $cookieValue, admin_remember_me_cookie_options($expiresAt));
+    $_COOKIE[admin_remember_me_cookie_name()] = $cookieValue;
+}
+
+function get_admin_remember_me_cookie_payload() {
+    $cookieValue = trim((string) ($_COOKIE[admin_remember_me_cookie_name()] ?? ''));
+    if ($cookieValue === '') {
+        return null;
+    }
+
+    $parts = explode(':', $cookieValue, 2);
+    if (count($parts) !== 2) {
+        return null;
+    }
+
+    $selector = trim((string) $parts[0]);
+    $token = trim((string) $parts[1]);
+
+    if (
+        $selector === ''
+        || $token === ''
+        || !ctype_xdigit($selector)
+        || !ctype_xdigit($token)
+    ) {
+        return null;
+    }
+
+    return [
+        'selector' => $selector,
+        'token' => $token,
+    ];
+}
+
+function set_admin_authenticated_session(array $user) {
     if (session_status() !== PHP_SESSION_ACTIVE) {
-        session_set_cookie_params([
-            'lifetime' => 0,
-            'path' => '/',
-            'secure' => is_https_request(),
-            'httponly' => true,
-            'samesite' => 'Lax',
-        ]);
-        session_start();
+        start_admin_php_session();
+    }
+
+    if (!headers_sent()) {
+        session_regenerate_id(true);
+    }
+
+    $_SESSION['admin_id'] = (int) ($user['id'] ?? 0);
+    $_SESSION['admin_user'] = trim((string) ($user['display_name'] ?? '')) !== ''
+        ? trim((string) $user['display_name'])
+        : trim((string) ($user['username'] ?? ''));
+    $_SESSION['admin_role'] = trim((string) ($user['role'] ?? 'admin')) !== ''
+        ? trim((string) $user['role'])
+        : 'admin';
+    $_SESSION['last_activity'] = time();
+}
+
+function issue_admin_remember_me_token($conn, $userId) {
+    if (!$conn) {
+        return false;
+    }
+
+    revoke_current_admin_remember_me($conn);
+
+    $userId = (int) $userId;
+    if ($userId <= 0) {
+        return false;
+    }
+
+    $selector = bin2hex(random_bytes(12));
+    $token = bin2hex(random_bytes(32));
+    $tokenHash = hash('sha256', $token);
+    $expiresAt = date('Y-m-d H:i:s', time() + ADMIN_REMEMBER_ME_LIFETIME);
+
+    $stored = store_admin_remember_token($conn, $userId, $selector, $tokenHash, $expiresAt);
+    if (!$stored) {
+        clear_admin_remember_me_cookie();
+        return false;
+    }
+
+    set_admin_remember_me_cookie($selector, $token, strtotime($expiresAt));
+    return true;
+}
+
+function revoke_current_admin_remember_me($conn = null) {
+    $payload = get_admin_remember_me_cookie_payload();
+    if ($payload && $conn && function_exists('delete_admin_remember_token_by_selector')) {
+        delete_admin_remember_token_by_selector($conn, $payload['selector']);
+    }
+
+    clear_admin_remember_me_cookie();
+}
+
+function try_restore_admin_session_from_remember_me() {
+    if (isset($_SESSION['admin_id'])) {
+        return true;
+    }
+
+    $cookieExists = isset($_COOKIE[admin_remember_me_cookie_name()]) && trim((string) $_COOKIE[admin_remember_me_cookie_name()]) !== '';
+    $payload = get_admin_remember_me_cookie_payload();
+    if (!$payload) {
+        if ($cookieExists) {
+            clear_admin_remember_me_cookie();
+        }
+        return false;
+    }
+
+    global $conn;
+    if (!$conn || !function_exists('get_admin_remember_token_by_selector') || !function_exists('rotate_admin_remember_token')) {
+        return false;
+    }
+
+    $rememberToken = get_admin_remember_token_by_selector($conn, $payload['selector']);
+    if (!$rememberToken) {
+        clear_admin_remember_me_cookie();
+        return false;
+    }
+
+    $expiresAt = strtotime((string) ($rememberToken['expires_at'] ?? ''));
+    $isExpired = !$expiresAt || $expiresAt < time();
+    $tokenHash = hash('sha256', $payload['token']);
+
+    if ($isExpired || !hash_equals((string) ($rememberToken['token_hash'] ?? ''), $tokenHash)) {
+        delete_admin_remember_token_by_selector($conn, $payload['selector']);
+        clear_admin_remember_me_cookie();
+        return false;
+    }
+
+    $user = getAdminUserById($conn, (int) ($rememberToken['user_id'] ?? 0));
+    if (!$user || (int) ($user['active'] ?? 1) !== 1) {
+        delete_admin_remember_token_by_selector($conn, $payload['selector']);
+        clear_admin_remember_me_cookie();
+        return false;
+    }
+
+    $newSelector = bin2hex(random_bytes(12));
+    $newToken = bin2hex(random_bytes(32));
+    $newTokenHash = hash('sha256', $newToken);
+    $newExpiresAt = date('Y-m-d H:i:s', time() + ADMIN_REMEMBER_ME_LIFETIME);
+
+    $rotated = rotate_admin_remember_token(
+        $conn,
+        (int) ($rememberToken['id'] ?? 0),
+        $newSelector,
+        $newTokenHash,
+        $newExpiresAt
+    );
+
+    if (!$rotated) {
+        delete_admin_remember_token_by_selector($conn, $payload['selector']);
+        clear_admin_remember_me_cookie();
+        return false;
+    }
+
+    set_admin_authenticated_session($user);
+    set_admin_remember_me_cookie($newSelector, $newToken, strtotime($newExpiresAt));
+    return true;
+}
+
+function start_secure_session($requireAdmin = false) {
+    start_admin_php_session();
+
+    if (!isset($_SESSION['admin_id'])) {
+        try_restore_admin_session_from_remember_me();
     }
 
     if ($requireAdmin) {
@@ -32,6 +232,10 @@ function start_secure_session($requireAdmin = false) {
             $_SESSION = [];
             session_destroy();
             start_secure_session(false);
+            if (isset($_SESSION['admin_id'])) {
+                $_SESSION['last_activity'] = time();
+                return;
+            }
             set_flash_message('login_notice', 'Tu sesión expiró por inactividad. Inicia sesión de nuevo.', 'error');
             header("Location: login.php");
             exit;

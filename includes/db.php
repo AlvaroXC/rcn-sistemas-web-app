@@ -170,6 +170,73 @@ function ensure_admin_users_schema($conn) {
 
     $conn->query("UPDATE users SET display_name = username WHERE (display_name IS NULL OR display_name = '')");
     $conn->query("UPDATE users SET role = 'admin' WHERE role IS NULL OR role = ''");
+
+    $conn->query(
+        "CREATE TABLE IF NOT EXISTS admin_notifications (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            user_id INT(11) NOT NULL,
+            actor_user_id INT(11) NULL,
+            ticket_id INT UNSIGNED NOT NULL,
+            type VARCHAR(50) NOT NULL DEFAULT 'ticket_assignment',
+            title VARCHAR(255) NOT NULL,
+            message TEXT NOT NULL,
+            is_read TINYINT(1) NOT NULL DEFAULT 0,
+            read_at TIMESTAMP NULL DEFAULT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_admin_notifications_user_id (user_id),
+            KEY idx_admin_notifications_ticket_id (ticket_id),
+            KEY idx_admin_notifications_type (type),
+            KEY idx_admin_notifications_is_read (is_read),
+            KEY idx_admin_notifications_created_at (created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    $conn->query(
+        "CREATE TABLE IF NOT EXISTS admin_remember_tokens (
+            id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY,
+            user_id INT(11) NOT NULL,
+            selector VARCHAR(24) NOT NULL,
+            token_hash CHAR(64) NOT NULL,
+            expires_at DATETIME NOT NULL,
+            last_used_at DATETIME NULL DEFAULT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_admin_remember_tokens_selector (selector),
+            KEY idx_admin_remember_tokens_user_id (user_id),
+            KEY idx_admin_remember_tokens_expires_at (expires_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci"
+    );
+
+    if (!customer_index_exists($conn, 'admin_notifications', 'idx_admin_notifications_user_id')) {
+        $conn->query('ALTER TABLE admin_notifications ADD INDEX idx_admin_notifications_user_id (user_id)');
+    }
+
+    if (!customer_index_exists($conn, 'admin_notifications', 'idx_admin_notifications_ticket_id')) {
+        $conn->query('ALTER TABLE admin_notifications ADD INDEX idx_admin_notifications_ticket_id (ticket_id)');
+    }
+
+    if (!customer_index_exists($conn, 'admin_notifications', 'idx_admin_notifications_type')) {
+        $conn->query('ALTER TABLE admin_notifications ADD INDEX idx_admin_notifications_type (type)');
+    }
+
+    if (!customer_index_exists($conn, 'admin_notifications', 'idx_admin_notifications_is_read')) {
+        $conn->query('ALTER TABLE admin_notifications ADD INDEX idx_admin_notifications_is_read (is_read)');
+    }
+
+    if (!customer_index_exists($conn, 'admin_notifications', 'idx_admin_notifications_created_at')) {
+        $conn->query('ALTER TABLE admin_notifications ADD INDEX idx_admin_notifications_created_at (created_at)');
+    }
+
+    if (!customer_index_exists($conn, 'admin_remember_tokens', 'uniq_admin_remember_tokens_selector')) {
+        $conn->query('ALTER TABLE admin_remember_tokens ADD UNIQUE INDEX uniq_admin_remember_tokens_selector (selector)');
+    }
+
+    if (!customer_index_exists($conn, 'admin_remember_tokens', 'idx_admin_remember_tokens_user_id')) {
+        $conn->query('ALTER TABLE admin_remember_tokens ADD INDEX idx_admin_remember_tokens_user_id (user_id)');
+    }
+
+    if (!customer_index_exists($conn, 'admin_remember_tokens', 'idx_admin_remember_tokens_expires_at')) {
+        $conn->query('ALTER TABLE admin_remember_tokens ADD INDEX idx_admin_remember_tokens_expires_at (expires_at)');
+    }
 }
 
 function ensure_support_tickets_schema($conn) {
@@ -708,6 +775,273 @@ function getAdminUsers($conn, $assignableOnly = false) {
     }
     $sql .= ' ORDER BY COALESCE(NULLIF(display_name, \'\'), username) ASC, id ASC';
     return $conn->query($sql);
+}
+
+function get_admin_user_label(?array $user = null) {
+    if (!$user) {
+        return '';
+    }
+
+    $displayName = trim((string) ($user['display_name'] ?? ''));
+    if ($displayName !== '') {
+        return $displayName;
+    }
+
+    return trim((string) ($user['username'] ?? ''));
+}
+
+function store_admin_remember_token($conn, $userId, $selector, $tokenHash, $expiresAt) {
+    $userId = (int) $userId;
+    $selector = trim((string) $selector);
+    $tokenHash = trim((string) $tokenHash);
+    $expiresAt = trim((string) $expiresAt);
+
+    if ($userId <= 0 || $selector === '' || $tokenHash === '' || $expiresAt === '') {
+        return false;
+    }
+
+    $stmt = $conn->prepare(
+        'INSERT INTO admin_remember_tokens (user_id, selector, token_hash, expires_at, last_used_at) VALUES (?, ?, ?, ?, NULL)'
+    );
+
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('isss', $userId, $selector, $tokenHash, $expiresAt);
+    return $stmt->execute();
+}
+
+function get_admin_remember_token_by_selector($conn, $selector) {
+    $selector = trim((string) $selector);
+    if ($selector === '') {
+        return null;
+    }
+
+    $stmt = $conn->prepare('SELECT * FROM admin_remember_tokens WHERE selector = ? LIMIT 1');
+    if (!$stmt) {
+        return null;
+    }
+
+    $stmt->bind_param('s', $selector);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result ? $result->fetch_assoc() : null;
+}
+
+function rotate_admin_remember_token($conn, $tokenId, $selector, $tokenHash, $expiresAt) {
+    $tokenId = (int) $tokenId;
+    $selector = trim((string) $selector);
+    $tokenHash = trim((string) $tokenHash);
+    $expiresAt = trim((string) $expiresAt);
+    $lastUsedAt = date('Y-m-d H:i:s');
+
+    if ($tokenId <= 0 || $selector === '' || $tokenHash === '' || $expiresAt === '') {
+        return false;
+    }
+
+    $stmt = $conn->prepare(
+        'UPDATE admin_remember_tokens SET selector = ?, token_hash = ?, expires_at = ?, last_used_at = ? WHERE id = ?'
+    );
+
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('ssssi', $selector, $tokenHash, $expiresAt, $lastUsedAt, $tokenId);
+    return $stmt->execute();
+}
+
+function delete_admin_remember_token_by_selector($conn, $selector) {
+    $selector = trim((string) $selector);
+    if ($selector === '') {
+        return false;
+    }
+
+    $stmt = $conn->prepare('DELETE FROM admin_remember_tokens WHERE selector = ?');
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('s', $selector);
+    return $stmt->execute();
+}
+
+function create_ticket_assignment_notification($conn, $recipientUserId, $ticketId, $actorUserId = null, $eventType = 'ticket_assignment') {
+    $recipientUserId = (int) $recipientUserId;
+    $ticketId = (int) $ticketId;
+    $actorUserId = $actorUserId !== null ? (int) $actorUserId : null;
+    $eventType = trim((string) $eventType);
+
+    if ($recipientUserId <= 0 || $ticketId <= 0) {
+        return false;
+    }
+
+    $recipient = getAdminUserById($conn, $recipientUserId);
+    $ticket = getTicketById($conn, $ticketId);
+    if (!$recipient || !$ticket) {
+        return false;
+    }
+
+    $actor = $actorUserId ? getAdminUserById($conn, $actorUserId) : null;
+    $actorLabel = get_admin_user_label($actor);
+    $ticketSubject = trim((string) ($ticket['subject'] ?? ''));
+    $customerName = trim((string) ($ticket['customer_name'] ?? ''));
+
+    if ($eventType === 'ticket_assignment_created') {
+        $title = 'Nuevo ticket asignado: Ticket #' . $ticketId;
+        $message = 'Se creó y asignó a tu cuenta el ticket #' . $ticketId;
+    } else {
+        $title = 'Ticket reasignado: Ticket #' . $ticketId;
+        $message = 'Se te asignó el ticket #' . $ticketId;
+    }
+
+    if ($ticketSubject !== '') {
+        $message .= ' · ' . $ticketSubject;
+    } elseif ($customerName !== '') {
+        $message .= ' · Cliente: ' . $customerName;
+    }
+
+    if ($actorLabel !== '') {
+        $message .= ' · Asignado por: ' . $actorLabel;
+    }
+
+    $stmt = $conn->prepare(
+        'INSERT INTO admin_notifications (user_id, actor_user_id, ticket_id, type, title, message, is_read, read_at) VALUES (?, ?, ?, ?, ?, ?, 0, NULL)'
+    );
+
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('iiisss', $recipientUserId, $actorUserId, $ticketId, $eventType, $title, $message);
+    return $stmt->execute();
+}
+
+function mark_ticket_assignment_notifications_as_read($conn, $recipientUserId, $ticketId) {
+    $recipientUserId = (int) $recipientUserId;
+    $ticketId = (int) $ticketId;
+
+    if ($recipientUserId <= 0 || $ticketId <= 0) {
+        return false;
+    }
+
+    $readAt = date('Y-m-d H:i:s');
+    $stmt = $conn->prepare(
+        "UPDATE admin_notifications
+         SET is_read = 1, read_at = ?
+         WHERE user_id = ? AND ticket_id = ? AND type IN ('ticket_assignment', 'ticket_assignment_created') AND is_read = 0"
+    );
+
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('sii', $readAt, $recipientUserId, $ticketId);
+    return $stmt->execute();
+}
+
+function get_unread_ticket_assignment_notification_count($conn, $userId) {
+    $userId = (int) $userId;
+    if ($userId <= 0) {
+        return 0;
+    }
+
+    $stmt = $conn->prepare(
+        "SELECT COUNT(*)
+         FROM admin_notifications
+         WHERE user_id = ? AND is_read = 0 AND type IN ('ticket_assignment', 'ticket_assignment_created')"
+    );
+
+    if (!$stmt) {
+        return 0;
+    }
+
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result ? (int) $result->fetch_row()[0] : 0;
+}
+
+function get_ticket_assignment_notifications($conn, $userId, $limit = 20) {
+    $userId = (int) $userId;
+    $limit = max(1, (int) $limit);
+
+    if ($userId <= 0) {
+        return false;
+    }
+
+    $sql = "SELECT
+                n.*,
+                actor.username AS actor_username,
+                actor.display_name AS actor_display_name
+            FROM admin_notifications n
+            LEFT JOIN users actor ON actor.id = n.actor_user_id
+            WHERE n.user_id = ? AND n.type IN ('ticket_assignment', 'ticket_assignment_created')
+            ORDER BY n.is_read ASC, n.created_at DESC, n.id DESC
+            LIMIT ?";
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('ii', $userId, $limit);
+    $stmt->execute();
+    return $stmt->get_result();
+}
+
+function get_latest_ticket_assignment_notification_id($conn, $userId) {
+    $userId = (int) $userId;
+    if ($userId <= 0) {
+        return 0;
+    }
+
+    $stmt = $conn->prepare(
+        "SELECT COALESCE(MAX(id), 0)
+         FROM admin_notifications
+         WHERE user_id = ? AND type IN ('ticket_assignment', 'ticket_assignment_created')"
+    );
+
+    if (!$stmt) {
+        return 0;
+    }
+
+    $stmt->bind_param('i', $userId);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    return $result ? (int) $result->fetch_row()[0] : 0;
+}
+
+function get_ticket_assignment_notifications_after_id($conn, $userId, $afterId = 0, $limit = 20) {
+    $userId = (int) $userId;
+    $afterId = max(0, (int) $afterId);
+    $limit = max(1, (int) $limit);
+
+    if ($userId <= 0) {
+        return false;
+    }
+
+    $sql = "SELECT
+                n.*,
+                actor.username AS actor_username,
+                actor.display_name AS actor_display_name
+            FROM admin_notifications n
+            LEFT JOIN users actor ON actor.id = n.actor_user_id
+            WHERE n.user_id = ?
+              AND n.id > ?
+              AND n.type IN ('ticket_assignment', 'ticket_assignment_created')
+            ORDER BY n.id ASC
+            LIMIT ?";
+
+    $stmt = $conn->prepare($sql);
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('iii', $userId, $afterId, $limit);
+    $stmt->execute();
+    return $stmt->get_result();
 }
 
 function create_admin_user($conn, $username, $password, $displayName = '', $active = 1, $role = 'agent') {
@@ -1601,6 +1935,8 @@ function update_ticket_assignee($conn, $ticketId, $assignedUserId, $assignedByUs
         return ['ok' => false, 'error' => 'El ticket ya no existe.', 'ticket' => null];
     }
 
+    $previousAssignedUserId = (int) ($ticket['assigned_user_id'] ?? 0);
+
     if (!can_admin_user_reassign_ticket($ticket, $assignedByUserId, $assignedByUserRole)) {
         return ['ok' => false, 'error' => 'No tienes permisos para reasignar este ticket.', 'ticket' => null];
     }
@@ -1620,7 +1956,12 @@ function update_ticket_assignee($conn, $ticketId, $assignedUserId, $assignedByUs
         return ['ok' => false, 'error' => 'No se pudo actualizar el responsable del ticket.', 'ticket' => null];
     }
 
-    return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];
+    $updatedTicket = getTicketById($conn, $ticketId);
+    if ($assignedUserId > 0 && $assignedUserId !== $previousAssignedUserId) {
+        create_ticket_assignment_notification($conn, $assignedUserId, $ticketId, $assignedByUserId, 'ticket_assignment');
+    }
+
+    return ['ok' => true, 'error' => '', 'ticket' => $updatedTicket];
 }
 
 function update_ticket_service_schedule($conn, $ticketId, $serviceDate, $startTime, $endTime) {

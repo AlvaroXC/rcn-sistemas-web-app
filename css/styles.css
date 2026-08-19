@@ -347,10 +347,80 @@ main .section--secondary,
     }
 }
 .sidebar__logo { color: white; font-size: 2.4rem; text-align: center; }
+.sidebar__session {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1.2rem;
+    align-items: center;
+    margin-top: 2.4rem;
+    padding: 1.4rem;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.12);
+}
+.sidebar__session-avatar {
+    width: 4.4rem;
+    height: 4.4rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.16);
+    color: #fff;
+    font-size: 1.7rem;
+    font-weight: 800;
+    line-height: 1;
+    flex: 0 0 auto;
+}
+.sidebar__session-body {
+    min-width: 0;
+}
+.sidebar__session-kicker,
+.sidebar__session-user,
+.sidebar__session-role {
+    margin: 0;
+}
+.sidebar__session-kicker {
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.64);
+}
+.sidebar__session-user {
+    margin-top: 0.4rem;
+    color: #fff;
+    font-size: 1.5rem;
+    font-weight: 800;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+}
+.sidebar__session-role {
+    margin-top: 0.3rem;
+    color: rgba(255,255,255,0.8);
+    font-size: 1.3rem;
+    line-height: 1.4;
+}
 .sidebar__nav { margin-top: 3rem; display: grid; gap: 1rem; }
 @media (min-width: 992px) { .sidebar__nav { margin-top: 4rem; } }
 .sidebar__link { padding: 1.5rem; border-radius: 8px; display: flex; gap: 1.5rem; align-items: center; font-size: 1.6rem; color: rgba(255,255,255,0.7); }
 .sidebar__link:hover, .sidebar__link--active { background: rgba(255,255,255,0.1); color: white; }
+.sidebar__link-content { display: inline-flex; align-items: center; gap: 1.5rem; min-width: 0; }
+.sidebar__link--with-badge { justify-content: space-between; }
+.sidebar__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.4rem;
+    height: 2.4rem;
+    padding: 0 0.8rem;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1;
+}
 
 .admin-main { padding: 2rem; background: var(--bg-gray); }
 @media (min-width: 768px) { .admin-main { padding: 4rem; } }
@@ -788,6 +858,172 @@ main .section--secondary,
 }
 .ticket-inline-alert {
     margin: 0;
+}
+.notification-summary {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 1rem;
+    font-size: 1.8rem;
+}
+.notification-list {
+    display: grid;
+    gap: 1.5rem;
+}
+.notification-item {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 2rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #fff;
+}
+@media (min-width: 768px) {
+    .notification-item {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+.notification-item--unread {
+    border-color: rgba(29, 78, 216, 0.25);
+    box-shadow: 0 0 0 1px rgba(29, 78, 216, 0.08);
+}
+.notification-item--read {
+    opacity: 0.85;
+}
+.notification-item__body {
+    min-width: 0;
+}
+.notification-item__header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.8rem;
+}
+.notification-item__header h3 {
+    margin: 0;
+}
+.notification-item__body p {
+    margin: 0 0 0.8rem;
+}
+.notification-item__actions {
+    flex-shrink: 0;
+}
+.live-toast-stack {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    z-index: 1200;
+    display: grid;
+    gap: 1.2rem;
+    width: min(36rem, calc(100vw - 3rem));
+    pointer-events: none;
+}
+.live-toast {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 1.4rem;
+    align-items: flex-start;
+    padding: 1.6rem;
+    border-radius: 16px;
+    border: 1px solid rgba(3, 123, 192, 0.15);
+    background: rgba(255, 255, 255, 0.98);
+    box-shadow: 0 18px 40px rgba(15, 23, 42, 0.16);
+    color: var(--text-dark);
+    pointer-events: auto;
+    animation: live-toast-enter 0.22s ease-out;
+}
+.live-toast--assignment {
+    border-left: 4px solid var(--secondary);
+}
+.live-toast--warning {
+    border-left: 4px solid #d97706;
+}
+.live-toast--closing {
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.live-toast__icon {
+    width: 3.8rem;
+    height: 3.8rem;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(3, 123, 192, 0.12);
+    color: var(--secondary);
+    font-size: 1.6rem;
+}
+.live-toast--warning .live-toast__icon {
+    background: rgba(217, 119, 6, 0.12);
+    color: #b45309;
+}
+.live-toast__content {
+    min-width: 0;
+}
+.live-toast__title {
+    margin: 0 0 0.5rem;
+    font-size: 1.5rem;
+}
+.live-toast__message {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 1.35rem;
+    line-height: 1.6;
+}
+.live-toast__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem 1.2rem;
+    margin-top: 1rem;
+}
+.live-toast__action,
+.live-toast__secondary-action {
+    font-size: 1.3rem;
+    font-weight: 800;
+}
+.live-toast__action {
+    color: var(--secondary);
+}
+.live-toast__secondary-action {
+    color: var(--primary);
+}
+.live-toast__close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+.live-toast__close:hover {
+    background: rgba(15, 23, 42, 0.06);
+    color: var(--primary);
+}
+@keyframes live-toast-enter {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+@media (max-width: 767px) {
+    .live-toast-stack {
+        top: 1.5rem;
+        right: 1.5rem;
+        left: 1.5rem;
+        width: auto;
+    }
 }
 .ticket-detail-list {
     display: grid;

@@ -2,8 +2,26 @@
 include 'includes/admin_header.php';
 require_once '../includes/db.php';
 
+$viewerUserId = current_admin_id();
+$viewerRole = current_admin_role();
 $allowedStatuses = ['Nuevo', 'Agendado', 'En revision', 'En proceso', 'Pendiente de respuesta', 'Por facturar', 'Resuelto', 'Cerrado'];
 $allowedTypes = ['Compra', 'Soporte', 'Informacion'];
+$assignableUsersResult = getAdminUsers($conn, true);
+$assignableUsers = [];
+
+if ($assignableUsersResult && $assignableUsersResult->num_rows > 0) {
+    while ($assignableUser = $assignableUsersResult->fetch_assoc()) {
+        $assignableUsers[(int) $assignableUser['id']] = $assignableUser;
+    }
+}
+
+$defaultAssignedUserId = $viewerUserId > 0 ? $viewerUserId : 0;
+$postedAssignedUserId = (int) ($_POST['assigned_user_id'] ?? 0);
+$selectedAssignedUserId = $postedAssignedUserId > 0 ? $postedAssignedUserId : $defaultAssignedUserId;
+
+if ($viewerRole !== 'admin') {
+    $selectedAssignedUserId = $defaultAssignedUserId;
+}
 
 $customerMode = trim((string) ($_POST['customer_mode'] ?? ($_GET['customer_id'] ?? 0 ? 'existing' : 'new')));
 if (!in_array($customerMode, ['existing', 'new'], true)) {
@@ -42,6 +60,7 @@ if ($selectedCustomer && $selectedCustomerId > 0) {
 $ticketForm = [
     'consultation_type' => trim((string) ($_POST['consultation_type'] ?? 'Soporte')),
     'status' => trim((string) ($_POST['status'] ?? 'Nuevo')),
+    'assigned_user_id' => $selectedAssignedUserId,
     'subject' => trim((string) ($_POST['subject'] ?? '')),
     'context_label' => trim((string) ($_POST['context_label'] ?? '')),
     'message' => trim((string) ($_POST['message'] ?? '')),
@@ -67,6 +86,14 @@ if (!in_array($ticketForm['consultation_type'], $allowedTypes, true)) {
 
 if (!in_array($ticketForm['status'], $allowedStatuses, true)) {
     $ticketForm['status'] = 'Nuevo';
+}
+
+if ($viewerRole === 'admin') {
+    if ($ticketForm['assigned_user_id'] <= 0 || !isset($assignableUsers[$ticketForm['assigned_user_id']])) {
+        $ticketForm['assigned_user_id'] = $defaultAssignedUserId;
+    }
+} else {
+    $ticketForm['assigned_user_id'] = $defaultAssignedUserId;
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -98,6 +125,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$programmedDateValidation['ok']) {
                 $error = $programmedDateValidation['error'];
             }
+        }
+    }
+
+    if ($error === '') {
+        $assignedUserId = $ticketForm['assigned_user_id'];
+        if ($viewerRole !== 'admin') {
+            $assignedUserId = $defaultAssignedUserId;
+        }
+
+        if ($assignedUserId <= 0 || !isset($assignableUsers[$assignedUserId])) {
+            $error = 'Selecciona un responsable válido.';
         }
     }
 
@@ -179,9 +217,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'service_date' => $ticketForm['service_date'],
                 'service_start_time' => $ticketForm['service_start_time'],
                 'service_end_time' => $ticketForm['service_end_time'],
+                'assigned_user_id' => $assignedUserId,
+                'assigned_by_user_id' => $adminUserId,
             ]);
 
             if ($ticket) {
+                if ((int) ($ticket['assigned_user_id'] ?? 0) > 0) {
+                    create_ticket_assignment_notification(
+                        $conn,
+                        (int) $ticket['assigned_user_id'],
+                        (int) $ticket['id'],
+                        $adminUserId,
+                        'ticket_assignment_created'
+                    );
+                }
                 redirect_to('ticket_view.php?id=' . (int) $ticket['id'] . '&return=' . urlencode('tickets.php'));
             }
 
@@ -414,6 +463,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <option value="<?php echo e($status); ?>" <?php echo $ticketForm['status'] === $status ? 'selected' : ''; ?>><?php echo e($status); ?></option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="assigned_user_id">Responsable inicial</label>
+                    <select id="assigned_user_id" name="assigned_user_id" class="admin-form__input" <?php echo $viewerRole !== 'admin' ? 'disabled' : ''; ?>>
+                        <?php foreach ($assignableUsers as $assignableUserId => $assignableUser): ?>
+                            <?php if ($viewerRole !== 'admin' && $assignableUserId !== $defaultAssignedUserId) { continue; } ?>
+                            <?php
+                            $assignableUserLabel = trim((string) ($assignableUser['display_name'] ?? '')) !== ''
+                                ? trim((string) $assignableUser['display_name'])
+                                : trim((string) ($assignableUser['username'] ?? ''));
+                            ?>
+                            <option value="<?php echo (int) $assignableUserId; ?>" <?php echo (int) $ticketForm['assigned_user_id'] === (int) $assignableUserId ? 'selected' : ''; ?>>
+                                <?php echo e($assignableUserLabel); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php if ($viewerRole !== 'admin'): ?>
+                        <input type="hidden" name="assigned_user_id" value="<?php echo (int) $defaultAssignedUserId; ?>">
+                        <div class="ticket-meta">Como operador, los tickets nuevos se asignan a tu cuenta para que permanezcan visibles en tu bandeja.</div>
+                    <?php else: ?>
+                        <div class="ticket-meta">Puedes dejar el responsable por defecto en tu cuenta o asignar el ticket a otro usuario activo antes de guardarlo.</div>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="admin-form__row">
