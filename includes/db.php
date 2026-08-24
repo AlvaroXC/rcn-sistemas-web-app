@@ -918,6 +918,25 @@ function create_ticket_assignment_notification($conn, $recipientUserId, $ticketI
     return $stmt->execute();
 }
 
+function delete_ticket_assignment_notifications($conn, $ticketId) {
+    $ticketId = (int) $ticketId;
+
+    if ($ticketId <= 0) {
+        return false;
+    }
+
+    $stmt = $conn->prepare(
+        "DELETE FROM admin_notifications
+         WHERE ticket_id = ? AND type IN ('ticket_assignment', 'ticket_assignment_created')"
+    );
+
+    if (!$stmt) {
+        return false;
+    }
+
+    $stmt->bind_param('i', $ticketId);
+    return $stmt->execute();
+}
 function mark_ticket_assignment_notifications_as_read($conn, $recipientUserId, $ticketId) {
     $recipientUserId = (int) $recipientUserId;
     $ticketId = (int) $ticketId;
@@ -949,8 +968,12 @@ function get_unread_ticket_assignment_notification_count($conn, $userId) {
 
     $stmt = $conn->prepare(
         "SELECT COUNT(*)
-         FROM admin_notifications
-         WHERE user_id = ? AND is_read = 0 AND type IN ('ticket_assignment', 'ticket_assignment_created')"
+         FROM admin_notifications n
+         INNER JOIN tickets t ON t.id = n.ticket_id
+         WHERE n.user_id = ?
+           AND n.is_read = 0
+           AND n.type IN ('ticket_assignment', 'ticket_assignment_created')
+           AND t.status <> 'Cerrado'"
     );
 
     if (!$stmt) {
@@ -976,8 +999,11 @@ function get_ticket_assignment_notifications($conn, $userId, $limit = 20) {
                 actor.username AS actor_username,
                 actor.display_name AS actor_display_name
             FROM admin_notifications n
+            INNER JOIN tickets t ON t.id = n.ticket_id
             LEFT JOIN users actor ON actor.id = n.actor_user_id
-            WHERE n.user_id = ? AND n.type IN ('ticket_assignment', 'ticket_assignment_created')
+            WHERE n.user_id = ?
+              AND n.type IN ('ticket_assignment', 'ticket_assignment_created')
+              AND t.status <> 'Cerrado'
             ORDER BY n.is_read ASC, n.created_at DESC, n.id DESC
             LIMIT ?";
 
@@ -998,9 +1024,12 @@ function get_latest_ticket_assignment_notification_id($conn, $userId) {
     }
 
     $stmt = $conn->prepare(
-        "SELECT COALESCE(MAX(id), 0)
-         FROM admin_notifications
-         WHERE user_id = ? AND type IN ('ticket_assignment', 'ticket_assignment_created')"
+        "SELECT COALESCE(MAX(n.id), 0)
+         FROM admin_notifications n
+         INNER JOIN tickets t ON t.id = n.ticket_id
+         WHERE n.user_id = ?
+           AND n.type IN ('ticket_assignment', 'ticket_assignment_created')
+           AND t.status <> 'Cerrado'"
     );
 
     if (!$stmt) {
@@ -1027,10 +1056,12 @@ function get_ticket_assignment_notifications_after_id($conn, $userId, $afterId =
                 actor.username AS actor_username,
                 actor.display_name AS actor_display_name
             FROM admin_notifications n
+            INNER JOIN tickets t ON t.id = n.ticket_id
             LEFT JOIN users actor ON actor.id = n.actor_user_id
             WHERE n.user_id = ?
               AND n.id > ?
               AND n.type IN ('ticket_assignment', 'ticket_assignment_created')
+              AND t.status <> 'Cerrado'
             ORDER BY n.id ASC
             LIMIT ?";
 
@@ -1815,15 +1846,36 @@ function update_ticket_status($conn, $ticketId, $status) {
         return ['ok' => false, 'error' => $programmedDateValidation['error'], 'ticket' => $ticket];
     }
 
+    $shouldDeleteNotifications = $status === 'Cerrado';
+    if ($shouldDeleteNotifications && !$conn->begin_transaction()) {
+        return ['ok' => false, 'error' => 'No se pudo iniciar la actualización del ticket.', 'ticket' => $ticket];
+    }
+
     $stmt = $conn->prepare('UPDATE tickets SET status = ? WHERE id = ?');
     if (!$stmt) {
+        if ($shouldDeleteNotifications) {
+            $conn->rollback();
+        }
         return ['ok' => false, 'error' => 'No se pudo preparar la actualización del estado.', 'ticket' => $ticket];
     }
 
     $stmt->bind_param('si', $status, $ticketId);
 
     if (!$stmt->execute()) {
+        if ($shouldDeleteNotifications) {
+            $conn->rollback();
+        }
         return ['ok' => false, 'error' => 'No se pudo actualizar el estado del ticket.', 'ticket' => $ticket];
+    }
+
+    if ($shouldDeleteNotifications && !delete_ticket_assignment_notifications($conn, $ticketId)) {
+        $conn->rollback();
+        return ['ok' => false, 'error' => 'No se pudieron limpiar las notificaciones del ticket cerrado.', 'ticket' => $ticket];
+    }
+
+    if ($shouldDeleteNotifications && !$conn->commit()) {
+        $conn->rollback();
+        return ['ok' => false, 'error' => 'No se pudo confirmar el cierre del ticket.', 'ticket' => $ticket];
     }
 
     return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];
