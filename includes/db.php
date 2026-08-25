@@ -319,6 +319,8 @@ function ensure_support_tickets_schema($conn) {
             price_currency CHAR(3) NULL DEFAULT 'MXN',
             price_updated_by INT UNSIGNED NULL,
             price_updated_at TIMESTAMP NULL DEFAULT NULL,
+            appointment_date DATE NULL,
+            appointment_time TIME NULL,
             service_date DATE NULL,
             service_start_time TIME NULL,
             service_end_time TIME NULL,
@@ -350,6 +352,8 @@ function ensure_support_tickets_schema($conn) {
         'message_updated_by' => "ALTER TABLE tickets ADD COLUMN message_updated_by INT UNSIGNED NULL AFTER message",
         'message_updated_at' => "ALTER TABLE tickets ADD COLUMN message_updated_at TIMESTAMP NULL DEFAULT NULL AFTER message_updated_by",
         'service_date' => "ALTER TABLE tickets ADD COLUMN service_date DATE NULL AFTER price_updated_at",
+        'appointment_date' => "ALTER TABLE tickets ADD COLUMN appointment_date DATE NULL AFTER price_updated_at",
+        'appointment_time' => "ALTER TABLE tickets ADD COLUMN appointment_time TIME NULL AFTER appointment_date",
         'service_start_time' => "ALTER TABLE tickets ADD COLUMN service_start_time TIME NULL AFTER service_date",
         'service_end_time' => "ALTER TABLE tickets ADD COLUMN service_end_time TIME NULL AFTER service_start_time",
         'assigned_user_id' => "ALTER TABLE tickets ADD COLUMN assigned_user_id INT UNSIGNED NULL AFTER service_end_time",
@@ -568,6 +572,20 @@ function normalize_ticket_service_date_input($serviceDate) {
     return ['ok' => true, 'value' => $serviceDate, 'error' => ''];
 }
 
+function normalize_ticket_appointment_date_input($appointmentDate) {
+    $appointmentDate = trim((string) $appointmentDate);
+    if ($appointmentDate === '') {
+        return ['ok' => true, 'value' => null, 'error' => ''];
+    }
+
+    $date = DateTime::createFromFormat('Y-m-d', $appointmentDate);
+    if (!$date || $date->format('Y-m-d') !== $appointmentDate) {
+        return ['ok' => false, 'value' => null, 'error' => 'Ingresa una fecha de cita válida.'];
+    }
+
+    return ['ok' => true, 'value' => $appointmentDate, 'error' => ''];
+}
+
 function normalize_ticket_service_time_input($serviceTime, $fieldLabel) {
     $serviceTime = trim((string) $serviceTime);
     $fieldLabel = trim((string) $fieldLabel);
@@ -586,6 +604,32 @@ function normalize_ticket_service_time_input($serviceTime, $fieldLabel) {
     }
 
     return ['ok' => true, 'value' => $time->format('H:i:s'), 'error' => ''];
+}
+
+function normalize_ticket_appointment_inputs($appointmentDate, $appointmentTime) {
+    $normalizedDate = normalize_ticket_appointment_date_input($appointmentDate);
+    if (!$normalizedDate['ok']) {
+        return ['ok' => false, 'error' => $normalizedDate['error'], 'appointment_date' => null, 'appointment_time' => null];
+    }
+
+    $normalizedTime = normalize_ticket_service_time_input($appointmentTime, 'hora de cita');
+    if (!$normalizedTime['ok']) {
+        return ['ok' => false, 'error' => $normalizedTime['error'], 'appointment_date' => null, 'appointment_time' => null];
+    }
+
+    $appointmentDateValue = $normalizedDate['value'];
+    $appointmentTimeValue = $normalizedTime['value'];
+
+    if (($appointmentDateValue === null) !== ($appointmentTimeValue === null)) {
+        return ['ok' => false, 'error' => 'Captura tanto la fecha como la hora de la cita.', 'appointment_date' => null, 'appointment_time' => null];
+    }
+
+    return [
+        'ok' => true,
+        'error' => '',
+        'appointment_date' => $appointmentDateValue,
+        'appointment_time' => $appointmentTimeValue,
+    ];
 }
 
 function normalize_ticket_schedule_inputs($serviceDate, $startTime, $endTime) {
@@ -672,6 +716,19 @@ function format_ticket_service_date($serviceDate) {
     }
 }
 
+function format_ticket_appointment_date($appointmentDate) {
+    $appointmentDate = trim((string) $appointmentDate);
+    if ($appointmentDate === '') {
+        return 'Pendiente de registrar';
+    }
+
+    try {
+        return (new DateTime($appointmentDate))->format('d/m/Y');
+    } catch (Exception $exception) {
+        return $appointmentDate;
+    }
+}
+
 function format_ticket_service_time($serviceTime) {
     $serviceTime = trim((string) $serviceTime);
     if ($serviceTime === '') {
@@ -683,6 +740,30 @@ function format_ticket_service_time($serviceTime) {
     } catch (Exception $exception) {
         return $serviceTime;
     }
+}
+
+function format_ticket_appointment_time($appointmentTime) {
+    $appointmentTime = trim((string) $appointmentTime);
+    if ($appointmentTime === '') {
+        return 'Pendiente de registrar';
+    }
+
+    try {
+        return (new DateTime($appointmentTime))->format('H:i');
+    } catch (Exception $exception) {
+        return $appointmentTime;
+    }
+}
+
+function format_ticket_appointment_datetime($appointmentDate, $appointmentTime) {
+    $appointmentDate = trim((string) $appointmentDate);
+    $appointmentTime = trim((string) $appointmentTime);
+
+    if ($appointmentDate === '' || $appointmentTime === '') {
+        return 'Sin cita';
+    }
+
+    return format_ticket_appointment_date($appointmentDate) . ' ' . format_ticket_appointment_time($appointmentTime);
 }
 
 function format_ticket_service_duration($startTime, $endTime) {
@@ -937,6 +1018,7 @@ function delete_ticket_assignment_notifications($conn, $ticketId) {
     $stmt->bind_param('i', $ticketId);
     return $stmt->execute();
 }
+
 function mark_ticket_assignment_notifications_as_read($conn, $recipientUserId, $ticketId) {
     $recipientUserId = (int) $recipientUserId;
     $ticketId = (int) $ticketId;
@@ -1420,13 +1502,15 @@ function create_support_ticket($conn, array $data) {
                 price_currency,
                 price_updated_by,
                 price_updated_at,
+                appointment_date,
+                appointment_time,
                 service_date,
                 service_start_time,
                 service_end_time,
                 assigned_user_id,
                 assigned_by_user_id,
                 assigned_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)';
 
     $stmt = $conn->prepare($sql);
     if (!$stmt) {
@@ -1473,6 +1557,14 @@ function create_support_ticket($conn, array $data) {
         $priceUpdatedBy = !empty($data['price_updated_by']) ? (int) $data['price_updated_by'] : null;
         $priceUpdatedAt = date('Y-m-d H:i:s');
     }
+    $appointmentValidation = normalize_ticket_appointment_inputs(
+        $data['appointment_date'] ?? null,
+        $data['appointment_time'] ?? null
+    );
+    if (!$appointmentValidation['ok']) {
+        return null;
+    }
+
     $scheduleValidation = normalize_ticket_schedule_inputs(
         $data['service_date'] ?? null,
         $data['service_start_time'] ?? null,
@@ -1487,6 +1579,8 @@ function create_support_ticket($conn, array $data) {
         return null;
     }
 
+    $appointmentDate = $appointmentValidation['appointment_date'];
+    $appointmentTime = $appointmentValidation['appointment_time'];
     $serviceDate = $scheduleValidation['service_date'];
     $serviceStartTime = $scheduleValidation['service_start_time'];
     $serviceEndTime = $scheduleValidation['service_end_time'];
@@ -1495,7 +1589,7 @@ function create_support_ticket($conn, array $data) {
     $assignedAt = $assignedUserId !== null ? date('Y-m-d H:i:s') : null;
 
     $stmt->bind_param(
-        'isssiisssssssssssssisiis',
+        'isssiissssssssssissssssiis',
         $customerId,
         $consultationType,
         $status,
@@ -1514,6 +1608,8 @@ function create_support_ticket($conn, array $data) {
         $priceCurrency,
         $priceUpdatedBy,
         $priceUpdatedAt,
+        $appointmentDate,
+        $appointmentTime,
         $serviceDate,
         $serviceStartTime,
         $serviceEndTime,
@@ -1570,12 +1666,29 @@ function getTicketById($conn, $ticketId) {
     return $result ? $result->fetch_assoc() : null;
 }
 
+function is_ticket_closed(array $ticket) {
+    return trim((string) ($ticket['status'] ?? '')) === 'Cerrado';
+}
+
+function get_closed_ticket_edit_block_response($ticket, $message = 'Los tickets cerrados ya no admiten cambios.') {
+    return [
+        'ok' => false,
+        'error' => $message,
+        'ticket' => $ticket,
+    ];
+}
+
 function create_ticket_observation($conn, $ticketId, $content, $adminUserId = null) {
     $ticketId = (int) $ticketId;
     $content = trim((string) $content);
     $adminUserId = $adminUserId !== null ? (int) $adminUserId : null;
 
     if ($ticketId <= 0 || $content === '') {
+        return null;
+    }
+
+    $ticket = getTicketById($conn, $ticketId);
+    if (!$ticket || is_ticket_closed($ticket)) {
         return null;
     }
 
@@ -1837,8 +1950,8 @@ function update_ticket_status($conn, $ticketId, $status) {
         return ['ok' => false, 'error' => 'El ticket ya no existe.', 'ticket' => null];
     }
 
-    if (trim((string) ($ticket['status'] ?? '')) === 'Cerrado') {
-        return ['ok' => false, 'error' => 'Los tickets cerrados no pueden cambiar de estado.', 'ticket' => $ticket];
+    if (is_ticket_closed($ticket)) {
+        return get_closed_ticket_edit_block_response($ticket, 'Los tickets cerrados no pueden cambiar de estado.');
     }
 
     $programmedDateValidation = validate_ticket_programmed_date_requirement($status, $ticket['service_date'] ?? null);
@@ -1892,6 +2005,10 @@ function update_ticket_price($conn, $ticketId, $priceAmount, $adminUserId) {
 
     if (!$ticket) {
         return ['ok' => false, 'error' => 'El ticket ya no existe.', 'ticket' => null];
+    }
+
+    if (is_ticket_closed($ticket)) {
+        return get_closed_ticket_edit_block_response($ticket);
     }
 
     $priceCalculation = calculate_ticket_price_components($priceAmount, $ticket['customer_type'] ?? 'persona_fisica');
@@ -1950,6 +2067,10 @@ function update_ticket_message($conn, $ticketId, $message, $adminUserId = null) 
         return ['ok' => false, 'error' => 'El ticket ya no existe.', 'ticket' => null];
     }
 
+    if (is_ticket_closed($ticket)) {
+        return get_closed_ticket_edit_block_response($ticket);
+    }
+
     $updatedAt = date('Y-m-d H:i:s');
     $stmt = $conn->prepare(
         'UPDATE tickets SET message = ?, message_updated_by = ?, message_updated_at = ? WHERE id = ?'
@@ -1985,6 +2106,10 @@ function update_ticket_assignee($conn, $ticketId, $assignedUserId, $assignedByUs
     $ticket = getTicketById($conn, $ticketId);
     if (!$ticket) {
         return ['ok' => false, 'error' => 'El ticket ya no existe.', 'ticket' => null];
+    }
+
+    if (is_ticket_closed($ticket)) {
+        return get_closed_ticket_edit_block_response($ticket);
     }
 
     $previousAssignedUserId = (int) ($ticket['assigned_user_id'] ?? 0);
@@ -2028,6 +2153,10 @@ function update_ticket_service_schedule($conn, $ticketId, $serviceDate, $startTi
         return ['ok' => false, 'error' => 'El ticket ya no existe.', 'ticket' => null];
     }
 
+    if (is_ticket_closed($ticket)) {
+        return get_closed_ticket_edit_block_response($ticket);
+    }
+
     $scheduleValidation = normalize_ticket_schedule_inputs($serviceDate, $startTime, $endTime);
     if (!$scheduleValidation['ok']) {
         return ['ok' => false, 'error' => $scheduleValidation['error'], 'ticket' => null];
@@ -2056,6 +2185,49 @@ function update_ticket_service_schedule($conn, $ticketId, $serviceDate, $startTi
 
     if (!$stmt->execute()) {
         return ['ok' => false, 'error' => 'No se pudo actualizar la ejecución del servicio.', 'ticket' => null];
+    }
+
+    return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];
+}
+
+function update_ticket_appointment_schedule($conn, $ticketId, $appointmentDate, $appointmentTime) {
+    $ticketId = (int) $ticketId;
+
+    if ($ticketId <= 0) {
+        return ['ok' => false, 'error' => 'No se pudo identificar el ticket.', 'ticket' => null];
+    }
+
+    $ticket = getTicketById($conn, $ticketId);
+    if (!$ticket) {
+        return ['ok' => false, 'error' => 'El ticket ya no existe.', 'ticket' => null];
+    }
+
+    if (is_ticket_closed($ticket)) {
+        return get_closed_ticket_edit_block_response($ticket);
+    }
+
+    $appointmentValidation = normalize_ticket_appointment_inputs($appointmentDate, $appointmentTime);
+    if (!$appointmentValidation['ok']) {
+        return ['ok' => false, 'error' => $appointmentValidation['error'], 'ticket' => null];
+    }
+
+    $stmt = $conn->prepare(
+        'UPDATE tickets SET appointment_date = ?, appointment_time = ? WHERE id = ?'
+    );
+
+    if (!$stmt) {
+        return ['ok' => false, 'error' => 'No se pudo preparar la actualización de la cita.', 'ticket' => null];
+    }
+
+    $stmt->bind_param(
+        'ssi',
+        $appointmentValidation['appointment_date'],
+        $appointmentValidation['appointment_time'],
+        $ticketId
+    );
+
+    if (!$stmt->execute()) {
+        return ['ok' => false, 'error' => 'No se pudo actualizar la cita del cliente.', 'ticket' => null];
     }
 
     return ['ok' => true, 'error' => '', 'ticket' => getTicketById($conn, $ticketId)];

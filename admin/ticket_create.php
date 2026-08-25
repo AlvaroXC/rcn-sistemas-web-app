@@ -65,6 +65,8 @@ $ticketForm = [
     'context_label' => trim((string) ($_POST['context_label'] ?? '')),
     'message' => trim((string) ($_POST['message'] ?? '')),
     'price_amount' => trim((string) ($_POST['price_amount'] ?? '')),
+    'appointment_date' => trim((string) ($_POST['appointment_date'] ?? '')),
+    'appointment_time' => trim((string) ($_POST['appointment_time'] ?? '')),
     'service_date' => trim((string) ($_POST['service_date'] ?? '')),
     'service_start_time' => trim((string) ($_POST['service_start_time'] ?? '')),
     'service_end_time' => trim((string) ($_POST['service_end_time'] ?? '')),
@@ -105,6 +107,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $priceValidation = normalize_ticket_price_input($ticketForm['price_amount']);
         if (!$priceValidation['ok']) {
             $error = $priceValidation['error'];
+        }
+    }
+
+    if ($error === '') {
+        $appointmentValidation = normalize_ticket_appointment_inputs(
+            $ticketForm['appointment_date'],
+            $ticketForm['appointment_time']
+        );
+
+        if (!$appointmentValidation['ok']) {
+            $error = $appointmentValidation['error'];
         }
     }
 
@@ -214,6 +227,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'attachment_path' => $attachmentPath,
                 'price_amount' => $normalizedPriceAmount,
                 'price_updated_by' => $normalizedPriceAmount !== null ? $adminUserId : null,
+                'appointment_date' => $ticketForm['appointment_date'],
+                'appointment_time' => $ticketForm['appointment_time'],
                 'service_date' => $ticketForm['service_date'],
                 'service_start_time' => $ticketForm['service_start_time'],
                 'service_end_time' => $ticketForm['service_end_time'],
@@ -510,6 +525,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="admin-form__group">
                     <label class="admin-form__label" for="attachment">Adjunto opcional</label>
                     <input type="file" id="attachment" name="attachment" class="admin-form__input" accept="image/*">
+                </div>
+            </div>
+            <div class="ticket-service-create">
+                <p class="ticket-observations__intro">Registra la cita con el cliente cuando necesites agendar una visita o seguimiento previo al servicio.</p>
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="appointment_date">Fecha de cita</label>
+                    <input type="date" id="appointment_date" name="appointment_date" class="admin-form__input" value="<?php echo e($ticketForm['appointment_date']); ?>">
+                </div>
+                <div class="admin-form__group">
+                    <label class="admin-form__label" for="appointment_time">Hora de cita</label>
+                    <input type="time" id="appointment_time" name="appointment_time" class="admin-form__input" value="<?php echo e($ticketForm['appointment_time']); ?>">
                 </div>
             </div>
             <div class="ticket-service-create">

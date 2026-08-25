@@ -15,6 +15,8 @@ $priceMessage = '';
 $priceError = '';
 $assigneeMessage = '';
 $assigneeError = '';
+$appointmentMessage = '';
+$appointmentError = '';
 $serviceMessage = '';
 $serviceError = '';
 $observationMessage = '';
@@ -23,6 +25,8 @@ $observationDraft = '';
 $ticketMessageDraft = trim((string) ($_POST['ticket_message'] ?? ''));
 $priceDraft = trim((string) ($_POST['price_amount'] ?? ''));
 $assignedUserDraft = (int) ($_POST['assigned_user_id'] ?? 0);
+$appointmentDateDraft = trim((string) ($_POST['appointment_date'] ?? ''));
+$appointmentTimeDraft = trim((string) ($_POST['appointment_time'] ?? ''));
 $serviceDateDraft = trim((string) ($_POST['service_date'] ?? ''));
 $serviceStartDraft = trim((string) ($_POST['service_start_time'] ?? ''));
 $serviceEndDraft = trim((string) ($_POST['service_end_time'] ?? ''));
@@ -43,9 +47,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $ticketId = (int) ($_POST['ticket_id'] ?? 0);
     $action = trim((string) ($_POST['ticket_action'] ?? 'update_status'));
     $editableTicket = $ticketId > 0 ? getTicketById($conn, $ticketId) : null;
+    $isEditableTicketClosed = $editableTicket ? is_ticket_closed($editableTicket) : false;
 
     if (!$editableTicket || !can_admin_user_access_ticket($editableTicket, $viewerUserId, $viewerRole)) {
         $statusError = 'No tienes permisos para modificar este ticket.';
+    } elseif ($isEditableTicketClosed) {
+        if ($action === 'update_status') {
+            $statusError = 'Los tickets cerrados no pueden cambiar de estado.';
+        } elseif ($action === 'update_message') {
+            $ticketMessageError = 'Los tickets cerrados ya no admiten cambios.';
+        } elseif ($action === 'add_observation') {
+            $observationError = 'Los tickets cerrados ya no admiten cambios.';
+        } elseif ($action === 'update_price') {
+            $priceError = 'Los tickets cerrados ya no admiten cambios.';
+        } elseif ($action === 'update_assignee') {
+            $assigneeError = 'Los tickets cerrados ya no admiten cambios.';
+        } elseif ($action === 'update_appointment_schedule') {
+            $appointmentError = 'Los tickets cerrados ya no admiten cambios.';
+        } elseif ($action === 'update_service_schedule') {
+            $serviceError = 'Los tickets cerrados ya no admiten cambios.';
+        } else {
+            $statusError = 'Los tickets cerrados ya no admiten cambios.';
+        }
     } elseif ($action === 'update_message') {
         $adminUserId = isset($_SESSION['admin_id']) ? (int) $_SESSION['admin_id'] : null;
         $messageUpdate = update_ticket_message($conn, $ticketId, $ticketMessageDraft, $adminUserId);
@@ -98,6 +121,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         } else {
             $assigneeError = $assigneeUpdate['error'] ?: 'No se pudo actualizar el responsable del ticket.';
+        }
+    } elseif ($action === 'update_appointment_schedule') {
+        $appointmentUpdate = update_ticket_appointment_schedule($conn, $ticketId, $appointmentDateDraft, $appointmentTimeDraft);
+
+        if ($appointmentUpdate['ok']) {
+            $appointmentMessage = 'La cita con el cliente se actualizó correctamente.';
+            $appointmentDateDraft = '';
+            $appointmentTimeDraft = '';
+        } else {
+            $appointmentError = $appointmentUpdate['error'] ?: 'No se pudo actualizar la cita del cliente.';
         }
     } elseif ($action === 'update_service_schedule') {
         $serviceUpdate = update_ticket_service_schedule($conn, $ticketId, $serviceDateDraft, $serviceStartDraft, $serviceEndDraft);
@@ -306,6 +339,21 @@ $isClosedTicket = trim((string) ($ticket['status'] ?? '')) === 'Cerrado';
             </section>
 
             <section class="card panel-card ticket-section-card">
+                <div class="ticket-section__eyebrow">Cita</div>
+                <h3 class="ticket-section__title">Cita con cliente</h3>
+                <div class="ticket-detail-list">
+                    <div class="ticket-kv">
+                        <span class="ticket-kv__label">Fecha de cita</span>
+                        <span class="ticket-kv__value"><?php echo e(format_ticket_appointment_date($ticket['appointment_date'] ?? null)); ?></span>
+                    </div>
+                    <div class="ticket-kv">
+                        <span class="ticket-kv__label">Hora de cita</span>
+                        <span class="ticket-kv__value"><?php echo e(format_ticket_appointment_time($ticket['appointment_time'] ?? null)); ?></span>
+                    </div>
+                </div>
+            </section>
+
+            <section class="card panel-card ticket-section-card">
                 <div class="ticket-section__eyebrow">Programación</div>
                 <h3 class="ticket-section__title">Servicio programado</h3>
                 <div class="ticket-detail-list">
@@ -411,22 +459,28 @@ $isClosedTicket = trim((string) ($ticket['status'] ?? '')) === 'Cerrado';
                 <div class="alert alert--error ticket-inline-alert"><?php echo e($observationError); ?></div>
             <?php endif; ?>
 
-            <form method="POST" class="admin-form ticket-observation-form">
-                <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
-                <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
-                <input type="hidden" name="ticket_action" value="add_observation">
-                <div class="admin-form__group">
-                    <label class="admin-form__label" for="observation_content">Nueva observación</label>
-                    <textarea
-                        id="observation_content"
-                        name="observation_content"
-                        class="admin-form__input admin-form__input--textarea"
-                        rows="4"
-                        placeholder="Escribe aquí comentarios internos, próximos pasos o contexto adicional."
-                    ><?php echo e($observationDraft); ?></textarea>
+            <?php if ($isClosedTicket): ?>
+                <div class="alert alert--info ticket-inline-alert">
+                    Este ticket está en modo solo lectura. Las observaciones existentes se conservan para consulta, pero no se pueden agregar nuevas entradas.
                 </div>
-                <button type="submit" class="btn ticket-observation-form__submit">Guardar observación</button>
-            </form>
+            <?php else: ?>
+                <form method="POST" class="admin-form ticket-observation-form">
+                    <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
+                    <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
+                    <input type="hidden" name="ticket_action" value="add_observation">
+                    <div class="admin-form__group">
+                        <label class="admin-form__label" for="observation_content">Nueva observación</label>
+                        <textarea
+                            id="observation_content"
+                            name="observation_content"
+                            class="admin-form__input admin-form__input--textarea"
+                            rows="4"
+                            placeholder="Escribe aquí comentarios internos, próximos pasos o contexto adicional."
+                        ><?php echo e($observationDraft); ?></textarea>
+                    </div>
+                    <button type="submit" class="btn ticket-observation-form__submit">Guardar observación</button>
+                </form>
+            <?php endif; ?>
 
             <div class="ticket-observation-history">
                 <h4 class="ticket-observation-history__title">Historial</h4>
@@ -508,181 +562,225 @@ $isClosedTicket = trim((string) ($ticket['status'] ?? '')) === 'Cerrado';
             </div>
         </div>
 
-        <div class="card panel-card ticket-action-card">
-            <div class="ticket-action-card__header">
-                <div class="ticket-section__eyebrow">Acciones</div>
-                <h3 class="ticket-section__title ticket-section__title--compact">Precio</h3>
-            </div>
-
-            <?php if ($priceMessage): ?>
-                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($priceMessage); ?></div>
-            <?php endif; ?>
-
-            <?php if ($priceError): ?>
-                <div class="alert alert--error ticket-inline-alert"><?php echo e($priceError); ?></div>
-            <?php endif; ?>
-
-            <form method="POST" class="admin-form ticket-price-form ticket-price-form--first">
-                <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
-                <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
-                <input type="hidden" name="ticket_action" value="update_price">
-                <div class="admin-form__group">
-                    <label class="admin-form__label" for="price_amount">Asignar / modificar precio base (MXN)</label>
-                    <input
-                        type="text"
-                        id="price_amount"
-                        name="price_amount"
-                        class="admin-form__input"
-                        inputmode="decimal"
-                        value="<?php echo e($priceDraft !== '' ? $priceDraft : ($effectivePriceBaseAmount !== null ? number_format((float) $effectivePriceBaseAmount, 2, '.', '') : '')); ?>"
-                        placeholder="0.00"
-                    >
-                    <div class="ticket-meta">El total final se recalcula automaticamente segun el tipo de cliente actual.</div>
-                </div>
-                <button type="submit" class="btn">Guardar precio</button>
-            </form>
-        </div>
-
-        <?php if (can_admin_user_reassign_ticket($ticket, $viewerUserId, $viewerRole)): ?>
+        <?php if (!$isClosedTicket): ?>
             <div class="card panel-card ticket-action-card">
-                <div class="ticket-section__eyebrow">Acciones</div>
-                <h3 class="ticket-section__title ticket-section__title--compact">Responsable</h3>
+                <div class="ticket-action-card__header">
+                    <div class="ticket-section__eyebrow">Acciones</div>
+                    <h3 class="ticket-section__title ticket-section__title--compact">Precio</h3>
+                </div>
 
-                <?php if ($assigneeMessage): ?>
-                    <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($assigneeMessage); ?></div>
+                <?php if ($priceMessage): ?>
+                    <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($priceMessage); ?></div>
                 <?php endif; ?>
 
-                <?php if ($assigneeError): ?>
-                    <div class="alert alert--error ticket-inline-alert"><?php echo e($assigneeError); ?></div>
+                <?php if ($priceError): ?>
+                    <div class="alert alert--error ticket-inline-alert"><?php echo e($priceError); ?></div>
                 <?php endif; ?>
 
                 <form method="POST" class="admin-form ticket-price-form ticket-price-form--first">
                     <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
                     <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
-                    <input type="hidden" name="ticket_action" value="update_assignee">
+                    <input type="hidden" name="ticket_action" value="update_price">
                     <div class="admin-form__group">
-                        <label class="admin-form__label" for="assigned_user_id">Asignar / cambiar responsable</label>
-                        <select id="assigned_user_id" name="assigned_user_id" class="admin-form__input">
-                            <option value="">Selecciona un responsable</option>
-                            <?php if ($assignableUsers): ?>
-                                <?php while ($assignableUser = $assignableUsers->fetch_assoc()): ?>
-                                    <?php
-                                    $assignableUserId = (int) $assignableUser['id'];
-                                    $assignableLabel = getAdminUserDisplayLabel($assignableUser);
-                                    ?>
-                                    <option value="<?php echo $assignableUserId; ?>" <?php echo $selectedAssigneeId === $assignableUserId ? 'selected' : ''; ?>>
-                                        <?php echo e($assignableLabel); ?>
-                                    </option>
-                                <?php endwhile; ?>
-                            <?php endif; ?>
-                        </select>
-                        <?php if ($viewerRole !== 'admin'): ?>
-                            <div class="ticket-meta">Al transferir este ticket dejará de aparecer en tu bandeja y quedará disponible solo para el nuevo responsable.</div>
-                        <?php endif; ?>
+                        <label class="admin-form__label" for="price_amount">Asignar / modificar precio base (MXN)</label>
+                        <input
+                            type="text"
+                            id="price_amount"
+                            name="price_amount"
+                            class="admin-form__input"
+                            inputmode="decimal"
+                            value="<?php echo e($priceDraft !== '' ? $priceDraft : ($effectivePriceBaseAmount !== null ? number_format((float) $effectivePriceBaseAmount, 2, '.', '') : '')); ?>"
+                            placeholder="0.00"
+                        >
+                        <div class="ticket-meta">El total final se recalcula automaticamente segun el tipo de cliente actual.</div>
                     </div>
-                    <button type="submit" class="btn">Guardar responsable</button>
+                    <button type="submit" class="btn">Guardar precio</button>
+                </form>
+            </div>
+
+            <?php if (can_admin_user_reassign_ticket($ticket, $viewerUserId, $viewerRole)): ?>
+                <div class="card panel-card ticket-action-card">
+                    <div class="ticket-section__eyebrow">Acciones</div>
+                    <h3 class="ticket-section__title ticket-section__title--compact">Responsable</h3>
+
+                    <?php if ($assigneeMessage): ?>
+                        <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($assigneeMessage); ?></div>
+                    <?php endif; ?>
+
+                    <?php if ($assigneeError): ?>
+                        <div class="alert alert--error ticket-inline-alert"><?php echo e($assigneeError); ?></div>
+                    <?php endif; ?>
+
+                    <form method="POST" class="admin-form ticket-price-form ticket-price-form--first">
+                        <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
+                        <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
+                        <input type="hidden" name="ticket_action" value="update_assignee">
+                        <div class="admin-form__group">
+                            <label class="admin-form__label" for="assigned_user_id">Asignar / cambiar responsable</label>
+                            <select id="assigned_user_id" name="assigned_user_id" class="admin-form__input">
+                                <option value="">Selecciona un responsable</option>
+                                <?php if ($assignableUsers): ?>
+                                    <?php while ($assignableUser = $assignableUsers->fetch_assoc()): ?>
+                                        <?php
+                                        $assignableUserId = (int) $assignableUser['id'];
+                                        $assignableLabel = getAdminUserDisplayLabel($assignableUser);
+                                        ?>
+                                        <option value="<?php echo $assignableUserId; ?>" <?php echo $selectedAssigneeId === $assignableUserId ? 'selected' : ''; ?>>
+                                            <?php echo e($assignableLabel); ?>
+                                        </option>
+                                    <?php endwhile; ?>
+                                <?php endif; ?>
+                            </select>
+                            <?php if ($viewerRole !== 'admin'): ?>
+                                <div class="ticket-meta">Al transferir este ticket dejará de aparecer en tu bandeja y quedará disponible solo para el nuevo responsable.</div>
+                            <?php endif; ?>
+                        </div>
+                        <button type="submit" class="btn">Guardar responsable</button>
+                    </form>
+                </div>
+            <?php endif; ?>
+
+            <div class="card panel-card ticket-action-card">
+                <div class="ticket-action-card__header">
+                    <div class="ticket-section__eyebrow">Acciones</div>
+                    <h3 class="ticket-section__title ticket-section__title--compact">Cita con cliente</h3>
+                </div>
+
+                <?php if ($appointmentMessage): ?>
+                    <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($appointmentMessage); ?></div>
+                <?php endif; ?>
+
+                <?php if ($appointmentError): ?>
+                    <div class="alert alert--error ticket-inline-alert"><?php echo e($appointmentError); ?></div>
+                <?php endif; ?>
+
+                <form method="POST" class="admin-form ticket-price-form ticket-price-form--first">
+                    <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
+                    <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
+                    <input type="hidden" name="ticket_action" value="update_appointment_schedule">
+                    <div class="admin-form__group">
+                        <label class="admin-form__label" for="appointment_date">Fecha de cita</label>
+                        <input
+                            type="date"
+                            id="appointment_date"
+                            name="appointment_date"
+                            class="admin-form__input"
+                            value="<?php echo e($appointmentDateDraft !== '' ? $appointmentDateDraft : (string) ($ticket['appointment_date'] ?? '')); ?>"
+                        >
+                    </div>
+                    <div class="admin-form__group">
+                        <label class="admin-form__label" for="appointment_time">Hora de cita</label>
+                        <input
+                            type="time"
+                            id="appointment_time"
+                            name="appointment_time"
+                            class="admin-form__input"
+                            value="<?php echo e($appointmentTimeDraft !== '' ? $appointmentTimeDraft : substr((string) ($ticket['appointment_time'] ?? ''), 0, 5)); ?>"
+                        >
+                    </div>
+                    <button type="submit" class="btn">Guardar cita</button>
+                </form>
+            </div>
+
+            <div class="card panel-card ticket-action-card">
+                <div class="ticket-action-card__header">
+                    <div class="ticket-section__eyebrow">Acciones</div>
+                    <h3 class="ticket-section__title ticket-section__title--compact">Programación</h3>
+                </div>
+
+                <?php if ($serviceMessage): ?>
+                    <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($serviceMessage); ?></div>
+                <?php endif; ?>
+
+                <?php if ($serviceError): ?>
+                    <div class="alert alert--error ticket-inline-alert"><?php echo e($serviceError); ?></div>
+                <?php endif; ?>
+
+                <form method="POST" class="admin-form ticket-price-form ticket-price-form--first">
+                    <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
+                    <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
+                    <input type="hidden" name="ticket_action" value="update_service_schedule">
+                    <div class="admin-form__group">
+                        <label class="admin-form__label" for="service_date">Fecha programada</label>
+                        <input
+                            type="date"
+                            id="service_date"
+                            name="service_date"
+                            class="admin-form__input"
+                            value="<?php echo e($serviceDateDraft !== '' ? $serviceDateDraft : (string) ($ticket['service_date'] ?? '')); ?>"
+                        >
+                    </div>
+                    <div class="admin-form__row ticket-service-schedule-row">
+                        <div class="admin-form__group">
+                            <label class="admin-form__label" for="service_start_time">Hora de inicio</label>
+                            <input
+                                type="time"
+                                id="service_start_time"
+                                name="service_start_time"
+                                class="admin-form__input"
+                                value="<?php echo e($serviceStartDraft !== '' ? $serviceStartDraft : substr((string) ($ticket['service_start_time'] ?? ''), 0, 5)); ?>"
+                            >
+                        </div>
+                        <div class="admin-form__group">
+                            <label class="admin-form__label" for="service_end_time">Hora de finalización</label>
+                            <input
+                                type="time"
+                                id="service_end_time"
+                                name="service_end_time"
+                                class="admin-form__input"
+                                value="<?php echo e($serviceEndDraft !== '' ? $serviceEndDraft : substr((string) ($ticket['service_end_time'] ?? ''), 0, 5)); ?>"
+                            >
+                        </div>
+                    </div>
+                    <div class="ticket-service-schedule-summary">
+                        <label class="admin-form__label" for="service_duration_preview">Duración calculada</label>
+                        <input
+                            type="text"
+                            id="service_duration_preview"
+                            class="admin-form__input ticket-service-schedule-summary__input"
+                            value="<?php echo e(format_ticket_service_duration(
+                                $serviceStartDraft !== '' ? $serviceStartDraft : ($ticket['service_start_time'] ?? ''),
+                                $serviceEndDraft !== '' ? $serviceEndDraft : ($ticket['service_end_time'] ?? '')
+                            )); ?>"
+                            readonly
+                        >
+                    </div>
+                    <button type="submit" class="btn">Guardar programación</button>
+                </form>
+            </div>
+
+            <div class="card panel-card ticket-action-card ticket-message-edit-card">
+                <div class="ticket-action-card__header">
+                    <div class="ticket-section__eyebrow">Acciones</div>
+                    <h3 class="ticket-section__title ticket-section__title--compact">Editar mensaje</h3>
+                </div>
+
+                <?php if ($ticketMessageStatus): ?>
+                    <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($ticketMessageStatus); ?></div>
+                <?php endif; ?>
+
+                <?php if ($ticketMessageError): ?>
+                    <div class="alert alert--error ticket-inline-alert"><?php echo e($ticketMessageError); ?></div>
+                <?php endif; ?>
+
+                <form method="POST" class="admin-form ticket-message-form ticket-price-form--first">
+                    <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
+                    <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
+                    <input type="hidden" name="ticket_action" value="update_message">
+                    <div class="admin-form__group">
+                        <label class="admin-form__label" for="ticket_message">Editar mensaje principal</label>
+                        <textarea
+                            id="ticket_message"
+                            name="ticket_message"
+                            class="admin-form__input admin-form__input--textarea"
+                            rows="6"
+                            required
+                        ><?php echo e($ticketMessageDraft !== '' ? $ticketMessageDraft : $ticket['message']); ?></textarea>
+                    </div>
+                    <button type="submit" class="btn ticket-message-form__submit">Guardar mensaje</button>
                 </form>
             </div>
         <?php endif; ?>
-
-        <div class="card panel-card ticket-action-card">
-            <div class="ticket-action-card__header">
-                <div class="ticket-section__eyebrow">Acciones</div>
-                <h3 class="ticket-section__title ticket-section__title--compact">Programación</h3>
-            </div>
-
-            <?php if ($serviceMessage): ?>
-                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($serviceMessage); ?></div>
-            <?php endif; ?>
-
-            <?php if ($serviceError): ?>
-                <div class="alert alert--error ticket-inline-alert"><?php echo e($serviceError); ?></div>
-            <?php endif; ?>
-
-            <form method="POST" class="admin-form ticket-price-form ticket-price-form--first">
-                <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
-                <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
-                <input type="hidden" name="ticket_action" value="update_service_schedule">
-                <div class="admin-form__group">
-                    <label class="admin-form__label" for="service_date">Fecha programada</label>
-                    <input
-                        type="date"
-                        id="service_date"
-                        name="service_date"
-                        class="admin-form__input"
-                        value="<?php echo e($serviceDateDraft !== '' ? $serviceDateDraft : (string) ($ticket['service_date'] ?? '')); ?>"
-                    >
-                </div>
-                <div class="admin-form__row ticket-service-schedule-row">
-                    <div class="admin-form__group">
-                        <label class="admin-form__label" for="service_start_time">Hora de inicio</label>
-                        <input
-                            type="time"
-                            id="service_start_time"
-                            name="service_start_time"
-                            class="admin-form__input"
-                            value="<?php echo e($serviceStartDraft !== '' ? $serviceStartDraft : substr((string) ($ticket['service_start_time'] ?? ''), 0, 5)); ?>"
-                        >
-                    </div>
-                    <div class="admin-form__group">
-                        <label class="admin-form__label" for="service_end_time">Hora de finalización</label>
-                        <input
-                            type="time"
-                            id="service_end_time"
-                            name="service_end_time"
-                            class="admin-form__input"
-                            value="<?php echo e($serviceEndDraft !== '' ? $serviceEndDraft : substr((string) ($ticket['service_end_time'] ?? ''), 0, 5)); ?>"
-                        >
-                    </div>
-                </div>
-                <div class="ticket-service-schedule-summary">
-                    <label class="admin-form__label" for="service_duration_preview">Duración calculada</label>
-                    <input
-                        type="text"
-                        id="service_duration_preview"
-                        class="admin-form__input ticket-service-schedule-summary__input"
-                        value="<?php echo e(format_ticket_service_duration(
-                            $serviceStartDraft !== '' ? $serviceStartDraft : ($ticket['service_start_time'] ?? ''),
-                            $serviceEndDraft !== '' ? $serviceEndDraft : ($ticket['service_end_time'] ?? '')
-                        )); ?>"
-                        readonly
-                    >
-                </div>
-                <button type="submit" class="btn">Guardar programación</button>
-            </form>
-        </div>
-
-        <div class="card panel-card ticket-action-card ticket-message-edit-card">
-            <div class="ticket-action-card__header">
-                <div class="ticket-section__eyebrow">Acciones</div>
-                <h3 class="ticket-section__title ticket-section__title--compact">Editar mensaje</h3>
-            </div>
-
-            <?php if ($ticketMessageStatus): ?>
-                <div class="alert alert--success ticket-inline-alert" data-auto-dismiss="5000"><?php echo e($ticketMessageStatus); ?></div>
-            <?php endif; ?>
-
-            <?php if ($ticketMessageError): ?>
-                <div class="alert alert--error ticket-inline-alert"><?php echo e($ticketMessageError); ?></div>
-            <?php endif; ?>
-
-            <form method="POST" class="admin-form ticket-message-form ticket-price-form--first">
-                <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
-                <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
-                <input type="hidden" name="ticket_action" value="update_message">
-                <div class="admin-form__group">
-                    <label class="admin-form__label" for="ticket_message">Editar mensaje principal</label>
-                    <textarea
-                        id="ticket_message"
-                        name="ticket_message"
-                        class="admin-form__input admin-form__input--textarea"
-                        rows="6"
-                        required
-                    ><?php echo e($ticketMessageDraft !== '' ? $ticketMessageDraft : $ticket['message']); ?></textarea>
-                </div>
-                <button type="submit" class="btn ticket-message-form__submit">Guardar mensaje</button>
-            </form>
-        </div>
     </aside>
 </div>
 

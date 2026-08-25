@@ -327,6 +327,7 @@ if (!in_array($ticketNoticeType, ['success', 'error'], true)) {
                 <th>Responsable</th>
                 <th>Precio</th>
                 <th>Estado</th>
+                <th>Cita</th>
                 <th>Canal</th>
                 <th>Contexto</th>
                 <th>Fecha</th>
@@ -375,6 +376,13 @@ if (!in_array($ticketNoticeType, ['success', 'error'], true)) {
                             <?php endif; ?>
                         </td>
                         <td><span class="ticket-status ticket-status--<?php echo strtolower(str_replace(' ', '-', $ticket['status'])); ?>"><span class="ticket-status__dot" aria-hidden="true"></span><?php echo e($ticket['status']); ?></span></td>
+                        <td>
+                            <?php if (trim((string) ($ticket['appointment_date'] ?? '')) !== '' && trim((string) ($ticket['appointment_time'] ?? '')) !== ''): ?>
+                                <span><?php echo e(format_ticket_appointment_datetime($ticket['appointment_date'], $ticket['appointment_time'])); ?></span>
+                            <?php else: ?>
+                                <span class="ticket-muted">Sin cita</span>
+                            <?php endif; ?>
+                        </td>
                         <td><?php echo e(ticket_origin_label($ticket['origin_type'])); ?></td>
                         <td><?php echo e($ticket['context_label'] ?: 'Sin contexto adicional'); ?></td>
                         <td><?php echo date('d/m/Y H:i', strtotime($ticket['created_at'])); ?></td>
@@ -386,7 +394,7 @@ if (!in_array($ticketNoticeType, ['success', 'error'], true)) {
                 <?php endwhile; ?>
             <?php else: ?>
                 <tr>
-                    <td colspan="9">No se encontraron tickets con los filtros seleccionados.</td>
+                    <td colspan="10">No se encontraron tickets con los filtros seleccionados.</td>
                 </tr>
             <?php endif; ?>
         </tbody>
