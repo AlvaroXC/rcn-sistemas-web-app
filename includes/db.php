@@ -669,13 +669,17 @@ function normalize_ticket_schedule_inputs($serviceDate, $startTime, $endTime) {
     ];
 }
 
-function ticket_status_requires_programmed_date($status) {
+function ticket_status_requires_appointment($status) {
     return trim((string) $status) === 'Agendado';
 }
 
-function validate_ticket_programmed_date_requirement($status, $serviceDate) {
-    if (ticket_status_requires_programmed_date($status) && trim((string) $serviceDate) === '') {
-        return ['ok' => false, 'error' => 'El estado Agendado requiere una fecha programada.'];
+function validate_ticket_appointment_requirement($status, $appointmentDate, $appointmentTime) {
+    if (!ticket_status_requires_appointment($status)) {
+        return ['ok' => true, 'error' => ''];
+    }
+
+    if (trim((string) $appointmentDate) === '' || trim((string) $appointmentTime) === '') {
+        return ['ok' => false, 'error' => 'El estado Agendado requiere fecha y hora de la cita.'];
     }
 
     return ['ok' => true, 'error' => ''];
@@ -1574,8 +1578,12 @@ function create_support_ticket($conn, array $data) {
         return null;
     }
 
-    $programmedDateValidation = validate_ticket_programmed_date_requirement($status, $scheduleValidation['service_date']);
-    if (!$programmedDateValidation['ok']) {
+    $appointmentRequirementValidation = validate_ticket_appointment_requirement(
+        $status,
+        $appointmentValidation['appointment_date'],
+        $appointmentValidation['appointment_time']
+    );
+    if (!$appointmentRequirementValidation['ok']) {
         return null;
     }
 
@@ -1954,9 +1962,13 @@ function update_ticket_status($conn, $ticketId, $status) {
         return get_closed_ticket_edit_block_response($ticket, 'Los tickets cerrados no pueden cambiar de estado.');
     }
 
-    $programmedDateValidation = validate_ticket_programmed_date_requirement($status, $ticket['service_date'] ?? null);
-    if (!$programmedDateValidation['ok']) {
-        return ['ok' => false, 'error' => $programmedDateValidation['error'], 'ticket' => $ticket];
+    $appointmentRequirementValidation = validate_ticket_appointment_requirement(
+        $status,
+        $ticket['appointment_date'] ?? null,
+        $ticket['appointment_time'] ?? null
+    );
+    if (!$appointmentRequirementValidation['ok']) {
+        return ['ok' => false, 'error' => $appointmentRequirementValidation['error'], 'ticket' => $ticket];
     }
 
     $shouldDeleteNotifications = $status === 'Cerrado';
@@ -2160,11 +2172,6 @@ function update_ticket_service_schedule($conn, $ticketId, $serviceDate, $startTi
     $scheduleValidation = normalize_ticket_schedule_inputs($serviceDate, $startTime, $endTime);
     if (!$scheduleValidation['ok']) {
         return ['ok' => false, 'error' => $scheduleValidation['error'], 'ticket' => null];
-    }
-
-    $programmedDateValidation = validate_ticket_programmed_date_requirement($ticket['status'] ?? '', $scheduleValidation['service_date']);
-    if (!$programmedDateValidation['ok']) {
-        return ['ok' => false, 'error' => $programmedDateValidation['error'], 'ticket' => null];
     }
 
     $stmt = $conn->prepare(

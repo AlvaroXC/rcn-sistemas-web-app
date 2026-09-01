@@ -131,12 +131,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$scheduleValidation['ok']) {
             $error = $scheduleValidation['error'];
         } else {
-            $programmedDateValidation = validate_ticket_programmed_date_requirement(
+            $appointmentRequirementValidation = validate_ticket_appointment_requirement(
                 $ticketForm['status'],
-                $scheduleValidation['service_date']
+                $appointmentValidation['appointment_date'],
+                $appointmentValidation['appointment_time']
             );
-            if (!$programmedDateValidation['ok']) {
-                $error = $programmedDateValidation['error'];
+            if (!$appointmentRequirementValidation['ok']) {
+                $error = $appointmentRequirementValidation['error'];
             }
         }
     }
@@ -304,7 +305,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 data-customer-panel="existing"
                 <?php echo $customerMode !== 'existing' ? 'hidden' : ''; ?>
             >
-                <p class="ticket-observations__intro">Busca y selecciona un cliente ya registrado para asociarlo al ticket.</p>
                 <div class="ticket-customer-search">
                     <label class="admin-form__label ticket-customer-search__label" for="customer_query">Buscar cliente existente</label>
                     <div class="ticket-customer-search__field">
@@ -429,14 +429,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         >
             <div class="ticket-section__eyebrow">Alta rápida</div>
             <h3 class="ticket-section__title">Datos del cliente</h3>
-            <p class="ticket-observations__intro">Captura el cliente si aún no existe. El teléfono es obligatorio y se usa como identificador único del cliente.</p>
             <div class="admin-form__row">
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="customer_name">Nombre de contacto</label>
+                    <label class="admin-form__label" for="customer_name">Nombre de contacto <span style="color: #c62828; font-weight: 700;" aria-hidden="true">*</span></label>
                     <input type="text" id="customer_name" name="customer_name" class="admin-form__input" data-customer-new-required value="<?php echo e($customerForm['name']); ?>">
                 </div>
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="customer_type">Tipo de persona</label>
+                    <label class="admin-form__label" for="customer_type">Tipo de persona <span style="color: #c62828; font-weight: 700;" aria-hidden="true">*</span></label>
                     <select id="customer_type" name="customer_type" class="admin-form__input">
                         <option value="persona_fisica" <?php echo $customerForm['customer_type'] === 'persona_fisica' ? 'selected' : ''; ?>>Persona física</option>
                         <option value="persona_moral" <?php echo $customerForm['customer_type'] === 'persona_moral' ? 'selected' : ''; ?>>Persona moral</option>
@@ -445,15 +444,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <div class="admin-form__row">
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="customer_business_name">Razón social</label>
+                    <label class="admin-form__label" for="customer_business_name">Razón social <span id="customer_business_name_requirement" style="color: #c62828; font-weight: 700;" aria-hidden="true"></span></label>
                     <input type="text" id="customer_business_name" name="customer_business_name" class="admin-form__input" value="<?php echo e($customerForm['business_name']); ?>">
+                    <div class="ticket-meta" id="customer_business_name_hint"></div>
                 </div>
                 <div class="admin-form__group">
                     <label class="admin-form__label" for="customer_email">Correo electrónico</label>
                     <input type="email" id="customer_email" name="customer_email" class="admin-form__input" value="<?php echo e($customerForm['email']); ?>">
                 </div>
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="customer_phone">Teléfono</label>
+                    <label class="admin-form__label" for="customer_phone">Teléfono <span style="color: #c62828; font-weight: 700;" aria-hidden="true">*</span></label>
                     <input type="text" id="customer_phone" name="customer_phone" class="admin-form__input" data-customer-new-required value="<?php echo e($customerForm['phone']); ?>">
                 </div>
             </div>
@@ -464,7 +464,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <h3 class="ticket-section__title">Datos del ticket</h3>
             <div class="admin-form__row">
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="consultation_type">Tipo de consulta</label>
+                    <label class="admin-form__label" for="consultation_type">Tipo de consulta <span style="color: #c62828; font-weight: 700;" aria-hidden="true">*</span></label>
                     <select id="consultation_type" name="consultation_type" class="admin-form__input">
                         <?php foreach ($allowedTypes as $type): ?>
                             <option value="<?php echo e($type); ?>" <?php echo $ticketForm['consultation_type'] === $type ? 'selected' : ''; ?>><?php echo e($type); ?></option>
@@ -472,7 +472,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </select>
                 </div>
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="status">Estado inicial</label>
+                    <label class="admin-form__label" for="status">Estado inicial <span style="color: #c62828; font-weight: 700;" aria-hidden="true">*</span></label>
                     <select id="status" name="status" class="admin-form__input">
                         <?php foreach ($allowedStatuses as $status): ?>
                             <option value="<?php echo e($status); ?>" <?php echo $ticketForm['status'] === $status ? 'selected' : ''; ?>><?php echo e($status); ?></option>
@@ -480,7 +480,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </select>
                 </div>
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="assigned_user_id">Responsable inicial</label>
+                    <label class="admin-form__label" for="assigned_user_id">Responsable inicial <span style="color: #c62828; font-weight: 700;" aria-hidden="true">*</span></label>
                     <select id="assigned_user_id" name="assigned_user_id" class="admin-form__input" <?php echo $viewerRole !== 'admin' ? 'disabled' : ''; ?>>
                         <?php foreach ($assignableUsers as $assignableUserId => $assignableUser): ?>
                             <?php if ($viewerRole !== 'admin' && $assignableUserId !== $defaultAssignedUserId) { continue; } ?>
@@ -513,35 +513,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
             <div class="admin-form__group">
-                <label class="admin-form__label" for="message">Mensaje</label>
+                <label class="admin-form__label" for="message">Mensaje <span style="color: #c62828; font-weight: 700;" aria-hidden="true">*</span></label>
                 <textarea id="message" name="message" class="admin-form__input admin-form__input--textarea" rows="6" required><?php echo e($ticketForm['message']); ?></textarea>
             </div>
             <div class="admin-form__row">
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="price_amount">Precio base opcional (MXN)</label>
+                    <label class="admin-form__label" for="price_amount">Precio base (MXN)</label>
                     <input type="text" id="price_amount" name="price_amount" class="admin-form__input" value="<?php echo e($ticketForm['price_amount']); ?>" inputmode="decimal" placeholder="0.00">
                     <div class="ticket-meta">El total final se calcula automaticamente segun el tipo de cliente.</div>
                 </div>
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="attachment">Adjunto opcional</label>
+                    <label class="admin-form__label" for="attachment">Adjunto</label>
                     <input type="file" id="attachment" name="attachment" class="admin-form__input" accept="image/*">
                 </div>
             </div>
             <div class="ticket-service-create">
-                <p class="ticket-observations__intro">Registra la cita con el cliente cuando necesites agendar una visita o seguimiento previo al servicio.</p>
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="appointment_date">Fecha de cita</label>
+                    <label class="admin-form__label" for="appointment_date">Fecha de cita <span id="appointment_date_requirement" style="color: #c62828; font-weight: 700;" aria-hidden="true"></span></label>
                     <input type="date" id="appointment_date" name="appointment_date" class="admin-form__input" value="<?php echo e($ticketForm['appointment_date']); ?>">
                 </div>
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="appointment_time">Hora de cita</label>
+                    <label class="admin-form__label" for="appointment_time">Hora de cita <span id="appointment_time_requirement" style="color: #c62828; font-weight: 700;" aria-hidden="true"></span></label>
                     <input type="time" id="appointment_time" name="appointment_time" class="admin-form__input" value="<?php echo e($ticketForm['appointment_time']); ?>">
                 </div>
+                <div class="ticket-meta" id="appointment_pair_hint"></div>
             </div>
             <div class="ticket-service-create">
-                <p class="ticket-observations__intro">Usa esta programación cuando el ticket represente una cita o visita. Si el estado es <strong>Agendado</strong>, la fecha programada es obligatoria.</p>
                 <div class="admin-form__group">
-                    <label class="admin-form__label" for="service_date">Fecha programada</label>
+                    <label class="admin-form__label" for="service_date">Fecha de ejecucion del servicio</label>
                     <input type="date" id="service_date" name="service_date" class="admin-form__input" value="<?php echo e($ticketForm['service_date']); ?>">
                 </div>
                 <div class="admin-form__row ticket-service-schedule-row">
@@ -554,6 +553,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <input type="time" id="service_end_time" name="service_end_time" class="admin-form__input" value="<?php echo e($ticketForm['service_end_time']); ?>">
                     </div>
                 </div>
+                <div class="ticket-meta">Captura inicio y finalización juntos.</div>
             </div>
         </section>
 
@@ -580,6 +580,16 @@ document.addEventListener('DOMContentLoaded', function () {
     const customerSelectionPhone = document.querySelector('[data-customer-selection-phone]');
     const customerSelectionEmail = document.querySelector('[data-customer-selection-email]');
     const customerNewRequiredFields = document.querySelectorAll('[data-customer-new-required]');
+    const customerTypeSelect = document.getElementById('customer_type');
+    const customerBusinessNameInput = document.getElementById('customer_business_name');
+    const customerBusinessNameRequirement = document.getElementById('customer_business_name_requirement');
+    const customerBusinessNameHint = document.getElementById('customer_business_name_hint');
+    const statusInput = document.getElementById('status');
+    const appointmentDateInput = document.getElementById('appointment_date');
+    const appointmentTimeInput = document.getElementById('appointment_time');
+    const appointmentDateRequirement = document.getElementById('appointment_date_requirement');
+    const appointmentTimeRequirement = document.getElementById('appointment_time_requirement');
+    const appointmentPairHint = document.getElementById('appointment_pair_hint');
     const minQueryLength = 3;
     const maxVisibleResults = 5;
     const searchEndpoint = 'customer_search.php';
@@ -743,6 +753,41 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function updateCustomerTypeRequirements() {
+        if (!customerTypeSelect || !customerBusinessNameInput || !customerBusinessNameRequirement || !customerBusinessNameHint) {
+            return;
+        }
+
+        const isPersonaMoral = customerTypeSelect.value === 'persona_moral';
+        const isNewCustomerMode = modeInput && modeInput.value === 'new';
+        const isRequired = isNewCustomerMode && isPersonaMoral;
+
+        customerBusinessNameInput.required = isRequired;
+        customerBusinessNameInput.setAttribute('aria-required', isRequired ? 'true' : 'false');
+        customerBusinessNameRequirement.textContent = isRequired ? '*' : '';
+        customerBusinessNameHint.textContent = isRequired
+            ? 'Requerida para persona moral.'
+            : '';
+    }
+
+    function updateAppointmentRequirements() {
+        if (!statusInput || !appointmentDateInput || !appointmentTimeInput || !appointmentDateRequirement || !appointmentTimeRequirement || !appointmentPairHint) {
+            return;
+        }
+
+        const isAgendado = statusInput.value === 'Agendado';
+
+        appointmentDateInput.required = isAgendado;
+        appointmentTimeInput.required = isAgendado;
+        appointmentDateInput.setAttribute('aria-required', isAgendado ? 'true' : 'false');
+        appointmentTimeInput.setAttribute('aria-required', isAgendado ? 'true' : 'false');
+        appointmentDateRequirement.textContent = isAgendado ? '*' : '';
+        appointmentTimeRequirement.textContent = isAgendado ? '*' : '';
+        appointmentPairHint.textContent = isAgendado
+            ? 'Con estado Agendado, captura fecha y hora.'
+            : '';
+    }
+
     function applyCustomerMode(nextMode) {
         modeInput.value = nextMode;
 
@@ -761,6 +806,8 @@ document.addEventListener('DOMContentLoaded', function () {
         customerNewRequiredFields.forEach((field) => {
             field.required = nextMode === 'new';
         });
+
+        updateCustomerTypeRequirements();
 
         if (customerSelection) {
             const hasSelection = customerIdInput && customerIdInput.value !== '';
@@ -911,6 +958,14 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    if (customerTypeSelect) {
+        customerTypeSelect.addEventListener('change', updateCustomerTypeRequirements);
+    }
+
+    if (statusInput) {
+        statusInput.addEventListener('change', updateAppointmentRequirements);
+    }
+
     customerResults.forEach((result) => {
         result.addEventListener('click', function () {
             applyCustomerSelection(result.dataset.customerId || '');
@@ -958,6 +1013,8 @@ document.addEventListener('DOMContentLoaded', function () {
     applyCustomerSelection(customerIdInput ? customerIdInput.value : '');
     handleCustomerQueryInput();
     applyCustomerMode(modeInput.value || 'new');
+    updateCustomerTypeRequirements();
+    updateAppointmentRequirements();
 });
 </script>
 </body>

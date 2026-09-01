@@ -354,11 +354,11 @@ $isClosedTicket = trim((string) ($ticket['status'] ?? '')) === 'Cerrado';
             </section>
 
             <section class="card panel-card ticket-section-card">
-                <div class="ticket-section__eyebrow">Programación</div>
-                <h3 class="ticket-section__title">Servicio programado</h3>
+                <div class="ticket-section__eyebrow">Ejecución</div>
+                <h3 class="ticket-section__title">Ejecucion del servicio</h3>
                 <div class="ticket-detail-list">
                     <div class="ticket-kv">
-                        <span class="ticket-kv__label">Fecha programada</span>
+                        <span class="ticket-kv__label">Fecha de ejecucion del servicio</span>
                         <span class="ticket-kv__value"><?php echo e(format_ticket_service_date($ticket['service_date'] ?? null)); ?></span>
                     </div>
                     <div class="ticket-kv">
@@ -685,7 +685,7 @@ $isClosedTicket = trim((string) ($ticket['status'] ?? '')) === 'Cerrado';
             <div class="card panel-card ticket-action-card">
                 <div class="ticket-action-card__header">
                     <div class="ticket-section__eyebrow">Acciones</div>
-                    <h3 class="ticket-section__title ticket-section__title--compact">Programación</h3>
+                    <h3 class="ticket-section__title ticket-section__title--compact">Ejecucion del servicio</h3>
                 </div>
 
                 <?php if ($serviceMessage): ?>
@@ -700,8 +700,9 @@ $isClosedTicket = trim((string) ($ticket['status'] ?? '')) === 'Cerrado';
                     <input type="hidden" name="ticket_id" value="<?php echo (int) $ticket['id']; ?>">
                     <input type="hidden" name="return" value="<?php echo e($returnUrl); ?>">
                     <input type="hidden" name="ticket_action" value="update_service_schedule">
+                    <div class="ticket-meta" style="margin-bottom: 1rem;">Documenta aqui cuando se realizo el servicio y el tiempo invertido. Esta seccion alimenta la orden de servicio y no sustituye la cita del cliente.</div>
                     <div class="admin-form__group">
-                        <label class="admin-form__label" for="service_date">Fecha programada</label>
+                        <label class="admin-form__label" for="service_date">Fecha de ejecucion del servicio</label>
                         <input
                             type="date"
                             id="service_date"
