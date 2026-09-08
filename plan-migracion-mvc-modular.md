@@ -292,6 +292,7 @@ Separar la administración y publicación de promociones y testimoniales.
 - [x] Crear `TestimonialService` para validar nombre, mensaje y calificación.
 - [ ] Crear controladores públicos para listados y detalles.
 - [ ] Crear controladores administrativos para altas, modificaciones y eliminaciones.
+- [x] Crear repositorio y servicio de persistencia para promociones administrativas.
 - [ ] Mantener la compatibilidad temporal con promociones que todavía tengan el campo antiguo `description`.
 - [ ] Mover la normalización de promociones a un servicio o transformador dedicado.
 - [x] Migrar `promociones.php`, `promotion_view.php` y `testimoniales.php`.
