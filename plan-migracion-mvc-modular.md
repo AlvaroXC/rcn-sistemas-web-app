@@ -320,7 +320,8 @@ Separar el módulo de mayor complejidad funcional y convertirlo en el centro de 
 - [x] Crear una base de normalización de identidad para correo y teléfono.
 - [ ] Mantener la regla de identificar clientes por teléfono normalizado.
 - [ ] Mantener la posibilidad de usar correo opcional.
-- [ ] Migrar `customers.php`, `customer_create.php`, `customer_edit.php`, `customer_view.php` y `customer_search.php`.
+- [x] Migrar `customers.php`, `customer_create.php`, `customer_edit.php` y `customer_view.php` al controlador MVC.
+- [ ] Migrar `customer_search.php`.
 
 ### Tareas de tickets
 
