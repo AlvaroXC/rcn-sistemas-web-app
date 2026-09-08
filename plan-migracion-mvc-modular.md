@@ -416,7 +416,7 @@ Hacer que la estructura de la base de datos sea explícita, versionada y control
 - [ ] Comparar `database.sql` con el esquema que actualmente crea y modifica `includes/db.php`.
 - [x] Crear una migración inicial para `users`, `products`, `benefits`, `promotions` y `testimonials`.
 - [x] Crear una migración para `customers`, `tickets` y `ticket_observations`.
-- [ ] Crear migraciones para notificaciones y tokens persistentes.
+- [x] Crear una migración para notificaciones y tokens persistentes.
 - [ ] Crear migraciones para columnas de precios, agenda, asignaciones y auditoría.
 - [ ] Crear una migración de compatibilidad para datos antiguos de promociones.
 - [ ] Crear scripts de respaldo antes de ejecutar cambios sobre datos existentes.
