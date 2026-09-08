@@ -28,7 +28,12 @@ final class MysqliCustomerRepository implements CustomerRepository
         $name = trim((string) ($data['name'] ?? '')); $email = $data['email'] ?? null;
         $emailNormalized = $email !== null ? strtolower((string) $email) : null;
         $phone = trim((string) ($data['phone'] ?? '')); $businessName = trim((string) ($data['business_name'] ?? ''));
-        $customerType = (string) ($data['customer_type'] ?? 'persona_fisica'); $existing = $this->findByPhone($phone);
+        $customerType = (string) ($data['customer_type'] ?? 'persona_fisica'); $customerId = (int) ($data['id'] ?? 0); $existing = $this->findByPhone($phone);
+        if ($customerId > 0) {
+            $statement = $this->connection->prepare('UPDATE customers SET name=?, business_name=?, customer_type=?, email=?, email_normalized=?, phone=?, phone_normalized=? WHERE id=?');
+            $statement->bind_param('sssssssi', $name, $businessName, $customerType, $email, $emailNormalized, $phone, $phone, $customerId); $statement->execute();
+            return $this->find($customerId);
+        }
         if ($existing) {
             $statement = $this->connection->prepare('UPDATE customers SET name=?, business_name=?, customer_type=?, email=?, email_normalized=?, phone=? WHERE id=?');
             $statement->bind_param('ssssssi', $name, $businessName, $customerType, $email, $emailNormalized, $phone, $existing->id); $statement->execute();

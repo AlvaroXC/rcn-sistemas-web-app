@@ -11,7 +11,7 @@ final class MysqliAdminUserManagementRepository implements AdminUserManagementRe
 
     public function all(): array
     {
-        $result = $this->connection->query('SELECT id, username, display_name, role, active FROM users ORDER BY display_name, username');
+        $result = $this->connection->query('SELECT id, username, display_name, role, active, created_at FROM users ORDER BY display_name, username');
         $users = [];
         while ($result && $row = $result->fetch_assoc()) $users[] = AdminUser::fromArray($row);
         return $users;

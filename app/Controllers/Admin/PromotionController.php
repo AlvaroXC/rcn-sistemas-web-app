@@ -45,11 +45,16 @@ final class PromotionController extends Controller
                     'short_description' => $request->input('short_description', ''),
                     'full_description' => $request->input('full_description', ''),
                     'terms_conditions' => $request->input('terms_conditions', ''),
-                    'image_path' => $request->input('current_img', ''),
+                    'image_path' => $request->input('current_img', $request->input('image_path', '')),
                     'start_date' => $request->input('start_date', ''),
                     'end_date' => $request->input('end_date', ''),
                     'active' => $request->input('active') !== null ? 1 : 0,
                 ];
+                $image = (array) $request->file('image', []);
+                if (($image['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                    $stored = $this->uploads->store($image, __DIR__ . '/../../../uploads/images');
+                    $data['image_path'] = 'uploads/images/' . $stored;
+                }
 
                 try {
                     $this->service->save($data, $promotionId);
@@ -71,6 +76,7 @@ final class PromotionController extends Controller
             'promotions' => $action === 'list' ? $this->promotions->all(false) : [],
             'promotion' => $current,
             'error' => $error,
+            'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'),
         ], 'layouts.admin');
     }
 }

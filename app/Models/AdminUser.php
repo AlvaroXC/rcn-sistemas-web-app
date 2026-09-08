@@ -9,11 +9,12 @@ final class AdminUser
         public readonly string $username,
         public readonly string $displayName,
         public readonly string $role,
-        public readonly bool $active
+        public readonly bool $active,
+        public readonly ?string $createdAt = null
     ) {}
 
     public static function fromArray(array $data): self
     {
-        return new self((int) ($data['id'] ?? 0), trim((string) ($data['username'] ?? '')), trim((string) ($data['display_name'] ?? '')), trim((string) ($data['role'] ?? 'admin')), (int) ($data['active'] ?? 0) === 1);
+        return new self((int) ($data['id'] ?? 0), trim((string) ($data['username'] ?? '')), trim((string) ($data['display_name'] ?? '')), trim((string) ($data['role'] ?? 'admin')), (int) ($data['active'] ?? 0) === 1, isset($data['created_at']) ? trim((string) $data['created_at']) : null);
     }
 }

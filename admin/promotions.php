@@ -1,9 +1,10 @@
 <?php
 
-require_once __DIR__ . '/../includes/security.php';
-require_once __DIR__ . '/../includes/db.php';
+$application = require __DIR__ . '/../app/Bootstrap/app.php';
 
 use RcnSistemas\Controllers\Admin\PromotionController;
+use RcnSistemas\Core\Security\CsrfService;
+use RcnSistemas\Core\Security\SessionManager;
 use RcnSistemas\Core\Http\Request;
 use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Repositories\MysqliPromotionManagementRepository;
@@ -11,10 +12,11 @@ use RcnSistemas\Services\Communications\UploadService;
 use RcnSistemas\Services\PromotionManagementService;
 use RcnSistemas\Services\PromotionService;
 
-start_secure_session(true);
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    verify_csrf_or_fail();
-}
+$session = new SessionManager(); $session->start();
+if (!$session->isAuthenticated()) { header('Location: login.php'); exit; }
+$csrf = new CsrfService($session); $csrf->token();
+if ($_SERVER['REQUEST_METHOD'] === 'POST') $csrf->validate($_POST['_csrf_token'] ?? null);
+$conn = $application['database']->get();
 
 $views = new ViewRenderer(__DIR__ . '/../app/Views');
 $repository = new MysqliPromotionManagementRepository($conn);

@@ -9,26 +9,43 @@ use RcnSistemas\Core\Http\Response;
 use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Repositories\ProductRepository;
 use RcnSistemas\Services\ProductService;
+use RcnSistemas\Services\Communications\UploadService;
 
 final class ProductController extends Controller
 {
     public function __construct(
         private readonly ProductRepository $products,
         private readonly ProductService $productService,
-        ViewRenderer $views
+        ViewRenderer $views,
+        private readonly ?UploadService $uploads = null,
+        private readonly string $imageDirectory = '',
+        private readonly string $pdfDirectory = ''
     ) {
         parent::__construct($views);
     }
 
-    public function index(): Response
+    public function index(Request $request): Response
     {
+        $action = in_array($request->query('action', 'list'), ['list', 'new', 'edit'], true) ? $request->query('action', 'list') : 'list';
+        $productId = (int) $request->query('id', 0);
+        if ($request->isMethod('POST')) {
+            $productId = (int) $request->input('id', $productId);
+            if ($request->input('form_action') === 'delete') {
+                if ($this->products->delete($productId)) return Response::redirect('products.php');
+                return $this->view('admin.products.index', ['pageTitle' => 'Productos', 'products' => $this->products->all(), 'error' => 'No se pudo eliminar el producto.', 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8')], 'layouts.admin', 422);
+            }
+            return $this->save($request, $productId);
+        }
+        $product = $productId > 0 ? $this->products->find($productId) : null;
+        if ($action === 'edit' && !$product) return $this->view('errors.404', [], 'layouts.admin', 404);
+        if ($action !== 'list') return $this->view('admin.products.form', ['pageTitle' => $product ? 'Editar producto' : 'Nuevo producto', 'product' => $product, 'error' => null, 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8')], 'layouts.admin');
         return $this->view('admin.products.index', [
             'pageTitle' => 'Productos',
-            'products' => $this->products->all(),
+            'products' => $this->products->all(), 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'),
         ], 'layouts.admin');
     }
 
-    public function save(Request $request): Response
+    public function save(Request $request, int $productId = 0): Response
     {
         try {
             $data = [
@@ -36,17 +53,34 @@ final class ProductController extends Controller
                 'short_description' => $request->input('short_description', ''),
                 'long_description' => $request->input('long_description', ''),
                 'video_link' => $request->input('video_link', ''),
-                'pdf_path' => $request->input('pdf_path', ''),
-                'image_path' => $request->input('image_path', ''),
+                'pdf_path' => $request->input('current_pdf', ''),
+                'image_path' => $request->input('current_img', ''),
             ];
-            $product = $this->productService->save($data);
+            $image = (array) $request->file('image', []);
+            $pdf = (array) $request->file('pdf', []);
+            if ($this->uploads && $this->imageDirectory !== '' && ($image['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $stored = $this->uploads->store($image, $this->imageDirectory);
+                $data['image_path'] = 'uploads/images/' . $stored;
+            }
+            if ($this->uploads && $this->pdfDirectory !== '' && ($pdf['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE) {
+                $stored = $this->uploads->store($pdf, $this->pdfDirectory, ['extensions' => ['pdf'], 'max_size' => 10 * 1024 * 1024]);
+                $data['pdf_path'] = 'uploads/pdfs/' . $stored;
+            }
+            $benefitTitles = (array) $request->input('benefit_titles', []);
+            $benefitDescriptions = (array) $request->input('benefit_descs', []);
+            $benefits = [];
+            foreach ($benefitTitles as $index => $title) {
+                $benefits[] = ['title' => $title, 'description' => $benefitDescriptions[$index] ?? ''];
+            }
+            $product = $this->productService->save($data, $benefits, $productId);
 
             return Response::redirect('/admin/products.php?id=' . $product->id);
         } catch (InvalidArgumentException $exception) {
             return $this->view('admin.products.form', [
                 'pageTitle' => 'Nuevo producto',
                 'error' => $exception->getMessage(),
-                'form' => $request,
+                'product' => $productId > 0 ? $this->products->find($productId) : null,
+                'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'),
             ], 'layouts.admin', 422);
         }
     }

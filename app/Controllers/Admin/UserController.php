@@ -27,6 +27,6 @@ final class UserController extends Controller
                 return Response::redirect('users.php');
             } catch (InvalidArgumentException $exception) { $error = $exception->getMessage(); }
         }
-        return $this->view('admin.users.index', ['pageTitle' => 'Usuarios administrativos', 'users' => $editing ? [] : $this->users->all(), 'user' => $user, 'editing' => $editing, 'error' => $error], 'layouts.admin');
+        return $this->view('admin.users.index', ['pageTitle' => 'Usuarios administrativos', 'users' => $editing ? [] : $this->users->all(), 'user' => $user, 'editing' => $editing, 'error' => $error, 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8')], 'layouts.admin');
     }
 }

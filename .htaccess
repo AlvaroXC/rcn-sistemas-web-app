@@ -1,0 +1,3 @@
+<FilesMatch "^(debug_db|fix_admin|fix_paths|seed)\.php$">
+    Require all denied
+</FilesMatch>

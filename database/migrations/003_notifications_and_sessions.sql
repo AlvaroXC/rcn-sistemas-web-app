@@ -1,5 +1,3 @@
-USE rcnsiste_axsoluciones;
-
 CREATE TABLE IF NOT EXISTS admin_notifications (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,

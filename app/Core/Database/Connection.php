@@ -13,7 +13,7 @@ final class Connection
     {
     }
 
-    public function get(): mysqli
+    public function get(bool $selectDatabase = true): mysqli
     {
         if ($this->connection instanceof mysqli) {
             return $this->connection;
@@ -25,7 +25,7 @@ final class Connection
             (string) ($this->configuration['host'] ?? 'localhost'),
             (string) ($this->configuration['username'] ?? 'root'),
             (string) ($this->configuration['password'] ?? ''),
-            (string) ($this->configuration['database'] ?? ''),
+            $selectDatabase ? (string) ($this->configuration['database'] ?? '') : '',
             (int) ($this->configuration['port'] ?? 3306)
         );
 

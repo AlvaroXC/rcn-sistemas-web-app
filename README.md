@@ -61,14 +61,13 @@ DB_PASS=tu_contraseña
 
 ### 4. Configurar la Base de Datos
 1. Crea una base de datos vacía en tu gestor de MySQL (ej. phpMyAdmin) llamada `rcn_sistemas`.
-2. Importa el esquema inicial de la base de datos:
+2. Ejecuta las migraciones desde la terminal:
    ```bash
-   mysql -u tu_usuario -p rcnsiste_axsoluciones < database/migrations/001_initial_schema.sql
-   mysql -u tu_usuario -p rcnsiste_axsoluciones < database/migrations/002_support_and_admin_extensions.sql
+   php scripts/migrate.php
    ```
-3. (Opcional) Si deseas inicializar productos de demostración, ejecuta el archivo PHP sembrador desde tu navegador o terminal:
+3. (Opcional) Si deseas inicializar productos de demostración, ejecuta el archivo PHP sembrador desde la terminal:
    ```bash
-   php seed.php
+   php scripts/seed.php
    ```
 
 ### 5. Iniciar la aplicación
@@ -86,6 +85,10 @@ Y abre `http://localhost:8000` en tu navegador.
 vendor/bin/phpunit
 ```
 
+También puedes usar `composer test` y `composer lint` para ejecutar las validaciones estandarizadas.
+
+Para una ejecución local aislada puedes copiar `.env.testing.example` como `.env.testing`. Las pruebas unitarias actuales no requieren conexión a MySQL; el workflow de integración continua ejecuta la suite en cada cambio.
+
 ### Ejecutar migraciones
 
 ```bash
@@ -97,15 +100,17 @@ Las migraciones se registran en `app_migrations` y no se repiten. Antes de modif
 ## 📂 Estructura del Proyecto
 
 ```text
-├── admin/                     # Panel de administración (CRUD de productos y promociones)
+├── admin/                     # Entradas del panel administrativo
+├── app/                       # Núcleo MVC: controladores, modelos, repositorios y servicios
 ├── css/                       # Archivos de estilos CSS (incluye estilos corporativos)
 ├── fichas_producto/           # PDFs de fichas técnicas oficiales de CONTPAQi
-├── includes/                  # Componentes reutilizables (cabecera, pie de página, DB)
+├── scripts/                   # Migraciones, seed y mantenimiento desde terminal
 ├── js/                        # Controladores de comportamiento JavaScript
-├── src/                       # Recursos estáticos (imágenes oficiales, logos SVG)
+├── src/                       # Recursos estáticos existentes
 ├── uploads/                   # Carpeta de subidas para imágenes del admin
 ├── .env.example               # Plantilla de configuración de variables de entorno
-└── database.sql               # Esquema de la Base de Datos
+├── database/migrations/       # Cambios versionados del esquema
+└── tests/                     # Pruebas PHPUnit
 ```
 
 ## 🔐 Acceso al Administrador

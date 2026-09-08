@@ -1,0 +1,191 @@
+.admin-main { min-height: 70vh; }
+.admin-main .table { width: 100%; }
+.admin-main .inline-form { display: inline; }
+.sidebar__link--logout { margin-top: auto; color: #ff6b6b; }
+.admin-main .admin-form label,
+.admin-main .section > form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+    color: var(--primary);
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+.admin-main .admin-form input,
+.admin-main .admin-form select,
+.admin-main .admin-form textarea,
+.admin-main .section > form input,
+.admin-main .section > form select,
+.admin-main .section > form textarea {
+    width: 100%;
+    padding: 1.2rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: #fff;
+    color: var(--text-dark);
+    font: inherit;
+}
+.admin-main .section > table,
+.admin-main .section > .table {
+    width: 100%;
+    margin-top: 2rem;
+    border-collapse: collapse;
+    background: #fff;
+    box-shadow: var(--shadow);
+}
+.admin-main .section > table th,
+.admin-main .section > table td,
+.admin-main .section > .table th,
+.admin-main .section > .table td {
+    padding: 1.5rem;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+}
+.dashboard-actions { padding: 3rem; margin-top: 3rem; }
+.dashboard-actions__links { display: flex; flex-wrap: wrap; gap: 2rem; margin-top: 2rem; }
+
+.admin-main .admin-header h1 {
+    font-size: 2.8rem !important;
+    font-weight: 600 !important;
+}
+
+.admin-main .ticket-section__title,
+.admin-main .panel-card h2:not(.ticket-section__title) {
+    font-size: 2rem !important;
+    font-weight: 600 !important;
+}
+
+.admin-main .admin-form__row--triple > .admin-form__actions {
+    grid-column: 1 / -1;
+}
+
+.admin-main .admin-form__actions--tickets,
+.admin-main .admin-form__actions {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 1.2rem;
+    width: fit-content;
+    margin-left: auto;
+    align-self: end;
+}
+
+.admin-main .admin-form__actions .btn {
+    width: 200px;
+    min-width: 200px;
+    height: 56px;
+    margin-top: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-main .admin-form__actions .btn--secondary {
+    background: transparent;
+    color: var(--secondary);
+    border: 1px solid rgba(3, 123, 192, 0.25);
+    box-shadow: none;
+}
+
+.admin-main .ticket-scope-tabs ~ .panel-card .admin-form {
+    position: relative;
+    padding-bottom: 8.6rem;
+}
+
+.admin-main .ticket-scope-tabs ~ .panel-card .admin-form > .btn {
+    position: absolute;
+    right: 212px;
+    bottom: 3rem;
+    width: 200px;
+    height: 56px;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.admin-main .stats .stat-card:nth-child(1) .stat-card__icon { color: #d97706; }
+.admin-main .stats .stat-card:nth-child(2) .stat-card__icon { color: #dc2626; }
+.admin-main .stats .stat-card:nth-child(3) .stat-card__icon { color: #1d4ed8; }
+
+.admin-main .admin-form .admin-form__check,
+.admin-main .admin-form .admin-form__check .admin-form__label {
+    display: inline-flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+}
+
+.admin-main .admin-form .admin-form__check {
+    width: fit-content;
+    min-height: 2.4rem;
+    align-self: flex-start;
+    gap: 1rem;
+}
+
+.admin-main .admin-form .admin-form__check .admin-form__label {
+    width: auto;
+    margin: 0;
+    gap: 0 !important;
+}
+
+.admin-main .admin-form .admin-form__check input[type="checkbox"] {
+    width: 1.6rem;
+    height: 1.6rem;
+    margin: 0;
+    flex: 0 0 auto;
+}
+
+.admin-main .ticket-scope-tabs ~ .panel-card .admin-form > .btn--secondary {
+    right: 0;
+    background: transparent;
+    color: var(--secondary);
+    border: 1px solid rgba(3, 123, 192, 0.25);
+    box-shadow: none;
+}
+
+@media (min-width: 768px) {
+    .admin-main .admin-header h1 {
+        font-size: 3.6rem !important;
+    }
+
+    .admin-main .ticket-section__title,
+    .admin-main .panel-card h2:not(.ticket-section__title) {
+        font-size: 2.4rem !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .admin-main .admin-form__actions--tickets,
+    .admin-main .admin-form__actions {
+        width: 100%;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .admin-main .admin-form__actions .btn,
+    .admin-main .ticket-scope-tabs ~ .panel-card .admin-form > .btn {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .admin-main .ticket-scope-tabs ~ .panel-card .admin-form {
+        padding-bottom: 15.2rem;
+    }
+
+    .admin-main .ticket-scope-tabs ~ .panel-card .admin-form > .btn {
+        right: 3rem;
+        left: 3rem;
+    }
+
+    .admin-main .ticket-scope-tabs ~ .panel-card .admin-form > .btn--secondary {
+        bottom: 3rem;
+    }
+
+    .admin-main .ticket-scope-tabs ~ .panel-card .admin-form > .btn:not(.btn--secondary) {
+        bottom: 9.8rem;
+    }
+}

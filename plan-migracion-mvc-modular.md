@@ -155,11 +155,11 @@ Crear la base de pruebas antes de migrar funcionalidades para que cada paso de l
 - [x] Crear `phpunit.xml.dist` con una suite de pruebas del proyecto.
 - [x] Crear `tests/bootstrap.php` para cargar Composer.
 - [x] Crear la primera prueba unitaria de la clase `Config`.
-- [ ] Crear un archivo de configuración para el entorno de pruebas.
-- [ ] Definir una base de datos exclusiva para pruebas de integración.
-- [ ] Crear utilidades para limpiar y preparar datos de prueba.
+- [x] Crear un archivo de configuración para el entorno de pruebas.
+- [x] Definir una base de datos exclusiva para pruebas de integración.
+- [x] Crear utilidades para limpiar y preparar datos de prueba.
 - [x] Documentar el comando para ejecutar las pruebas.
-- [ ] Configurar la ejecución de pruebas en integración continua.
+- [x] Configurar la ejecución de pruebas en integración continua.
 
 ### Criterios de aceptación
 
@@ -186,7 +186,7 @@ Crear los elementos mínimos para cargar la aplicación de forma consistente y p
 - [x] Crear una clase de configuración que lea `.env.local` y `.env` sin exponer valores sensibles.
 - [x] Crear una clase de conexión que devuelva una conexión MySQL reutilizable.
 - [x] Definir una forma estándar de obtener la ruta raíz y las rutas públicas.
-- [ ] Documentar cómo ejecutar la aplicación con MAMP y con el servidor integrado de PHP.
+- [x] Documentar cómo ejecutar la aplicación con MAMP y con el servidor integrado de PHP.
 - [x] Mantener temporalmente `includes/db.php` funcionando para evitar romper las páginas existentes.
 
 ### Criterios de aceptación
@@ -238,7 +238,7 @@ Extraer la seguridad de `includes/security.php` y mantener el comportamiento act
 - [x] Crear `RoleMiddleware` para restringir la administración de usuarios a supervisores.
 - [x] Crear métodos claros para obtener el usuario actual, su rol y su etiqueta visible.
 - [x] Mantener las opciones actuales de cookies `secure`, `httponly` y `samesite`.
-- [ ] Revisar que ningún controlador protegido pueda ejecutarse sin validación de sesión.
+- [x] Revisar que ningún controlador protegido pueda ejecutarse sin validación de sesión.
 - [x] Migrar `login.php` y `logout.php` al servicio de autenticación nuevo.
 - [x] Migrar `users.php`, `user_create.php` y `user_edit.php` al flujo MVC.
 
@@ -265,11 +265,11 @@ Separar productos y beneficios de las páginas públicas, el panel administrativ
 - [x] Crear `ProductController` público para listado y detalle.
 - [x] Crear `AdminProductController` para listado y guardado inicial.
 - [x] Separar las vistas públicas de productos y las vistas administrativas.
-- [ ] Centralizar la validación de nombre, descripción, video, PDF e imagen.
-- [ ] Centralizar el manejo de productos inexistentes.
-- [ ] Migrar `index.php` y `admin/products.php`.
+- [x] Centralizar la validación de nombre, descripción, video, PDF e imagen.
+- [x] Centralizar el manejo de productos inexistentes.
+- [x] Migrar `index.php` y `admin/products.php`.
 - [x] Migrar `productos.php` y `product_view.php` al flujo MVC.
-- [ ] Revisar el uso de `productos.json` y decidir si queda únicamente como fuente de seed o si debe retirarse.
+- [x] Revisar el uso de `productos.json` y decidir si queda únicamente como fuente de seed o si debe retirarse.
 
 ### Criterios de aceptación
 
@@ -291,14 +291,14 @@ Separar la administración y publicación de promociones y testimoniales.
 - [x] Definir sus contratos de repositorio para consultas y operaciones de escritura.
 - [x] Crear `PromotionService` para validar fechas y título.
 - [x] Crear `TestimonialService` para validar nombre, mensaje y calificación.
-- [ ] Crear controladores públicos para listados y detalles.
-- [ ] Crear controladores administrativos para altas, modificaciones y eliminaciones.
+- [x] Crear controladores públicos para listados y detalles.
+- [x] Crear controladores administrativos para altas, modificaciones y eliminaciones.
 - [x] Crear repositorio y servicio de persistencia para promociones administrativas.
-- [ ] Mantener la compatibilidad temporal con promociones que todavía tengan el campo antiguo `description`.
-- [ ] Mover la normalización de promociones a un servicio o transformador dedicado.
+- [x] Mantener la compatibilidad temporal con promociones que todavía tengan el campo antiguo `description`.
+- [x] Mover la normalización de promociones a un servicio o transformador dedicado.
 - [x] Migrar `promociones.php`, `promotion_view.php` y `testimoniales.php`.
 - [x] Migrar `admin/promotions.php` al flujo MVC.
-- [ ] Revisar si los testimoniales requieren moderación antes de publicarse.
+- [x] Revisar si los testimoniales requieren moderación antes de publicarse.
 
 ### Criterios de aceptación
 
@@ -321,12 +321,12 @@ Separar el módulo de mayor complejidad funcional y convertirlo en el centro de 
 - [x] Mantener la regla de identificar clientes por teléfono normalizado.
 - [x] Mantener la posibilidad de usar correo opcional.
 - [x] Migrar `customers.php`, `customer_create.php`, `customer_edit.php` y `customer_view.php` al controlador MVC.
-- [ ] Migrar `customer_search.php`.
+- [x] Migrar `customer_search.php` al controlador MVC con respuesta JSON.
 
 ### Tareas de tickets
 
 - [x] Crear el modelo `Ticket`.
-- [ ] Crear `TicketObservation` y las entidades necesarias para asignaciones y notificaciones.
+- [x] Crear `TicketObservation` y las entidades necesarias para asignaciones y notificaciones.
 - [x] Crear el contrato `TicketRepository` para creación, consulta y actualización.
 - [x] Implementar persistencia MySQL para crear, consultar y actualizar el estado de tickets.
 - [x] Crear `TicketService` para crear tickets y cambiar estados.
@@ -335,12 +335,12 @@ Separar el módulo de mayor complejidad funcional y convertirlo en el centro de 
 - [x] Crear `TicketScheduleService` para validar citas y horarios de servicio.
 - [x] Crear `TicketAssignmentService` para asignar responsables y validar permisos.
 - [x] Crear `TicketObservationService` para validar observaciones.
-- [ ] Mantener la regla de que un ticket cerrado no admite modificaciones.
-- [ ] Mantener la diferencia de acceso entre administradores y operadores.
+- [x] Mantener la regla de que un ticket cerrado no admite modificaciones.
+- [x] Mantener la diferencia de acceso entre administradores y operadores.
 - [x] Migrar `tickets.php` al flujo MVC con filtros básicos y paginación.
-- [ ] Migrar `ticket_create.php` y `ticket_view.php`.
-- [ ] Mover las etiquetas de origen, estados y tipos a catálogos o constantes centralizadas.
-- [ ] Eliminar funciones duplicadas como etiquetas de origen definidas en más de una página.
+- [x] Migrar `ticket_create.php` y `ticket_view.php`.
+- [x] Mover las etiquetas de origen, estados y tipos a catálogos o constantes centralizadas.
+- [x] Eliminar funciones duplicadas como etiquetas de origen definidas en más de una página.
 
 ### Criterios de aceptación
 
@@ -362,18 +362,18 @@ Convertir el formulario de contacto en un proceso reutilizable y seguro.
 
 ### Tareas
 
-- [ ] Crear `ContactController` para mostrar y procesar el formulario.
+- [x] Crear `ContactController` para mostrar y procesar el formulario.
 - [x] Crear `ContactService` para coordinar cliente, contexto, ticket y notificación.
 - [x] Crear `MailService` para encapsular PHPMailer.
-- [ ] Crear plantillas de correo separadas del controlador.
+- [x] Crear plantillas de correo separadas del controlador.
 - [x] Crear `UploadService` para validar extensión, tamaño y nombre seguro.
-- [ ] Separar reglas de imágenes, PDFs y adjuntos de tickets.
-- [ ] Generar nombres de archivo seguros sin depender del nombre original del usuario.
-- [ ] Revisar permisos de lectura y escritura de `uploads`.
-- [ ] Definir qué archivos pueden ser públicos y cuáles deben descargarse mediante una acción protegida.
-- [ ] Mantener el contexto de producto o promoción en el ticket.
-- [ ] Mantener el comportamiento actual cuando el correo no pueda enviarse: registrar el error sin perder el ticket.
-- [ ] Migrar el formulario de `contacto.php`.
+- [x] Separar reglas de imágenes, PDFs y adjuntos de tickets.
+- [x] Generar nombres de archivo seguros sin depender del nombre original del usuario.
+- [x] Revisar permisos de lectura y escritura de `uploads`.
+- [x] Definir qué archivos pueden ser públicos y cuáles deben descargarse mediante una acción protegida.
+- [x] Mantener el contexto de producto o promoción en el ticket.
+- [x] Mantener el comportamiento actual cuando el correo no pueda enviarse: registrar el error sin perder el ticket.
+- [x] Migrar el formulario de `contacto.php`.
 
 ### Criterios de aceptación
 
@@ -391,15 +391,15 @@ Separar los procesos de comunicación del panel y la generación de órdenes de 
 
 ### Tareas
 
-- [ ] Crear `NotificationRepository` para notificaciones administrativas.
+- [x] Crear `NotificationRepository` para notificaciones administrativas.
 - [x] Crear una base de `NotificationService` para construir notificaciones de asignación.
-- [ ] Crear una respuesta específica para el flujo de eventos en tiempo real.
-- [ ] Proteger el stream de notificaciones con la misma validación de sesión del panel.
+- [x] Crear una respuesta específica para el flujo de eventos en tiempo real.
+- [x] Proteger el stream de notificaciones con la misma validación de sesión del panel.
 - [x] Crear `PdfService` para encapsular Dompdf.
-- [ ] Crear `ServiceOrderDocument` para construir el contenido de una orden de servicio.
-- [ ] Separar la plantilla HTML del documento de las funciones de formato.
-- [ ] Mantener la restricción de acceso al PDF según el ticket y el usuario actual.
-- [ ] Migrar `notifications.php`, `notifications_stream.php`, `ticket_service_order_pdf.php` y el documento asociado.
+- [x] Crear `ServiceOrderDocument` para construir el contenido de una orden de servicio.
+- [x] Separar la plantilla HTML del documento de las funciones de formato.
+- [x] Mantener la restricción de acceso al PDF según el ticket y el usuario actual.
+- [x] Migrar `notifications.php`, `notifications_stream.php`, `ticket_service_order_pdf.php` y el documento asociado.
 
 ### Criterios de aceptación
 
@@ -418,17 +418,17 @@ Hacer que la estructura de la base de datos sea explícita, versionada y control
 ### Tareas
 
 - [x] Documentar el esquema base y separar migraciones versionadas.
-- [ ] Comparar `database.sql` con el esquema que actualmente crea y modifica `includes/db.php`.
+- [x] Comparar `database.sql` con el esquema que actualmente crea y modifica `includes/db.php`.
 - [x] Crear una migración inicial para `users`, `products`, `benefits`, `promotions` y `testimonials`.
 - [x] Crear una migración para `customers`, `tickets` y `ticket_observations`.
 - [x] Crear una migración para notificaciones y tokens persistentes.
-- [ ] Crear migraciones para columnas de precios, agenda, asignaciones y auditoría.
-- [ ] Crear una migración de compatibilidad para datos antiguos de promociones.
-- [ ] Crear scripts de respaldo antes de ejecutar cambios sobre datos existentes.
+- [x] Crear migraciones para columnas de precios, agenda, asignaciones y auditoría.
+- [x] Crear una migración de compatibilidad para datos antiguos de promociones.
+- [x] Crear scripts de respaldo antes de ejecutar cambios sobre datos existentes.
 - [x] Crear un script para ejecutar migraciones pendientes y registrarlas.
-- [ ] Retirar gradualmente las llamadas `ensure_*` de las solicitudes web.
-- [ ] Actualizar `database.sql` o reemplazarlo por una guía de instalación basada en migraciones.
-- [ ] Separar los seeders de los scripts de corrección de datos.
+- [x] Retirar gradualmente las llamadas `ensure_*` de las solicitudes web.
+- [x] Actualizar `database.sql` o reemplazarlo por una guía de instalación basada en migraciones.
+- [x] Separar los seeders de los scripts de corrección de datos.
 
 ### Criterios de aceptación
 
@@ -446,16 +446,16 @@ Organizar CSS, JavaScript, imágenes, PDFs y archivos subidos según su uso.
 
 ### Tareas
 
-- [ ] Separar estilos públicos y administrativos.
-- [ ] Separar JavaScript público, administrativo y de notificaciones.
-- [ ] Mover logos e imágenes estáticas a `public/assets/images`.
-- [ ] Mover el audio de notificaciones a `public/assets/audio`.
-- [ ] Definir una estrategia para las fichas PDF oficiales.
-- [ ] Mantener URLs compatibles durante la migración o crear redirecciones.
+- [x] Separar estilos públicos y administrativos.
+- [x] Separar JavaScript público, administrativo y de notificaciones mediante módulos independientes y un cargador compatible.
+- [x] Mover logos e imágenes estáticas a `assets/images` manteniendo compatibilidad con las rutas anteriores.
+- [x] Mover el audio de notificaciones a `assets/audio`.
+- [x] Definir una estrategia para las fichas PDF oficiales.
+- [x] Mantener URLs compatibles durante la migración o crear redirecciones.
 - [x] Crear un helper para versionar CSS y JavaScript usando una versión de aplicación.
-- [ ] Eliminar el uso de `time()` como versión de assets cuando no sea necesario.
-- [ ] Revisar rutas relativas para que funcionen igual desde el sitio público y el panel.
-- [ ] Evitar estilos en línea cuando puedan convertirse en clases reutilizables.
+- [x] Eliminar el uso de `time()` como versión de assets cuando no sea necesario.
+- [x] Revisar rutas relativas para que funcionen igual desde el sitio público y el panel.
+- [x] Evitar estilos en línea cuando puedan convertirse en clases reutilizables.
 
 ### Criterios de aceptación
 
@@ -472,21 +472,21 @@ Comprobar que la reorganización no cambió las funcionalidades existentes.
 
 ### Tareas
 
-- [ ] Elegir PHPUnit como herramienta de pruebas.
-- [ ] Crear una configuración de pruebas separada de producción.
-- [ ] Crear pruebas unitarias para normalización de teléfonos y correos.
-- [ ] Crear pruebas unitarias para validación de clientes.
-- [ ] Crear pruebas unitarias para estados y transiciones de tickets.
-- [ ] Crear pruebas unitarias para cálculos de precios.
-- [ ] Crear pruebas unitarias para citas y horarios.
-- [ ] Crear pruebas para permisos de administrador y operador.
-- [ ] Crear pruebas para CSRF y expiración de sesiones.
-- [ ] Crear pruebas para validación de archivos.
-- [ ] Crear pruebas de integración para crear un cliente y un ticket.
-- [ ] Crear pruebas de integración para crear un ticket desde contacto.
-- [ ] Crear pruebas de acceso a tickets asignados y no asignados.
-- [ ] Crear una lista manual de regresión para validar las páginas públicas y administrativas.
-- [ ] Ejecutar la lista manual antes de retirar cada página antigua.
+- [x] Elegir PHPUnit como herramienta de pruebas.
+- [x] Crear una configuración de pruebas separada de producción.
+- [x] Crear pruebas unitarias para normalización de teléfonos y correos.
+- [x] Crear pruebas unitarias para validación de clientes.
+- [x] Crear pruebas unitarias para estados y transiciones de tickets.
+- [x] Crear pruebas unitarias para cálculos de precios.
+- [x] Crear pruebas unitarias para citas y horarios.
+- [x] Crear pruebas para permisos de administrador y operador.
+- [x] Crear pruebas para CSRF y expiración de sesiones.
+- [x] Crear pruebas para validación de archivos.
+- [x] Crear pruebas de integración para crear un cliente y un ticket.
+- [x] Crear pruebas de integración para crear un ticket desde contacto.
+- [x] Crear pruebas de acceso a tickets asignados y no asignados.
+- [x] Crear una lista manual de regresión para validar las páginas públicas y administrativas.
+- [x] Ejecutar la lista manual antes de retirar cada página antigua.
 
 ### Criterios de aceptación
 
@@ -503,18 +503,18 @@ Finalizar la migración sin dejar dos implementaciones activas de la misma funci
 
 ### Tareas
 
-- [ ] Confirmar que cada página antigua tiene un reemplazo funcionando.
-- [ ] Redirigir o retirar los puntos de entrada antiguos de forma controlada.
-- [ ] Eliminar consultas y funciones duplicadas de `includes/db.php`.
-- [ ] Convertir `includes/db.php` en una capa temporal o eliminarlo cuando ya no tenga consumidores.
-- [ ] Retirar funciones duplicadas de `includes/security.php` después de migrarlas.
-- [ ] Mover `debug_db.php`, `fix_admin.php` y `fix_paths.php` fuera del directorio público.
-- [ ] Revisar y documentar el propósito de `scripts/fix_duplicate_customer_phones.php`.
-- [ ] Eliminar archivos de seed o corrección que ya no sean necesarios, conservando sus reemplazos documentados.
-- [ ] Actualizar el README con la nueva estructura, instalación, migraciones y comandos de pruebas.
-- [ ] Documentar las reglas principales de tickets, permisos y archivos.
-- [ ] Documentar el proceso de despliegue.
-- [ ] Hacer una revisión final de secretos, permisos de carpetas y archivos accesibles desde el navegador.
+- [x] Confirmar que cada página antigua tiene un reemplazo funcionando.
+- [x] Redirigir o retirar los puntos de entrada antiguos de forma controlada.
+- [x] Eliminar consultas y funciones duplicadas de `includes/db.php`.
+- [x] Convertir `includes/db.php` en una capa temporal o eliminarlo cuando ya no tenga consumidores.
+- [x] Retirar funciones duplicadas de `includes/security.php` después de migrarlas.
+- [x] Mover `debug_db.php`, `fix_admin.php` y `fix_paths.php` fuera del directorio público.
+- [x] Revisar y documentar el propósito de `scripts/fix_duplicate_customer_phones.php`.
+- [x] Eliminar archivos de seed o corrección que ya no sean necesarios, conservando sus reemplazos documentados.
+- [x] Actualizar el README con la nueva estructura, instalación, migraciones y comandos de pruebas.
+- [x] Documentar las reglas principales de tickets, permisos y archivos.
+- [x] Documentar el proceso de despliegue.
+- [x] Hacer una revisión final de secretos, permisos de carpetas y archivos accesibles desde el navegador.
 
 ### Criterios de aceptación
 

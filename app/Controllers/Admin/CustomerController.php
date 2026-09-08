@@ -8,13 +8,14 @@ use RcnSistemas\Core\Http\Request;
 use RcnSistemas\Core\Http\Response;
 use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Repositories\CustomerRepository;
+use RcnSistemas\Repositories\CustomerQueryRepository;
 use RcnSistemas\Services\Customers\CustomerIdentity;
 use RcnSistemas\Services\Customers\CustomerService;
 
 final class CustomerController extends Controller
 {
     private CustomerService $service;
-    public function __construct(private readonly CustomerRepository $customers, ViewRenderer $views) { parent::__construct($views); $this->service = new CustomerService($customers, new CustomerIdentity()); }
+    public function __construct(private readonly CustomerRepository $customers, private readonly CustomerQueryRepository $customerQuery, ViewRenderer $views) { parent::__construct($views); $this->service = new CustomerService($customers, new CustomerIdentity()); }
 
     public function index(Request $request): Response
     {
@@ -22,9 +23,29 @@ final class CustomerController extends Controller
         $customer = $customerId > 0 ? $this->customers->find($customerId) : null; if ($customerId > 0 && !$customer) return $this->view('errors.404', [], 'layouts.admin', 404);
         $error = null;
         if ($request->isMethod('POST')) {
-            try { $customer = $this->service->save(['name' => $request->input('name', ''), 'phone' => $request->input('phone', ''), 'email' => $request->input('email'), 'business_name' => $request->input('business_name', ''), 'customer_type' => $request->input('customer_type', 'persona_fisica')]); return Response::redirect('customers.php?id=' . $customer->id); }
+            try { $customer = $this->service->save(['id' => $customerId, 'name' => $request->input('name', ''), 'phone' => $request->input('phone', ''), 'email' => $request->input('email'), 'business_name' => $request->input('business_name', ''), 'customer_type' => $request->input('customer_type', 'persona_fisica')]); return Response::redirect('customers.php?id=' . $customer->id); }
             catch (InvalidArgumentException $exception) { $error = $exception->getMessage(); }
         }
-        return $this->view('admin.customers.index', ['pageTitle' => 'Clientes', 'customer' => $customer, 'editing' => $editing, 'error' => $error], 'layouts.admin');
+        $search = trim((string) $request->query('search', $request->query('q', '')));
+        $page = max(1, (int) $request->query('page', 1));
+        $perPage = (int) $request->query('per_page', 10);
+        if (!in_array($perPage, [10, 25, 50], true)) $perPage = 10;
+        $total = $this->customerQuery->count($search);
+        return $this->view('admin.customers.index', ['pageTitle' => 'Clientes', 'customer' => $customer, 'editing' => $editing, 'error' => $error, 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'), 'customers' => $this->customerQuery->list($search, $perPage, ($page - 1) * $perPage), 'search' => $search, 'page' => $page, 'perPage' => $perPage, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $perPage))], 'layouts.admin');
+    }
+
+    public function show(Request $request): Response
+    {
+        $customerId = (int) $request->query('id', 0);
+        $customer = $customerId > 0 ? $this->customers->find($customerId) : null;
+        if (!$customer) return $this->view('errors.404', [], 'layouts.admin', 404);
+        $returnUrl = $this->returnUrl((string) $request->query('return', 'tickets.php'));
+        $ticketFilter = $customer->phone ?: ($customer->email ?: $customer->name);
+        return $this->view('admin.customers.show', ['pageTitle' => 'Cliente: ' . $customer->name, 'customer' => $customer, 'tickets' => $this->customerQuery->tickets($customerId), 'returnUrl' => $returnUrl, 'ticketFilter' => $ticketFilter], 'layouts.admin');
+    }
+
+    private function returnUrl(string $url): string
+    {
+        return preg_match('#^(tickets|notifications|customers)\\.php(?:\\?[^\\r\\n]*)?$#', trim($url)) ? trim($url) : 'tickets.php';
     }
 }

@@ -9,16 +9,24 @@ use RcnSistemas\Services\Tickets\TicketService;
 
 final class ContactService
 {
+    private ContactMailTemplate $template;
     public function __construct(
         private readonly CustomerService $customers,
         private readonly TicketService $tickets,
         private readonly UploadService $uploads,
         private readonly MailService $mail
     ) {
+        $this->template = new ContactMailTemplate();
     }
 
     public function createTicket(array $data, ?array $file = null, array $uploadRules = []): Ticket
     {
+        if (trim((string) ($data['name'] ?? '')) === '' || trim((string) ($data['phone'] ?? '')) === '') {
+            throw new InvalidArgumentException('El nombre y el teléfono son obligatorios.');
+        }
+        if (!in_array((string) ($data['consultation_type'] ?? ''), ['Compra', 'Soporte', 'Informacion'], true)) {
+            throw new InvalidArgumentException('Selecciona un tipo de consulta válido.');
+        }
         if ($file !== null) {
             $this->uploads->validate($file, $uploadRules);
         }
@@ -44,11 +52,15 @@ final class ContactService
             'attachment_path' => $data['attachment_path'] ?? null,
         ]);
 
-        $this->mail->send(
-            'Nuevo ticket de contacto - Web RCN',
-            $this->buildMailBody($ticket, $customer->name, $customer->email, $customer->phone, $data),
-            $data['attachment_full_path'] ?? null
-        );
+        try {
+            $this->mail->send(
+                'Nuevo ticket de contacto - Web RCN',
+                $this->template->render($ticket, $customer, $data),
+                $data['attachment_full_path'] ?? null
+            );
+        } catch (\Throwable $exception) {
+            error_log('Contact mail error: ' . $exception->getMessage());
+        }
 
         return $ticket;
     }

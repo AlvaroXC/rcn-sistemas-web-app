@@ -1,9 +1,13 @@
 <?php
 
-require_once __DIR__ . '/../includes/security.php';
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../app/Bootstrap/app.php';
-start_secure_session(true);
+$application = require __DIR__ . '/../app/Bootstrap/app.php';
+
+use RcnSistemas\Core\Security\SessionManager;
+
+$session = new SessionManager();
+$session->start();
+if (!$session->isAuthenticated()) { header('Location: login.php'); exit; }
+$conn = $application['database']->get();
 
 use RcnSistemas\Controllers\Admin\TicketListController;
 use RcnSistemas\Core\Http\Request;
@@ -12,4 +16,4 @@ use RcnSistemas\Repositories\MysqliTicketQueryRepository;
 use RcnSistemas\Services\Tickets\TicketListService;
 
 $controller = new TicketListController(new MysqliTicketQueryRepository($conn), new TicketListService(), new ViewRenderer(__DIR__ . '/../app/Views'));
-$controller->index(Request::fromGlobals(), current_admin_id(), current_admin_role())->send();
+$controller->index(Request::fromGlobals(), $session->userId(), $session->role())->send();

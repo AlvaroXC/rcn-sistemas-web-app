@@ -1,11 +1,15 @@
+<?php $escape = static fn (mixed $value): string => htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8'); ?>
 <section class="section">
-    <h1><?php echo htmlspecialchars((string) ($pageTitle ?? 'Producto'), ENT_QUOTES, 'UTF-8'); ?></h1>
-    <?php if (!empty($error)): ?>
-        <p class="alert alert--error"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></p>
-    <?php endif; ?>
-    <form method="post">
-        <label for="name">Nombre</label>
-        <input id="name" name="name" required>
-        <button type="submit">Guardar</button>
-    </form>
+    <header class="admin-header"><div><h1><?php echo $escape($pageTitle ?? 'Producto'); ?></h1><p>Completa la información que se mostrará en el catálogo público.</p></div><a href="products.php" class="btn btn--secondary">Volver al listado</a></header>
+    <?php if (!empty($error)): ?><p class="alert alert--error"><?php echo $escape($error); ?></p><?php endif; ?>
+    <div class="card panel-card"><form method="post" enctype="multipart/form-data" class="admin-form">
+        <input type="hidden" name="_csrf_token" value="<?php echo $csrf; ?>"><input type="hidden" name="id" value="<?php echo (int) ($product?->id ?? 0); ?>">
+        <div class="admin-form__row"><div class="admin-form__group"><label class="admin-form__label" for="name">Nombre del producto</label><input id="name" name="name" class="admin-form__input" required value="<?php echo $escape($product?->name); ?>"></div><div class="admin-form__group"><label class="admin-form__label" for="video_link">Enlace de video</label><input id="video_link" name="video_link" class="admin-form__input" value="<?php echo $escape($product?->videoLink); ?>" placeholder="https://www.youtube.com/watch?v=..."></div></div>
+        <div class="admin-form__group"><label class="admin-form__label" for="short_description">Descripción corta</label><input id="short_description" name="short_description" class="admin-form__input" required value="<?php echo $escape($product?->shortDescription); ?>"></div>
+        <div class="admin-form__group"><label class="admin-form__label" for="long_description">Descripción completa</label><textarea id="long_description" name="long_description" class="admin-form__textarea" rows="6" required><?php echo $escape($product?->longDescription); ?></textarea></div>
+        <div class="admin-form__row"><div class="admin-form__group"><label class="admin-form__label" for="pdf">Ficha técnica (PDF)</label><input id="pdf" name="pdf" type="file" class="admin-form__input" accept=".pdf"><input type="hidden" name="current_pdf" value="<?php echo $escape($product?->pdfPath); ?>"><?php if ($product?->pdfPath): ?><small class="admin-current-media">Actual: <?php echo $escape(basename($product->pdfPath)); ?></small><?php endif; ?></div><div class="admin-form__group"><label class="admin-form__label" for="image">Imagen del producto</label><input id="image" name="image" type="file" class="admin-form__input" accept="image/*"><input type="hidden" name="current_img" value="<?php echo $escape($product?->imagePath); ?>"><?php if ($product?->imagePath): ?><small class="admin-current-media">Actual: <img src="../<?php echo $escape($product->imagePath); ?>" alt="" height="30"></small><?php endif; ?></div></div>
+        <section class="card panel-card"><h2>Beneficios del producto</h2><div id="benefits-container"><?php $benefits = $product?->benefits ?: [null]; foreach ($benefits as $benefit): ?><div class="benefit-item"><input name="benefit_titles[]" class="admin-form__input" placeholder="Título" value="<?php echo $escape($benefit?->title); ?>"><input name="benefit_descs[]" class="admin-form__input" placeholder="Descripción" value="<?php echo $escape($benefit?->description); ?>"></div><?php endforeach; ?></div><button type="button" class="benefit-btn-add" data-add-benefit>+ Añadir otro beneficio</button></section>
+        <button type="submit" class="btn">Guardar producto</button>
+    </form></div>
 </section>
+<script>document.querySelector('[data-add-benefit]')?.addEventListener('click', () => { const item = document.createElement('div'); item.className = 'benefit-item'; item.innerHTML = '<input name="benefit_titles[]" class="admin-form__input" placeholder="Título"><input name="benefit_descs[]" class="admin-form__input" placeholder="Descripción">'; document.getElementById('benefits-container')?.appendChild(item); });</script>

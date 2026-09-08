@@ -1,5 +1,3 @@
-USE rcnsiste_axsoluciones;
-
 CREATE TABLE IF NOT EXISTS customers (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(255) NOT NULL,

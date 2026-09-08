@@ -35,4 +35,7 @@ final class InMemoryTicketRepository implements TicketRepository
     public function create(array $data): ?Ticket { return Ticket::fromArray(['id' => 1] + $data); }
     public function find(int $ticketId): ?Ticket { return null; }
     public function updateStatus(int $ticketId, string $status): bool { return true; }
+    public function updatePrice(int $ticketId, array $price, int $userId): bool { return true; }
+    public function updateSchedule(int $ticketId, ?string $date, ?string $time, ?string $serviceDate, ?string $serviceStart, ?string $serviceEnd): bool { return true; }
+    public function updateAssignee(int $ticketId, int $userId, int $actorId): bool { return true; }
 }
