@@ -20,13 +20,13 @@ $assetVersion = rawurlencode((string) (function_exists('getEnvVar') ? getEnvVar(
 <body class="public-page">
     <header class="header">
         <div class="container header__content">
-            <a href="<?php echo $baseUrl; ?>/index.php" class="header__logo"><img src="<?php echo $baseUrl; ?>/assets/images/LOGO RCN Sistemas.jpg" alt="RCN Sistemas" class="header__logo-img"></a>
+            <a href="<?php echo $baseUrl; ?>/" class="header__logo"><img src="<?php echo $baseUrl; ?>/assets/images/LOGO RCN Sistemas.jpg" alt="RCN Sistemas" class="header__logo-img"></a>
             <nav class="nav">
-                <a href="<?php echo $baseUrl; ?>/index.php" class="nav__link">Inicio</a>
-                <a href="<?php echo $baseUrl; ?>/productos.php" class="nav__link">Productos</a>
-                <a href="<?php echo $baseUrl; ?>/promociones.php" class="nav__link">Promociones</a>
-                <a href="<?php echo $baseUrl; ?>/testimoniales.php" class="nav__link">Testimoniales</a>
-                <a href="<?php echo $baseUrl; ?>/contacto.php" class="nav__link">Contacto</a>
+                <a href="<?php echo $baseUrl; ?>/" class="nav__link">Inicio</a>
+                <a href="<?php echo $baseUrl; ?>/productos" class="nav__link">Productos</a>
+                <a href="<?php echo $baseUrl; ?>/promociones" class="nav__link">Promociones</a>
+                <a href="<?php echo $baseUrl; ?>/testimoniales" class="nav__link">Testimoniales</a>
+                <a href="<?php echo $baseUrl; ?>/contacto" class="nav__link">Contacto</a>
             </nav>
         </div>
     </header>
@@ -35,7 +35,7 @@ $assetVersion = rawurlencode((string) (function_exists('getEnvVar') ? getEnvVar(
         <div class="container">
             <div class="footer__grid">
                 <div class="footer__info"><h3 class="footer__title">RCN Sistemas</h3><p class="footer__text">Expertos en consultoría y distribución de software administrativo para empresas que buscan crecer de forma organizada.</p></div>
-                <div class="footer__links"><h4 class="footer__title">Enlaces rápidos</h4><ul class="footer__list"><li><a href="<?php echo $baseUrl; ?>/index.php">Inicio</a></li><li><a href="<?php echo $baseUrl; ?>/productos.php">Catálogo de productos</a></li><li><a href="<?php echo $baseUrl; ?>/promociones.php">Promociones del mes</a></li><li><a href="<?php echo $baseUrl; ?>/contacto.php">Contacto</a></li></ul></div>
+                <div class="footer__links"><h4 class="footer__title">Enlaces rápidos</h4><ul class="footer__list"><li><a href="<?php echo $baseUrl; ?>/">Inicio</a></li><li><a href="<?php echo $baseUrl; ?>/productos">Catálogo de productos</a></li><li><a href="<?php echo $baseUrl; ?>/promociones">Promociones del mes</a></li><li><a href="<?php echo $baseUrl; ?>/contacto">Contacto</a></li></ul></div>
                 <div class="footer__social-wrapper"><h4 class="footer__title">Síguenos</h4><div class="footer__social"><a href="https://www.facebook.com/profile.php?id=61563445589140" class="footer__social-link" target="_blank" rel="noopener" title="Facebook"><i class="fab fa-facebook-f"></i></a><a href="https://wa.me/529999942427" class="footer__social-link" target="_blank" rel="noopener" title="WhatsApp"><i class="fab fa-whatsapp"></i></a></div></div>
             </div>
             <div class="footer__bottom"><p>&copy; <?php echo date('Y'); ?> RCN Sistemas. Todos los derechos reservados.</p></div>

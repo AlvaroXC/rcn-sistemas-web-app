@@ -6,6 +6,7 @@ use InvalidArgumentException;
 use RcnSistemas\Core\Controller;
 use RcnSistemas\Core\Http\Request;
 use RcnSistemas\Core\Http\Response;
+use RcnSistemas\Core\Routing\Url;
 use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Repositories\CustomerRepository;
 use RcnSistemas\Repositories\TicketRepository;
@@ -54,7 +55,7 @@ final class TicketController extends Controller
                 $file = $request->file('attachment');
                 $storedAttachment = $file && $this->uploads && $this->uploadDirectory !== '' ? $this->uploads->store($file, $this->uploadDirectory) : '';
                 $ticket = (new TicketService($this->tickets, new TicketWorkflow()))->create(['customer_id' => $customerId, 'consultation_type' => $values['consultation_type'], 'status' => $values['status'], 'subject' => $values['subject'], 'context_label' => $values['context_label'], 'message' => $values['message'], 'origin_type' => 'admin', 'assigned_user_id' => $assignedUserId, 'assigned_by_user_id' => $viewerId, 'price' => $price, 'appointment_date' => $values['appointment_date'], 'appointment_time' => $values['appointment_time'], 'service_date' => $values['service_date'], 'service_start_time' => $values['service_start_time'], 'service_end_time' => $values['service_end_time'], 'attachment_path' => $storedAttachment ? 'uploads/tickets/' . $storedAttachment : null]);
-                return Response::redirect('ticket_view.php?id=' . $ticket->id);
+                return Response::redirect(Url::to('/admin/tickets/' . $ticket->id));
             } catch (InvalidArgumentException $exception) { $error = $exception->getMessage(); }
         }
         $customerQuery = trim((string) $request->query('customer_query', ''));
@@ -67,7 +68,7 @@ final class TicketController extends Controller
     {
         $ticket = $this->tickets->find((int) $request->query('id', 0));
         if (!$ticket || ($viewerRole !== 'admin' && $ticket->assignedUserId !== $viewerId)) return $this->view('errors.404', [], 'layouts.admin', 404);
-        $returnUrl = $this->returnUrl((string) $request->query('return', $request->input('return', 'tickets.php')));
+        $returnUrl = $this->returnUrl((string) $request->query('return', $request->input('return', Url::to('/admin/tickets'))));
         $error = null;
         if ($request->isMethod('POST')) {
             try {
@@ -80,7 +81,7 @@ final class TicketController extends Controller
                 elseif ($action === 'service') { $serviceDate = trim((string) $request->input('service_date', '')); $serviceStart = trim((string) $request->input('service_start_time', '')); $serviceEnd = trim((string) $request->input('service_end_time', '')); if (($serviceStart !== '') xor ($serviceEnd !== '')) throw new InvalidArgumentException('El inicio y fin del servicio deben capturarse juntos.'); if ($serviceStart !== '') (new TicketScheduleService())->durationMinutes($serviceStart, $serviceEnd); if (!$this->tickets->updateSchedule($ticket->id, $ticket->appointmentDate, $ticket->appointmentTime, $serviceDate ?: null, $serviceStart ?: null, $serviceEnd ?: null)) throw new InvalidArgumentException('No se pudo actualizar la ejecución del servicio.'); }
                 elseif ($action === 'schedule') { $appointmentDate = trim((string) $request->input('appointment_date', '')); $appointmentTime = trim((string) $request->input('appointment_time', '')); $serviceDate = trim((string) $request->input('service_date', '')); $serviceStart = trim((string) $request->input('service_start_time', '')); $serviceEnd = trim((string) $request->input('service_end_time', '')); if (($appointmentDate !== '') xor ($appointmentTime !== '')) throw new InvalidArgumentException('La fecha y hora de la cita deben capturarse juntas.'); if (($serviceStart !== '') xor ($serviceEnd !== '')) throw new InvalidArgumentException('El inicio y fin del servicio deben capturarse juntos.'); if ($appointmentDate !== '') (new TicketScheduleService())->validateAppointment($appointmentDate, $appointmentTime); if ($serviceStart !== '') (new TicketScheduleService())->durationMinutes($serviceStart, $serviceEnd); if (!$this->tickets->updateSchedule($ticket->id, $appointmentDate ?: null, $appointmentTime ?: null, $serviceDate ?: null, $serviceStart ?: null, $serviceEnd ?: null)) throw new InvalidArgumentException('No se pudo actualizar la agenda.'); }
                 else (new TicketService($this->tickets, new TicketWorkflow()))->changeStatus($ticket, (string) $request->input('status', ''));
-                return Response::redirect('ticket_view.php?id=' . $ticket->id . '&return=' . urlencode($returnUrl));
+                return Response::redirect(Url::to('/admin/tickets/' . $ticket->id) . '?return=' . urlencode($returnUrl));
             }
             catch (InvalidArgumentException $exception) { $error = $exception->getMessage(); }
         }
@@ -91,6 +92,6 @@ final class TicketController extends Controller
     {
         $url = trim($url);
 
-        return preg_match('#^(tickets|notifications|customer_view)\\.php(?:\\?[^\\r\\n]*)?$#', $url) ? $url : 'tickets.php';
+        return preg_match('#^/admin/(tickets|notificaciones|clientes/[0-9]+)(?:\\?[^\\r\\n]*)?$#', $url) ? $url : Url::to('/admin/tickets');
     }
 }

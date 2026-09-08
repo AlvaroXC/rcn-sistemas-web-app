@@ -63,4 +63,14 @@ final class Request
     {
         return $this->server[$key] ?? $default;
     }
+
+    public function withPath(string $path): self
+    {
+        return new self($this->method, $path, $this->query, $this->input, $this->files, $this->server);
+    }
+
+    public function withQuery(array $query): self
+    {
+        return new self($this->method, $this->path, [...$this->query, ...$query], $this->input, $this->files, $this->server);
+    }
 }

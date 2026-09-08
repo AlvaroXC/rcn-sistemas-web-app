@@ -6,6 +6,7 @@ use InvalidArgumentException;
 use RcnSistemas\Core\Controller;
 use RcnSistemas\Core\Http\Request;
 use RcnSistemas\Core\Http\Response;
+use RcnSistemas\Core\Routing\Url;
 use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Repositories\ProductRepository;
 use RcnSistemas\Services\ProductService;
@@ -31,7 +32,7 @@ final class ProductController extends Controller
         if ($request->isMethod('POST')) {
             $productId = (int) $request->input('id', $productId);
             if ($request->input('form_action') === 'delete') {
-                if ($this->products->delete($productId)) return Response::redirect('products.php');
+                if ($this->products->delete($productId)) return Response::redirect(Url::to('/admin/productos'));
                 return $this->view('admin.products.index', ['pageTitle' => 'Productos', 'products' => $this->products->all(), 'error' => 'No se pudo eliminar el producto.', 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8')], 'layouts.admin', 422);
             }
             return $this->save($request, $productId);
@@ -74,7 +75,7 @@ final class ProductController extends Controller
             }
             $product = $this->productService->save($data, $benefits, $productId);
 
-            return Response::redirect('/admin/products.php?id=' . $product->id);
+            return Response::redirect(Url::to('/admin/productos/' . $product->id . '/editar'));
         } catch (InvalidArgumentException $exception) {
             return $this->view('admin.products.form', [
                 'pageTitle' => 'Nuevo producto',

@@ -6,6 +6,7 @@ use InvalidArgumentException;
 use RcnSistemas\Core\Controller;
 use RcnSistemas\Core\Http\Request;
 use RcnSistemas\Core\Http\Response;
+use RcnSistemas\Core\Routing\Url;
 use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Repositories\PromotionManagementRepository;
 use RcnSistemas\Services\PromotionManagementService;
@@ -36,7 +37,7 @@ final class PromotionController extends Controller
 
             if ($formAction === 'delete') {
                 if ($this->service->delete($promotionId)) {
-                    return Response::redirect('promotions.php');
+                    return Response::redirect(Url::to('/admin/promociones'));
                 }
                 $error = 'No se pudo eliminar la promoción.';
             } else {
@@ -58,7 +59,7 @@ final class PromotionController extends Controller
 
                 try {
                     $this->service->save($data, $promotionId);
-                    return Response::redirect('promotions.php');
+                    return Response::redirect(Url::to('/admin/promociones'));
                 } catch (InvalidArgumentException $exception) {
                     $error = $exception->getMessage();
                 }

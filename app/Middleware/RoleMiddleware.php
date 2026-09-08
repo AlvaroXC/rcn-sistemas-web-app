@@ -18,7 +18,7 @@ final class RoleMiddleware
     public function handle(Request $request, Closure $next): Response
     {
         if (!$this->session->isAuthenticated()) {
-            return Response::redirect('/admin/login.php');
+            return Response::redirect(\RcnSistemas\Core\Routing\Url::to('/admin/login'));
         }
 
         if ($this->session->role() !== $this->requiredRole) {

@@ -28,4 +28,26 @@ final class RouterTest extends TestCase
 
         self::assertSame(404, $response->status());
     }
+
+    public function test_it_dispatches_a_dynamic_route_and_exposes_its_parameters(): void
+    {
+        $router = new Router();
+        $router->get('/productos/{id}', static fn (Request $request): Response => Response::html((string) $request->query('id')));
+
+        $response = $router->dispatch(new Request('GET', '/productos/27'));
+
+        self::assertSame(200, $response->status());
+        self::assertSame('27', $response->content());
+    }
+
+    public function test_it_prioritizes_static_routes_over_dynamic_routes(): void
+    {
+        $router = new Router();
+        $router->get('/clientes/{id}', static fn (): Response => Response::html('detalle'));
+        $router->get('/clientes/buscar', static fn (): Response => Response::html('buscador'));
+
+        $response = $router->dispatch(new Request('GET', '/clientes/buscar'));
+
+        self::assertSame('buscador', $response->content());
+    }
 }

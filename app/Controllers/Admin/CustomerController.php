@@ -6,6 +6,7 @@ use InvalidArgumentException;
 use RcnSistemas\Core\Controller;
 use RcnSistemas\Core\Http\Request;
 use RcnSistemas\Core\Http\Response;
+use RcnSistemas\Core\Routing\Url;
 use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Repositories\CustomerRepository;
 use RcnSistemas\Repositories\CustomerQueryRepository;
@@ -23,7 +24,7 @@ final class CustomerController extends Controller
         $customer = $customerId > 0 ? $this->customers->find($customerId) : null; if ($customerId > 0 && !$customer) return $this->view('errors.404', [], 'layouts.admin', 404);
         $error = null;
         if ($request->isMethod('POST')) {
-            try { $customer = $this->service->save(['id' => $customerId, 'name' => $request->input('name', ''), 'phone' => $request->input('phone', ''), 'email' => $request->input('email'), 'business_name' => $request->input('business_name', ''), 'customer_type' => $request->input('customer_type', 'persona_fisica')]); return Response::redirect('customers.php?id=' . $customer->id); }
+            try { $customer = $this->service->save(['id' => $customerId, 'name' => $request->input('name', ''), 'phone' => $request->input('phone', ''), 'email' => $request->input('email'), 'business_name' => $request->input('business_name', ''), 'customer_type' => $request->input('customer_type', 'persona_fisica')]); return Response::redirect(Url::to('/admin/clientes/' . $customer->id)); }
             catch (InvalidArgumentException $exception) { $error = $exception->getMessage(); }
         }
         $search = trim((string) $request->query('search', $request->query('q', '')));
@@ -39,13 +40,13 @@ final class CustomerController extends Controller
         $customerId = (int) $request->query('id', 0);
         $customer = $customerId > 0 ? $this->customers->find($customerId) : null;
         if (!$customer) return $this->view('errors.404', [], 'layouts.admin', 404);
-        $returnUrl = $this->returnUrl((string) $request->query('return', 'tickets.php'));
+        $returnUrl = $this->returnUrl((string) $request->query('return', Url::to('/admin/tickets')));
         $ticketFilter = $customer->phone ?: ($customer->email ?: $customer->name);
         return $this->view('admin.customers.show', ['pageTitle' => 'Cliente: ' . $customer->name, 'customer' => $customer, 'tickets' => $this->customerQuery->tickets($customerId), 'returnUrl' => $returnUrl, 'ticketFilter' => $ticketFilter], 'layouts.admin');
     }
 
     private function returnUrl(string $url): string
     {
-        return preg_match('#^(tickets|notifications|customers)\\.php(?:\\?[^\\r\\n]*)?$#', trim($url)) ? trim($url) : 'tickets.php';
+        return preg_match('#^/admin/(tickets|notificaciones|clientes)(?:\\?[^\\r\\n]*)?$#', trim($url)) ? trim($url) : Url::to('/admin/tickets');
     }
 }
