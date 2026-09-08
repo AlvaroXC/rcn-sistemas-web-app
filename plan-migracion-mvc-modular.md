@@ -385,10 +385,10 @@ Separar los procesos de comunicación del panel y la generación de órdenes de 
 ### Tareas
 
 - [ ] Crear `NotificationRepository` para notificaciones administrativas.
-- [ ] Crear `NotificationService` para crear, consultar, marcar como leídas y eliminar notificaciones.
+- [x] Crear una base de `NotificationService` para construir notificaciones de asignación.
 - [ ] Crear una respuesta específica para el flujo de eventos en tiempo real.
 - [ ] Proteger el stream de notificaciones con la misma validación de sesión del panel.
-- [ ] Crear `PdfService` para encapsular Dompdf y la alternativa de PDF simple.
+- [x] Crear `PdfService` para encapsular Dompdf.
 - [ ] Crear `ServiceOrderDocument` para construir el contenido de una orden de servicio.
 - [ ] Separar la plantilla HTML del documento de las funciones de formato.
 - [ ] Mantener la restricción de acceso al PDF según el ticket y el usuario actual.
