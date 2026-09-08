@@ -410,10 +410,10 @@ Hacer que la estructura de la base de datos sea explícita, versionada y control
 
 ### Tareas
 
-- [ ] Documentar el esquema real actual de las tablas.
+- [x] Documentar el esquema base y separar migraciones versionadas.
 - [ ] Comparar `database.sql` con el esquema que actualmente crea y modifica `includes/db.php`.
-- [ ] Crear una migración inicial para `users`, `products`, `benefits`, `promotions` y `testimonials`.
-- [ ] Crear migraciones para `customers`, `tickets` y `ticket_observations`.
+- [x] Crear una migración inicial para `users`, `products`, `benefits`, `promotions` y `testimonials`.
+- [x] Crear una migración para `customers`, `tickets` y `ticket_observations`.
 - [ ] Crear migraciones para notificaciones y tokens persistentes.
 - [ ] Crear migraciones para columnas de precios, agenda, asignaciones y auditoría.
 - [ ] Crear una migración de compatibilidad para datos antiguos de promociones.
