@@ -4,6 +4,7 @@ use RcnSistemas\Controllers\Admin\AuthController;
 use RcnSistemas\Controllers\Admin\CustomerController;
 use RcnSistemas\Controllers\Admin\CustomerSearchController;
 use RcnSistemas\Controllers\Admin\DashboardController;
+use RcnSistemas\Controllers\Admin\GoogleCalendarController;
 use RcnSistemas\Controllers\Admin\NotificationController;
 use RcnSistemas\Controllers\Admin\ProductController as AdminProductController;
 use RcnSistemas\Controllers\Admin\PromotionController as AdminPromotionController;
@@ -29,6 +30,8 @@ use RcnSistemas\Repositories\MysqliCustomerRepository;
 use RcnSistemas\Repositories\MysqliCustomerSearchRepository;
 use RcnSistemas\Repositories\MysqliDashboardMetricsRepository;
 use RcnSistemas\Repositories\MysqliNotificationRepository;
+use RcnSistemas\Repositories\MysqliGoogleCalendarConnectionRepository;
+use RcnSistemas\Repositories\MysqliTicketCalendarRepository;
 use RcnSistemas\Repositories\MysqliProductRepository;
 use RcnSistemas\Repositories\MysqliPromotionManagementRepository;
 use RcnSistemas\Repositories\MysqliPromotionRepository;
@@ -50,6 +53,9 @@ use RcnSistemas\Services\TestimonialService;
 use RcnSistemas\Services\Tickets\TicketListService;
 use RcnSistemas\Services\Tickets\TicketService;
 use RcnSistemas\Services\Tickets\TicketWorkflow;
+use RcnSistemas\Services\Google\GoogleCalendarService;
+use RcnSistemas\Services\Google\TokenEncryption;
+use RcnSistemas\Services\Google\GoogleCalendarAppointmentSyncService;
 
 return static function (array $application): Router {
     $connection = $application['database']->get();
@@ -118,7 +124,10 @@ return static function (array $application): Router {
     $ticketList = new TicketListController(new MysqliTicketQueryRepository($connection), new TicketListService(), $views);
     $router->get('/admin/tickets', $authorized(static fn (Request $request, SessionManager $currentSession): Response => $ticketList->index($request, $currentSession->userId(), $currentSession->role())));
 
-    $ticketController = new TicketController(new MysqliTicketRepository($connection), new MysqliCustomerRepository($connection), $views, new MysqliTicketDetailRepository($connection), new MysqliCustomerSearchRepository($connection), new UploadService(), $application['root'] . '/uploads/tickets', new MysqliAdminUserManagementRepository($connection));
+    $ticketCalendarConnections = new MysqliGoogleCalendarConnectionRepository($connection);
+    $ticketCalendarClient = new GoogleCalendarService($application['config']->get('google', []), $ticketCalendarConnections, new TokenEncryption((string) $application['config']->get('app.encryption_key', '')));
+    $ticketCalendarSync = new GoogleCalendarAppointmentSyncService($ticketCalendarConnections, new MysqliTicketCalendarRepository($connection), $ticketCalendarClient, $application['config']->get('google', []));
+    $ticketController = new TicketController(new MysqliTicketRepository($connection), new MysqliCustomerRepository($connection), $views, new MysqliTicketDetailRepository($connection), new MysqliCustomerSearchRepository($connection), new UploadService(), $application['root'] . '/uploads/tickets', new MysqliAdminUserManagementRepository($connection), $ticketCalendarSync);
     $createTicket = $authorized(static fn (Request $request, SessionManager $currentSession): Response => $ticketController->create($request, $currentSession->userId(), $currentSession->role()));
     $showTicket = $authorized(static fn (Request $request, SessionManager $currentSession): Response => $ticketController->show($request, $currentSession->userId(), $currentSession->role()));
     $router->get('/admin/tickets/nuevo', $createTicket);
@@ -158,6 +167,13 @@ return static function (array $application): Router {
 
     $notifications = new NotificationController(new MysqliNotificationRepository($connection), $views);
     $router->get('/admin/notificaciones', $authorized(static fn (Request $request, SessionManager $currentSession): Response => $notifications->index($request, $currentSession->userId())));
+
+    $googleConnections = new MysqliGoogleCalendarConnectionRepository($connection);
+    $googleCalendar = new GoogleCalendarController($googleConnections, new GoogleCalendarService($application['config']->get('google', []), $googleConnections, new TokenEncryption((string) $application['config']->get('app.encryption_key', ''))), $csrf, $session, $views);
+    $router->get('/admin/google-calendar', $authorized(static fn (Request $request): Response => $googleCalendar->index($request)));
+    $router->post('/admin/google-calendar', $authorized(static fn (Request $request): Response => $googleCalendar->index($request)));
+    $router->get('/admin/google-calendar/connect', $authorized(static fn (): Response => $googleCalendar->connect()));
+    $router->get('/admin/google-calendar/callback', $authorized(static fn (Request $request): Response => $googleCalendar->callback($request)));
 
     $usersRepository = new MysqliAdminUserManagementRepository($connection);
     $users = new UserController($usersRepository, new AdminUserService($usersRepository), $views);

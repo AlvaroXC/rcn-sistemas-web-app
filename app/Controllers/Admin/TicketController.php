@@ -21,10 +21,11 @@ use RcnSistemas\Services\Tickets\TicketScheduleService;
 use RcnSistemas\Services\Tickets\TicketPricing;
 use RcnSistemas\Services\Tickets\TicketAssignmentService;
 use RcnSistemas\Services\Communications\UploadService;
+use RcnSistemas\Services\Google\GoogleCalendarAppointmentSyncService;
 
 final class TicketController extends Controller
 {
-    public function __construct(private readonly TicketRepository $tickets, private readonly CustomerRepository $customers, ViewRenderer $views, private readonly ?TicketDetailRepository $details = null, private readonly ?CustomerSearchRepository $customerSearch = null, private readonly ?UploadService $uploads = null, private readonly string $uploadDirectory = '', private readonly ?AdminUserManagementRepository $users = null) { parent::__construct($views); }
+    public function __construct(private readonly TicketRepository $tickets, private readonly CustomerRepository $customers, ViewRenderer $views, private readonly ?TicketDetailRepository $details = null, private readonly ?CustomerSearchRepository $customerSearch = null, private readonly ?UploadService $uploads = null, private readonly string $uploadDirectory = '', private readonly ?AdminUserManagementRepository $users = null, private readonly ?GoogleCalendarAppointmentSyncService $calendarSync = null) { parent::__construct($views); }
 
     public function create(Request $request, int $viewerId, string $viewerRole = 'agent'): Response
     {
@@ -55,6 +56,7 @@ final class TicketController extends Controller
                 $file = $request->file('attachment');
                 $storedAttachment = $file && $this->uploads && $this->uploadDirectory !== '' ? $this->uploads->store($file, $this->uploadDirectory) : '';
                 $ticket = (new TicketService($this->tickets, new TicketWorkflow()))->create(['customer_id' => $customerId, 'consultation_type' => $values['consultation_type'], 'status' => $values['status'], 'subject' => $values['subject'], 'context_label' => $values['context_label'], 'message' => $values['message'], 'origin_type' => 'admin', 'assigned_user_id' => $assignedUserId, 'assigned_by_user_id' => $viewerId, 'price' => $price, 'appointment_date' => $values['appointment_date'], 'appointment_time' => $values['appointment_time'], 'service_date' => $values['service_date'], 'service_start_time' => $values['service_start_time'], 'service_end_time' => $values['service_end_time'], 'attachment_path' => $storedAttachment ? 'uploads/tickets/' . $storedAttachment : null]);
+                $this->calendarSync?->sync($ticket);
                 return Response::redirect(Url::to('/admin/tickets/' . $ticket->id));
             } catch (InvalidArgumentException $exception) { $error = $exception->getMessage(); }
         }
@@ -73,6 +75,7 @@ final class TicketController extends Controller
         if ($request->isMethod('POST')) {
             try {
                 $action = (string) $request->input('action', 'status');
+                $previousTicket = $ticket;
                 if ($action === 'observation' && $this->details) { $content = (new \RcnSistemas\Services\Tickets\TicketObservationService())->validate((string) $request->input('content', '')); if ($ticket->status === 'Cerrado' || !$this->details->addObservation($ticket->id, $content, $viewerId)) throw new InvalidArgumentException('No se pudo guardar la observación.'); }
                 elseif ($action === 'message' && $this->details) { $message = trim((string) $request->input('message', '')); if ($message === '' || !$this->details->updateMessage($ticket->id, $message, $viewerId)) throw new InvalidArgumentException('No se pudo actualizar el mensaje.'); }
                 elseif ($action === 'price') { $price = (new TicketPricing())->calculate((float) $request->input('price_amount', 0), $ticket->customerType ?: 'persona_fisica'); if (!$this->tickets->updatePrice($ticket->id, $price, $viewerId)) throw new InvalidArgumentException('No se pudo actualizar el precio.'); }
@@ -80,7 +83,12 @@ final class TicketController extends Controller
                 elseif ($action === 'appointment') { $appointmentDate = trim((string) $request->input('appointment_date', '')); $appointmentTime = trim((string) $request->input('appointment_time', '')); if (($appointmentDate !== '') xor ($appointmentTime !== '')) throw new InvalidArgumentException('La fecha y hora de la cita deben capturarse juntas.'); if ($appointmentDate !== '') (new TicketScheduleService())->validateAppointment($appointmentDate, $appointmentTime); if (!$this->tickets->updateSchedule($ticket->id, $appointmentDate ?: null, $appointmentTime ?: null, $ticket->serviceDate, $ticket->serviceStartTime, $ticket->serviceEndTime)) throw new InvalidArgumentException('No se pudo actualizar la cita.'); }
                 elseif ($action === 'service') { $serviceDate = trim((string) $request->input('service_date', '')); $serviceStart = trim((string) $request->input('service_start_time', '')); $serviceEnd = trim((string) $request->input('service_end_time', '')); if (($serviceStart !== '') xor ($serviceEnd !== '')) throw new InvalidArgumentException('El inicio y fin del servicio deben capturarse juntos.'); if ($serviceStart !== '') (new TicketScheduleService())->durationMinutes($serviceStart, $serviceEnd); if (!$this->tickets->updateSchedule($ticket->id, $ticket->appointmentDate, $ticket->appointmentTime, $serviceDate ?: null, $serviceStart ?: null, $serviceEnd ?: null)) throw new InvalidArgumentException('No se pudo actualizar la ejecución del servicio.'); }
                 elseif ($action === 'schedule') { $appointmentDate = trim((string) $request->input('appointment_date', '')); $appointmentTime = trim((string) $request->input('appointment_time', '')); $serviceDate = trim((string) $request->input('service_date', '')); $serviceStart = trim((string) $request->input('service_start_time', '')); $serviceEnd = trim((string) $request->input('service_end_time', '')); if (($appointmentDate !== '') xor ($appointmentTime !== '')) throw new InvalidArgumentException('La fecha y hora de la cita deben capturarse juntas.'); if (($serviceStart !== '') xor ($serviceEnd !== '')) throw new InvalidArgumentException('El inicio y fin del servicio deben capturarse juntos.'); if ($appointmentDate !== '') (new TicketScheduleService())->validateAppointment($appointmentDate, $appointmentTime); if ($serviceStart !== '') (new TicketScheduleService())->durationMinutes($serviceStart, $serviceEnd); if (!$this->tickets->updateSchedule($ticket->id, $appointmentDate ?: null, $appointmentTime ?: null, $serviceDate ?: null, $serviceStart ?: null, $serviceEnd ?: null)) throw new InvalidArgumentException('No se pudo actualizar la agenda.'); }
+                elseif ($action === 'calendar_sync') { if (!$this->calendarSync) throw new InvalidArgumentException('La sincronización de Google Calendar no está disponible.'); }
                 else (new TicketService($this->tickets, new TicketWorkflow()))->changeStatus($ticket, (string) $request->input('status', ''));
+                $updatedTicket = $this->tickets->find($ticket->id);
+                if ($updatedTicket && $this->calendarSync) {
+                    $action === 'assignee' ? $this->calendarSync->syncReassignment($previousTicket, $updatedTicket) : $this->calendarSync->sync($updatedTicket);
+                }
                 return Response::redirect(Url::to('/admin/tickets/' . $ticket->id) . '?return=' . urlencode($returnUrl));
             }
             catch (InvalidArgumentException $exception) { $error = $exception->getMessage(); }
