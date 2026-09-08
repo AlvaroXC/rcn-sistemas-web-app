@@ -3,6 +3,7 @@
 .env.local
 .vscode/
 *.log
+.phpunit.result.cache
 .codex/skills
 openspec/
 scratch/

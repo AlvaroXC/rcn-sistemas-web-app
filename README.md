@@ -63,7 +63,8 @@ DB_PASS=tu_contraseña
 1. Crea una base de datos vacía en tu gestor de MySQL (ej. phpMyAdmin) llamada `rcn_sistemas`.
 2. Importa el esquema inicial de la base de datos:
    ```bash
-   mysql -u tu_usuario -p rcn_sistemas < database.sql
+   mysql -u tu_usuario -p rcnsiste_axsoluciones < database/migrations/001_initial_schema.sql
+   mysql -u tu_usuario -p rcnsiste_axsoluciones < database/migrations/002_support_and_admin_extensions.sql
    ```
 3. (Opcional) Si deseas inicializar productos de demostración, ejecuta el archivo PHP sembrador desde tu navegador o terminal:
    ```bash
@@ -78,6 +79,20 @@ También puedes levantar el servidor embebido de PHP directamente desde la termi
 php -S localhost:8000
 ```
 Y abre `http://localhost:8000` en tu navegador.
+
+### Ejecutar pruebas
+
+```bash
+vendor/bin/phpunit
+```
+
+### Ejecutar migraciones
+
+```bash
+php scripts/migrate.php
+```
+
+Las migraciones se registran en `app_migrations` y no se repiten. Antes de modificar una base existente, crea un respaldo.
 
 ## 📂 Estructura del Proyecto
 
@@ -95,4 +110,3 @@ Y abre `http://localhost:8000` en tu navegador.
 
 ## 🔐 Acceso al Administrador
 Para ingresar al panel administrativo, dirígete a `http://localhost/new_web_page/admin` e inicia sesión con las credenciales correspondientes.
-

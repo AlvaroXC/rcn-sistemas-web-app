@@ -158,7 +158,7 @@ Crear la base de pruebas antes de migrar funcionalidades para que cada paso de l
 - [ ] Crear un archivo de configuración para el entorno de pruebas.
 - [ ] Definir una base de datos exclusiva para pruebas de integración.
 - [ ] Crear utilidades para limpiar y preparar datos de prueba.
-- [ ] Documentar el comando para ejecutar las pruebas.
+- [x] Documentar el comando para ejecutar las pruebas.
 - [ ] Configurar la ejecución de pruebas en integración continua.
 
 ### Criterios de aceptación
@@ -418,7 +418,7 @@ Hacer que la estructura de la base de datos sea explícita, versionada y control
 - [ ] Crear migraciones para columnas de precios, agenda, asignaciones y auditoría.
 - [ ] Crear una migración de compatibilidad para datos antiguos de promociones.
 - [ ] Crear scripts de respaldo antes de ejecutar cambios sobre datos existentes.
-- [ ] Crear un comando o script para ejecutar migraciones pendientes.
+- [x] Crear un script para ejecutar migraciones pendientes y registrarlas.
 - [ ] Retirar gradualmente las llamadas `ensure_*` de las solicitudes web.
 - [ ] Actualizar `database.sql` o reemplazarlo por una guía de instalación basada en migraciones.
 - [ ] Separar los seeders de los scripts de corrección de datos.
