@@ -445,7 +445,7 @@ Organizar CSS, JavaScript, imágenes, PDFs y archivos subidos según su uso.
 - [ ] Mover el audio de notificaciones a `public/assets/audio`.
 - [ ] Definir una estrategia para las fichas PDF oficiales.
 - [ ] Mantener URLs compatibles durante la migración o crear redirecciones.
-- [ ] Crear un helper para versionar CSS y JavaScript usando fecha de modificación o versión de aplicación.
+- [x] Crear un helper para versionar CSS y JavaScript usando una versión de aplicación.
 - [ ] Eliminar el uso de `time()` como versión de assets cuando no sea necesario.
 - [ ] Revisar rutas relativas para que funcionen igual desde el sitio público y el panel.
 - [ ] Evitar estilos en línea cuando puedan convertirse en clases reutilizables.
