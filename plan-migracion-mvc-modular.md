@@ -204,15 +204,16 @@ Establecer una forma común de recibir solicitudes, devolver respuestas y render
 
 ### Tareas
 
-- [ ] Crear una clase `Request` para consultar de forma uniforme parámetros, formularios, archivos y método HTTP.
-- [ ] Crear una clase `Response` para respuestas HTML, redirecciones, JSON y archivos descargables.
-- [ ] Crear un renderizador de vistas con soporte para layouts y variables.
-- [ ] Crear un layout público que reemplace gradualmente `includes/header.php` y `includes/footer.php`.
-- [ ] Crear un layout administrativo que reemplace gradualmente `admin/includes/admin_header.php`.
-- [ ] Crear componentes reutilizables para alertas, botones, formularios, tablas y paginación.
-- [ ] Crear una clase de rutas o un router sencillo para asociar URLs con controladores.
-- [ ] Definir respuestas estándar para páginas no encontradas, errores internos y acceso no autorizado.
-- [ ] Definir una convención para nombres de vistas, por ejemplo `public/products/index.php` y `admin/tickets/show.php`.
+- [x] Crear una clase `Request` para consultar de forma uniforme parámetros, formularios, archivos y método HTTP.
+- [x] Crear una clase `Response` para respuestas HTML, redirecciones y JSON.
+- [x] Crear un renderizador de vistas con soporte para layouts y variables.
+- [x] Crear un layout público que pueda reemplazar gradualmente `includes/header.php` y `includes/footer.php`.
+- [x] Crear un layout administrativo que pueda reemplazar gradualmente `admin/includes/admin_header.php`.
+- [x] Crear componentes reutilizables para alertas, botones, formularios, tablas y paginación.
+- [x] Crear una clase de rutas o un router sencillo para asociar URLs con controladores.
+- [x] Definir respuestas estándar para páginas no encontradas y errores internos.
+- [x] Definir una convención para nombres de vistas, por ejemplo `public/products/index.php` y `admin/tickets/show.php`.
+- [x] Crear un controlador base que pueda renderizar vistas mediante el renderizador común.
 
 ### Criterios de aceptación
 
