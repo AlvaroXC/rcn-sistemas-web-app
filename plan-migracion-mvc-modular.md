@@ -332,9 +332,9 @@ Separar el módulo de mayor complejidad funcional y convertirlo en el centro de 
 - [x] Crear `TicketService` para crear tickets y cambiar estados.
 - [x] Crear `TicketWorkflow` para validar estados y tickets cerrados.
 - [x] Crear `TicketPricing` para calcular base, IVA, retención y total.
-- [ ] Crear `TicketScheduleService` para validar citas y horarios de servicio.
-- [ ] Crear `TicketAssignmentService` para asignar responsables y validar permisos.
-- [ ] Crear `TicketObservationService` para agregar y consultar observaciones.
+- [x] Crear `TicketScheduleService` para validar citas y horarios de servicio.
+- [x] Crear `TicketAssignmentService` para asignar responsables y validar permisos.
+- [x] Crear `TicketObservationService` para validar observaciones.
 - [ ] Mantener la regla de que un ticket cerrado no admite modificaciones.
 - [ ] Mantener la diferencia de acceso entre administradores y operadores.
 - [ ] Migrar `tickets.php`, `ticket_create.php` y `ticket_view.php`.
