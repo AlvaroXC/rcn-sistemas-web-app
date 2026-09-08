@@ -296,7 +296,7 @@ Separar la administración y publicación de promociones y testimoniales.
 - [ ] Mantener la compatibilidad temporal con promociones que todavía tengan el campo antiguo `description`.
 - [ ] Mover la normalización de promociones a un servicio o transformador dedicado.
 - [x] Migrar `promociones.php`, `promotion_view.php` y `testimoniales.php`.
-- [ ] Migrar `admin/promotions.php`.
+- [x] Migrar `admin/promotions.php` al flujo MVC.
 - [ ] Revisar si los testimoniales requieren moderación antes de publicarse.
 
 ### Criterios de aceptación
