@@ -230,14 +230,14 @@ Extraer la seguridad de `includes/security.php` y mantener el comportamiento act
 
 ### Tareas
 
-- [ ] Crear `AuthService` para iniciar sesión, cerrar sesión y restaurar sesiones persistentes.
-- [ ] Crear `SessionManager` para iniciar sesiones seguras, regenerar identificadores y controlar expiración.
-- [ ] Crear `RememberTokenRepository` para manejar los tokens persistentes.
-- [ ] Crear `CsrfService` para emitir y validar tokens.
-- [ ] Crear `AuthMiddleware` para proteger el panel administrativo.
-- [ ] Crear `RoleMiddleware` para restringir la administración de usuarios a supervisores.
-- [ ] Crear métodos claros para obtener el usuario actual, su rol y su etiqueta visible.
-- [ ] Mantener las opciones actuales de cookies `secure`, `httponly` y `samesite`.
+- [x] Crear `AuthService` para iniciar sesión y cerrar sesión.
+- [x] Crear `SessionManager` para iniciar sesiones seguras, regenerar identificadores y controlar expiración.
+- [x] Crear un repositorio de usuarios administrativos para consultar usuarios por nombre e identificador.
+- [x] Crear `CsrfService` para emitir y validar tokens.
+- [x] Crear `AuthMiddleware` para proteger el panel administrativo.
+- [x] Crear `RoleMiddleware` para restringir la administración de usuarios a supervisores.
+- [x] Crear métodos claros para obtener el usuario actual, su rol y su etiqueta visible.
+- [x] Mantener las opciones actuales de cookies `secure`, `httponly` y `samesite`.
 - [ ] Revisar que ningún controlador protegido pueda ejecutarse sin validación de sesión.
 - [ ] Migrar `login.php`, `logout.php`, `users.php`, `user_create.php` y `user_edit.php`.
 
