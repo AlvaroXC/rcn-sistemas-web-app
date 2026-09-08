@@ -239,7 +239,8 @@ Extraer la seguridad de `includes/security.php` y mantener el comportamiento act
 - [x] Crear métodos claros para obtener el usuario actual, su rol y su etiqueta visible.
 - [x] Mantener las opciones actuales de cookies `secure`, `httponly` y `samesite`.
 - [ ] Revisar que ningún controlador protegido pueda ejecutarse sin validación de sesión.
-- [ ] Migrar `login.php`, `logout.php`, `users.php`, `user_create.php` y `user_edit.php`.
+- [x] Migrar `login.php` y `logout.php` al servicio de autenticación nuevo.
+- [ ] Migrar `users.php`, `user_create.php` y `user_edit.php`.
 
 ### Criterios de aceptación
 

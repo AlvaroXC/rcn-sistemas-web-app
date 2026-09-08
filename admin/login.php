@@ -1,8 +1,14 @@
 <?php
 require_once '../includes/security.php';
 require_once '../includes/db.php';
+require_once '../app/Bootstrap/app.php';
 
-start_secure_session(false);
+use RcnSistemas\Core\Security\SessionManager;
+use RcnSistemas\Repositories\MysqliAdminUserRepository;
+use RcnSistemas\Services\AuthService;
+
+$session = new SessionManager(ADMIN_SESSION_TIMEOUT);
+$session->start();
 
 if (isset($_SESSION['admin_id'])) {
     header("Location: index.php");
@@ -19,25 +25,19 @@ if (!in_array($loginNoticeType, ['success', 'error'], true)) {
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim((string) ($_POST['username'] ?? ''));
-    $password = $_POST['password'];
+    $password = (string) ($_POST['password'] ?? '');
     $rememberMe = isset($_POST['remember_me']) && $_POST['remember_me'] === '1';
-    
-    $stmt = $conn->prepare("SELECT id, username, password, display_name, role, active FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($user = $result->fetch_assoc()) {
-        if ((int) ($user['active'] ?? 1) === 1 && password_verify($password, $user['password'])) {
-            set_admin_authenticated_session($user);
-            if ($rememberMe) {
-                issue_admin_remember_me_token($conn, (int) $user['id']);
-            } else {
-                revoke_current_admin_remember_me($conn);
-            }
-            header("Location: index.php");
-            exit;
+
+    $auth = new AuthService(new MysqliAdminUserRepository($conn), $session);
+    if ($auth->authenticate($username, $password)) {
+        $userId = $session->userId();
+        if ($rememberMe) {
+            issue_admin_remember_me_token($conn, $userId);
+        } else {
+            revoke_current_admin_remember_me($conn);
         }
+        header('Location: index.php');
+        exit;
     }
     $error = "Usuario o contraseña incorrectos.";
 }

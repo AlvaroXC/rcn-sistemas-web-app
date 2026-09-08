@@ -6,7 +6,7 @@ final class SessionManager
 {
     public function __construct(
         private readonly int $timeout = 1800,
-        private readonly string $sessionName = 'rcn_admin_session'
+        private readonly string $sessionName = 'PHPSESSID'
     ) {
     }
 
