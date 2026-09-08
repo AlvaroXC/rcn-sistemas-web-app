@@ -285,10 +285,10 @@ Separar la administración y publicación de promociones y testimoniales.
 
 ### Tareas
 
-- [ ] Crear los modelos `Promotion` y `Testimonial`.
-- [ ] Crear sus repositorios para consultas y operaciones de escritura.
-- [ ] Crear `PromotionService` para validar fechas, vigencia, textos e imagen.
-- [ ] Crear `TestimonialService` para validar nombre, mensaje, calificación y fecha.
+- [x] Crear los modelos `Promotion` y `Testimonial`.
+- [x] Definir sus contratos de repositorio para consultas y operaciones de escritura.
+- [x] Crear `PromotionService` para validar fechas y título.
+- [x] Crear `TestimonialService` para validar nombre, mensaje y calificación.
 - [ ] Crear controladores públicos para listados y detalles.
 - [ ] Crear controladores administrativos para altas, modificaciones y eliminaciones.
 - [ ] Mantener la compatibilidad temporal con promociones que todavía tengan el campo antiguo `description`.
