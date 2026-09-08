@@ -240,7 +240,7 @@ Extraer la seguridad de `includes/security.php` y mantener el comportamiento act
 - [x] Mantener las opciones actuales de cookies `secure`, `httponly` y `samesite`.
 - [ ] Revisar que ningún controlador protegido pueda ejecutarse sin validación de sesión.
 - [x] Migrar `login.php` y `logout.php` al servicio de autenticación nuevo.
-- [ ] Migrar `users.php`, `user_create.php` y `user_edit.php`.
+- [x] Migrar `users.php`, `user_create.php` y `user_edit.php` al flujo MVC.
 
 ### Criterios de aceptación
 
