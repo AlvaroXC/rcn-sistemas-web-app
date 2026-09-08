@@ -266,7 +266,8 @@ Separar productos y beneficios de las páginas públicas, el panel administrativ
 - [x] Separar las vistas públicas de productos y las vistas administrativas.
 - [ ] Centralizar la validación de nombre, descripción, video, PDF e imagen.
 - [ ] Centralizar el manejo de productos inexistentes.
-- [ ] Migrar `index.php`, `productos.php`, `product_view.php` y `admin/products.php`.
+- [ ] Migrar `index.php` y `admin/products.php`.
+- [x] Migrar `productos.php` y `product_view.php` al flujo MVC.
 - [ ] Revisar el uso de `productos.json` y decidir si queda únicamente como fuente de seed o si debe retirarse.
 
 ### Criterios de aceptación
