@@ -311,8 +311,8 @@ Separar el módulo de mayor complejidad funcional y convertirlo en el centro de 
 
 ### Tareas de clientes
 
-- [ ] Crear el modelo `Customer`.
-- [ ] Crear `CustomerRepository` para búsquedas, paginación y consultas por identificadores.
+- [x] Crear el modelo `Customer`.
+- [x] Crear el contrato `CustomerRepository` para búsquedas y persistencia.
 - [x] Crear una base de normalización de identidad para correo y teléfono.
 - [ ] Mantener la regla de identificar clientes por teléfono normalizado.
 - [ ] Mantener la posibilidad de usar correo opcional.
@@ -320,10 +320,10 @@ Separar el módulo de mayor complejidad funcional y convertirlo en el centro de 
 
 ### Tareas de tickets
 
-- [ ] Crear el modelo `Ticket`.
+- [x] Crear el modelo `Ticket`.
 - [ ] Crear `TicketObservation` y las entidades necesarias para asignaciones y notificaciones.
-- [ ] Crear `TicketRepository` para listado, detalle, filtros, paginación y estadísticas.
-- [ ] Crear `TicketService` para crear y actualizar tickets.
+- [x] Crear el contrato `TicketRepository` para creación, consulta y actualización.
+- [x] Crear `TicketService` para crear tickets y cambiar estados.
 - [x] Crear `TicketWorkflow` para validar estados y tickets cerrados.
 - [x] Crear `TicketPricing` para calcular base, IVA, retención y total.
 - [ ] Crear `TicketScheduleService` para validar citas y horarios de servicio.
