@@ -313,7 +313,7 @@ Separar el módulo de mayor complejidad funcional y convertirlo en el centro de 
 
 - [ ] Crear el modelo `Customer`.
 - [ ] Crear `CustomerRepository` para búsquedas, paginación y consultas por identificadores.
-- [ ] Crear `CustomerService` para normalizar nombre, correo, teléfono y tipo de cliente.
+- [x] Crear una base de normalización de identidad para correo y teléfono.
 - [ ] Mantener la regla de identificar clientes por teléfono normalizado.
 - [ ] Mantener la posibilidad de usar correo opcional.
 - [ ] Migrar `customers.php`, `customer_create.php`, `customer_edit.php`, `customer_view.php` y `customer_search.php`.
@@ -324,8 +324,8 @@ Separar el módulo de mayor complejidad funcional y convertirlo en el centro de 
 - [ ] Crear `TicketObservation` y las entidades necesarias para asignaciones y notificaciones.
 - [ ] Crear `TicketRepository` para listado, detalle, filtros, paginación y estadísticas.
 - [ ] Crear `TicketService` para crear y actualizar tickets.
-- [ ] Crear `TicketWorkflow` para validar las transiciones de estado.
-- [ ] Crear `TicketPricing` para calcular base, IVA, retención y total.
+- [x] Crear `TicketWorkflow` para validar estados y tickets cerrados.
+- [x] Crear `TicketPricing` para calcular base, IVA, retención y total.
 - [ ] Crear `TicketScheduleService` para validar citas y horarios de servicio.
 - [ ] Crear `TicketAssignmentService` para asignar responsables y validar permisos.
 - [ ] Crear `TicketObservationService` para agregar y consultar observaciones.
