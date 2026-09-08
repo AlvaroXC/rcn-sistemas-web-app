@@ -337,7 +337,8 @@ Separar el módulo de mayor complejidad funcional y convertirlo en el centro de 
 - [x] Crear `TicketObservationService` para validar observaciones.
 - [ ] Mantener la regla de que un ticket cerrado no admite modificaciones.
 - [ ] Mantener la diferencia de acceso entre administradores y operadores.
-- [ ] Migrar `tickets.php`, `ticket_create.php` y `ticket_view.php`.
+- [x] Migrar `tickets.php` al flujo MVC con filtros básicos y paginación.
+- [ ] Migrar `ticket_create.php` y `ticket_view.php`.
 - [ ] Mover las etiquetas de origen, estados y tipos a catálogos o constantes centralizadas.
 - [ ] Eliminar funciones duplicadas como etiquetas de origen definidas en más de una página.
 
