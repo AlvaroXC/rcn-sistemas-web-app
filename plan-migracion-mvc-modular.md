@@ -356,7 +356,7 @@ Convertir el formulario de contacto en un proceso reutilizable y seguro.
 ### Tareas
 
 - [ ] Crear `ContactController` para mostrar y procesar el formulario.
-- [ ] Crear `ContactService` para coordinar cliente, contexto, ticket y notificación.
+- [x] Crear `ContactService` para coordinar cliente, contexto, ticket y notificación.
 - [x] Crear `MailService` para encapsular PHPMailer.
 - [ ] Crear plantillas de correo separadas del controlador.
 - [x] Crear `UploadService` para validar extensión, tamaño y nombre seguro.
