@@ -257,10 +257,10 @@ Separar productos y beneficios de las páginas públicas, el panel administrativ
 
 ### Tareas
 
-- [ ] Crear los modelos `Product` y `Benefit`.
-- [ ] Crear `ProductRepository` para listar, consultar, crear, actualizar y eliminar productos.
+- [x] Crear los modelos `Product` y `Benefit`.
+- [x] Crear `ProductRepository` para listar, consultar, crear, actualizar y eliminar productos.
 - [ ] Crear `BenefitRepository` para administrar beneficios relacionados con productos.
-- [ ] Crear `ProductService` para validar y guardar productos junto con sus beneficios.
+- [x] Crear `ProductService` para validar y guardar productos junto con sus beneficios.
 - [ ] Crear `ProductController` público para listado y detalle.
 - [ ] Crear `AdminProductController` para listado, alta, edición y eliminación.
 - [ ] Separar las vistas públicas de productos y las vistas administrativas.
