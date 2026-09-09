@@ -41,11 +41,13 @@ final class FcmClient
             'headers' => ['Authorization' => 'Bearer ' . $accessToken, 'Content-Type' => 'application/json'],
             'json' => ['message' => [
                 'token' => $token,
-                'notification' => $notification,
-                'data' => array_map('strval', $data),
+                'data' => array_map('strval', array_merge($data, [
+                    'title' => (string) ($notification['title'] ?? 'RCN Sistemas'),
+                    'body' => (string) ($notification['body'] ?? 'Tienes una actualización de ticket.'),
+                    'icon' => $webpushNotification['icon'],
+                ])),
                 'webpush' => [
                     'headers' => ['Urgency' => 'high'],
-                    'notification' => $webpushNotification,
                     'fcm_options' => $link !== '' ? ['link' => $link] : [],
                 ],
             ]],
