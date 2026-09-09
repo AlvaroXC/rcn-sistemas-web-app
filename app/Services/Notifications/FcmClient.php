@@ -31,9 +31,24 @@ final class FcmClient
         if ($accessToken === '') throw new RuntimeException('No se pudo autorizar el envío FCM.');
 
         $client = $this->http ?? new Client(['timeout' => (float) ($this->config['timeout_seconds'] ?? 5)]);
+        $link = trim((string) ($data['url'] ?? ''));
+        $webpushNotification = [
+            'title' => (string) ($notification['title'] ?? 'RCN Sistemas'),
+            'body' => (string) ($notification['body'] ?? 'Tienes una actualización de ticket.'),
+            'icon' => rtrim((string) ($this->config['app_url'] ?? ''), '/') . '/assets/images/pwa-icon.svg',
+        ];
         $response = $client->post('https://fcm.googleapis.com/v1/projects/' . rawurlencode((string) $this->config['project_id']) . '/messages:send', [
             'headers' => ['Authorization' => 'Bearer ' . $accessToken, 'Content-Type' => 'application/json'],
-            'json' => ['message' => ['token' => $token, 'notification' => $notification, 'data' => array_map('strval', $data)]],
+            'json' => ['message' => [
+                'token' => $token,
+                'notification' => $notification,
+                'data' => array_map('strval', $data),
+                'webpush' => [
+                    'headers' => ['Urgency' => 'high'],
+                    'notification' => $webpushNotification,
+                    'fcm_options' => $link !== '' ? ['link' => $link] : [],
+                ],
+            ]],
         ]);
         $body = json_decode((string) $response->getBody(), true) ?: [];
         return ['result' => 'sent', 'provider_code' => $body['name'] ?? null];
