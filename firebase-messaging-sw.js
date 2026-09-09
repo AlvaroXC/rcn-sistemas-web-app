@@ -14,25 +14,6 @@ self.addEventListener('notificationclick', event => {
     }));
 });
 
-self.addEventListener('push', event => {
-    if (!event.data) return;
-    let payload;
-    try {
-        payload = event.data.json();
-    } catch (error) {
-        console.error('[RCN Push] El evento push no contiene JSON válido.', error);
-        return;
-    }
-    const data = payload.data || payload;
-    if (!data.title && !data.body) return;
-    console.info('[RCN Push] Evento push nativo recibido.', {type: data.type, ticketId: data.ticket_id});
-    event.waitUntil(self.registration.showNotification(data.title || 'RCN Sistemas', {
-        body: data.body || 'Tienes una actualización de ticket.',
-        icon: data.icon || new URL('assets/images/pwa-icon.svg', self.registration.scope).href,
-        data: {url: data.url || new URL('admin/notificaciones', self.registration.scope).href},
-    }));
-});
-
 importScripts('https://www.gstatic.com/firebasejs/12.1.0/firebase-app-compat.js');
 importScripts('https://www.gstatic.com/firebasejs/12.1.0/firebase-messaging-compat.js');
 

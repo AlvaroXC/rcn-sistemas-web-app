@@ -32,17 +32,20 @@ final class FcmClient
 
         $client = $this->http ?? new Client(['timeout' => (float) ($this->config['timeout_seconds'] ?? 5)]);
         $link = trim((string) ($data['url'] ?? ''));
-        $dataPayload = array_map('strval', $data);
-        $dataPayload['title'] = (string) ($notification['title'] ?? 'RCN Sistemas');
-        $dataPayload['body'] = (string) ($notification['body'] ?? 'Tienes una actualización de ticket.');
-        $dataPayload['icon'] = rtrim((string) ($this->config['app_url'] ?? ''), '/') . '/assets/images/pwa-icon.svg';
+        $webpushNotification = [
+            'title' => (string) ($notification['title'] ?? 'RCN Sistemas'),
+            'body' => (string) ($notification['body'] ?? 'Tienes una actualización de ticket.'),
+            'icon' => rtrim((string) ($this->config['app_url'] ?? ''), '/') . '/assets/images/pwa-icon.svg',
+        ];
         $response = $client->post('https://fcm.googleapis.com/v1/projects/' . rawurlencode((string) $this->config['project_id']) . '/messages:send', [
             'headers' => ['Authorization' => 'Bearer ' . $accessToken, 'Content-Type' => 'application/json'],
             'json' => ['message' => [
                 'token' => $token,
-                'data' => $dataPayload,
+                'notification' => $notification,
+                'data' => array_map('strval', $data),
                 'webpush' => [
                     'headers' => ['Urgency' => 'high'],
+                    'notification' => $webpushNotification,
                     'fcm_options' => $link !== '' ? ['link' => $link] : [],
                 ],
             ]],
