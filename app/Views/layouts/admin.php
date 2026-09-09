@@ -12,7 +12,9 @@ if ($baseUrl === '') {
         $baseUrl = $scriptDirectory === '.' || $scriptDirectory === '/' ? '' : rtrim(dirname($scriptDirectory), '/');
     }
 }
-$assetVersion = rawurlencode((string) (function_exists('getEnvVar') ? getEnvVar('APP_ASSET_VERSION', '2026.06.27.1') : '2026.06.27.1') . '-' . (filemtime(dirname(__DIR__, 3) . '/css/admin.css') ?: 0));
+$assetRoot = dirname(__DIR__, 3);
+$assetStamp = max(array_map(static fn (string $path): int => is_file($path) ? (int) filemtime($path) : 0, [$assetRoot . '/css/admin.css', $assetRoot . '/js/main.js', $assetRoot . '/js/push.js', $assetRoot . '/js/pwa.js']));
+$assetVersion = rawurlencode((string) (function_exists('getEnvVar') ? getEnvVar('APP_ASSET_VERSION', '2026.06.27.1') : '2026.06.27.1') . '-' . $assetStamp);
 $firebaseWebConfig = [
     'apiKey' => (string) getEnvVar('FIREBASE_API_KEY', ''),
     'authDomain' => (string) getEnvVar('FIREBASE_AUTH_DOMAIN', ''),
