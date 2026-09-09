@@ -112,7 +112,9 @@ final class TicketController extends Controller
     private function returnUrl(string $url): string
     {
         $url = trim($url);
+        $basePath = rtrim((string) (parse_url((string) (function_exists('getEnvVar') ? getEnvVar('APP_URL', '') : ''), PHP_URL_PATH) ?: ($_SERVER['RCN_BASE_PATH'] ?? '')), '/');
+        if ($basePath !== '' && str_starts_with($url, $basePath . '/')) $url = substr($url, strlen($basePath));
 
-        return preg_match('#^/admin/(tickets|notificaciones|clientes/[0-9]+)(?:\\?[^\\r\\n]*)?$#', $url) ? $url : Url::to('/admin/tickets');
+        return preg_match('#^/admin/(tickets|notificaciones|clientes/[0-9]+)(?:\\?[^\\r\\n]*)?$#', $url) ? Url::to($url) : Url::to('/admin/tickets');
     }
 }
