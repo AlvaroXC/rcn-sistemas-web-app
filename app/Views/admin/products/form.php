@@ -1,6 +1,6 @@
 <?php $escape = static fn (mixed $value): string => htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8'); ?>
 <section class="section">
-    <header class="admin-header"><div><h1><?php echo $escape($pageTitle ?? 'Producto'); ?></h1><p>Completa la información que se mostrará en el catálogo público.</p></div><a href="products.php" class="btn btn--secondary">Volver al listado</a></header>
+    <header class="admin-header"><div><h1><?php echo $escape($pageTitle ?? 'Producto'); ?></h1><p>Completa la información que se mostrará en el catálogo público.</p></div><a href="<?php echo $baseUrl; ?>/admin/productos" class="btn btn--secondary">Volver al listado</a></header>
     <?php if (!empty($error)): ?><p class="alert alert--error"><?php echo $escape($error); ?></p><?php endif; ?>
     <div class="card panel-card"><form method="post" enctype="multipart/form-data" class="admin-form">
         <input type="hidden" name="_csrf_token" value="<?php echo $csrf; ?>"><input type="hidden" name="id" value="<?php echo (int) ($product?->id ?? 0); ?>">

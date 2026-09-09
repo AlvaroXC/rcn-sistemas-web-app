@@ -11,7 +11,7 @@ use RcnSistemas\Services\Communications\UploadService;
 
 $application = require __DIR__ . '/../app/Bootstrap/app.php';
 $session = new SessionManager(); $session->start();
-if (!$session->isAuthenticated()) { header('Location: login.php'); exit; }
+if (!$session->isAuthenticated()) { header('Location: ' . \RcnSistemas\Core\Routing\Url::to('/admin/login')); exit; }
 $csrf = new CsrfService($session); $csrf->token();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') $csrf->validate($_POST['_csrf_token'] ?? null);
 $connection = $application['database']->get();

@@ -7,4 +7,5 @@ return [
     'url' => rtrim((string) getEnvVar('APP_URL', ''), '/'),
     'asset_version' => getEnvVar('APP_ASSET_VERSION', '2026.06.27.1'),
     'encryption_key' => getEnvVar('APP_ENCRYPTION_KEY', ''),
+    'timezone' => getEnvVar('APP_TIMEZONE', 'America/Merida'),
 ];

@@ -19,7 +19,7 @@ if ($ticket->serviceStartTime && $ticket->serviceEndTime) {
     <nav class="breadcrumbs" aria-label="Navegación"><a href="<?php echo $escape($returnUrl); ?>">Tickets</a><span>/</span><span>Ticket #<?php echo (int) $ticket->id; ?></span></nav>
     <header class="admin-header">
         <div><h1>Ticket #<?php echo (int) $ticket->id; ?></h1><p>Creado el <?php echo $escape($date($ticket->createdAt)); ?></p></div>
-        <div class="ticket-header-actions"><a href="ticket_service_order_pdf.php?id=<?php echo (int) $ticket->id; ?>&amp;return=<?php echo urlencode($returnUrl); ?>" class="btn">Exportar PDF</a><a href="<?php echo $escape($returnUrl); ?>" class="btn btn--secondary">Volver a tickets</a><a href="customer_view.php?id=<?php echo (int) $ticket->customerId; ?>&amp;return=<?php echo urlencode($returnUrl); ?>" class="btn">Ver cliente</a></div>
+        <div class="ticket-header-actions"><a href="<?php echo $baseUrl; ?>/admin/tickets/<?php echo (int) $ticket->id; ?>/orden-servicio.pdf" class="btn">Exportar PDF</a><a href="<?php echo $escape($returnUrl); ?>" class="btn btn--secondary">Volver a tickets</a><a href="<?php echo $baseUrl; ?>/admin/clientes/<?php echo (int) $ticket->customerId; ?>?return=<?php echo urlencode($returnUrl); ?>" class="btn">Ver cliente</a></div>
     </header>
     <?php if ($error): ?><div class="alert alert--error ticket-inline-alert"><?php echo $escape($error); ?></div><?php endif; ?>
 

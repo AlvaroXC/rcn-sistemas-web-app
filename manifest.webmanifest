@@ -1,0 +1,13 @@
+{
+  "name": "RCN Sistemas - Panel",
+  "short_name": "RCN Panel",
+  "lang": "es-MX",
+  "start_url": "./admin/",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f4f6f8",
+  "theme_color": "#003b5c",
+  "icons": [
+    {"src": "./assets/images/pwa-icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}
+  ]
+}

@@ -4,6 +4,7 @@ namespace RcnSistemas\Core\View;
 
 use InvalidArgumentException;
 use RcnSistemas\Core\Http\Response;
+use RcnSistemas\Core\Routing\Url;
 
 final class ViewRenderer
 {
@@ -13,13 +14,14 @@ final class ViewRenderer
 
     public function render(string $view, array $data = [], ?string $layout = null): string
     {
-        $viewContent = $this->renderFile($view, $data);
+        $viewData = [...$data, 'baseUrl' => rtrim(Url::to('/'), '/')];
+        $viewContent = $this->renderFile($view, $viewData);
 
         if ($layout === null) {
             return $viewContent;
         }
 
-        return $this->renderFile($layout, [...$data, 'content' => $viewContent]);
+        return $this->renderFile($layout, [...$viewData, 'content' => $viewContent]);
     }
 
     public function response(string $view, array $data = [], ?string $layout = null, int $status = 200): Response

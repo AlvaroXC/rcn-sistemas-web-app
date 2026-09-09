@@ -4,8 +4,8 @@ $types = ['Compra', 'Soporte', 'Informacion'];
 $statuses = ['Nuevo', 'Agendado', 'En revision', 'En proceso', 'Pendiente de respuesta', 'Por facturar', 'Resuelto', 'Cerrado'];
 ?>
 <section class="section">
-    <nav class="breadcrumbs" aria-label="Navegación"><a href="tickets.php">Tickets</a><span>/</span><span>Nuevo ticket</span></nav>
-    <header class="admin-header"><div><h1>Nuevo ticket</h1><p>Registra una solicitud y relaciona toda la información del cliente.</p></div><a href="tickets.php" class="btn btn--secondary">Volver a tickets</a></header>
+    <nav class="breadcrumbs" aria-label="Navegación"><a href="<?php echo $baseUrl; ?>/admin/tickets">Tickets</a><span>/</span><span>Nuevo ticket</span></nav>
+    <header class="admin-header"><div><h1>Nuevo ticket</h1><p>Registra una solicitud y relaciona toda la información del cliente.</p></div><a href="<?php echo $baseUrl; ?>/admin/tickets" class="btn btn--secondary">Volver a tickets</a></header>
     <?php if ($error): ?><p class="alert alert--error"><?php echo $escape($error); ?></p><?php endif; ?>
     <div class="card panel-card"><form method="post" enctype="multipart/form-data" class="admin-form">
         <input type="hidden" name="_csrf_token" value="<?php echo $csrf; ?>">

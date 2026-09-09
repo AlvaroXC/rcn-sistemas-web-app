@@ -8,7 +8,7 @@ use RcnSistemas\Services\AuthService;
 $application = require __DIR__ . '/../app/Bootstrap/app.php';
 $session = new SessionManager();
 $session->start();
-if ($session->isAuthenticated()) { header('Location: index.php'); exit; }
+if ($session->isAuthenticated()) { header('Location: ' . \RcnSistemas\Core\Routing\Url::to('/admin')); exit; }
 
 $csrf = new CsrfService($session);
 $csrf->token();
@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $csrf->validate($_POST['_csrf_token'] ?? null);
         $auth = new AuthService(new MysqliAdminUserRepository($application['database']->get()), $session);
-        if ($auth->authenticate(trim((string) ($_POST['username'] ?? '')), (string) ($_POST['password'] ?? ''))) { header('Location: index.php'); exit; }
+        if ($auth->authenticate(trim((string) ($_POST['username'] ?? '')), (string) ($_POST['password'] ?? ''))) { header('Location: ' . \RcnSistemas\Core\Routing\Url::to('/admin')); exit; }
         $error = 'Usuario o contraseña incorrectos.';
     } catch (Throwable $exception) {
         $error = $exception->getMessage();
@@ -40,7 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="card login-card">
         <h1 style="text-align: center; margin-bottom: 4rem; font-size: 3rem;">Admin<span>RCN</span></h1>
         <?php if ($error): ?><div class="alert alert--error"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div><?php endif; ?>
-        <form action="login.php" method="post" style="display: grid; gap: 2rem;">
+        <form action="<?php echo \RcnSistemas\Core\Routing\Url::to('/admin/login'); ?>" method="post" style="display: grid; gap: 2rem;">
             <input type="hidden" name="_csrf_token" value="<?php echo htmlspecialchars($csrf->token(), ENT_QUOTES, 'UTF-8'); ?>">
             <div style="display: grid; gap: 0.8rem;"><label style="font-weight: 700; font-size: 1.3rem;">Usuario</label><input type="text" name="username" required autofocus style="padding: 1.2rem; border: 1px solid var(--border); border-radius: 8px;"></div>
             <div style="display: grid; gap: 0.8rem;"><label style="font-weight: 700; font-size: 1.3rem;">Contraseña</label><input type="password" name="password" required style="padding: 1.2rem; border: 1px solid var(--border); border-radius: 8px;"></div>

@@ -13,7 +13,7 @@ use RcnSistemas\Services\PromotionManagementService;
 use RcnSistemas\Services\PromotionService;
 
 $session = new SessionManager(); $session->start();
-if (!$session->isAuthenticated()) { header('Location: login.php'); exit; }
+if (!$session->isAuthenticated()) { header('Location: ' . \RcnSistemas\Core\Routing\Url::to('/admin/login')); exit; }
 $csrf = new CsrfService($session); $csrf->token();
 if ($_SERVER['REQUEST_METHOD'] === 'POST') $csrf->validate($_POST['_csrf_token'] ?? null);
 $conn = $application['database']->get();

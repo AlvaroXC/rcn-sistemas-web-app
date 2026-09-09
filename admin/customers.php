@@ -7,7 +7,7 @@ use RcnSistemas\Core\Security\SessionManager;
 
 $session = new SessionManager();
 $session->start();
-if (!$session->isAuthenticated()) { header('Location: login.php'); exit; }
+if (!$session->isAuthenticated()) { header('Location: ' . \RcnSistemas\Core\Routing\Url::to('/admin/login')); exit; }
 if ($_SERVER['REQUEST_METHOD'] === 'POST') (new CsrfService($session))->validate($_POST['_csrf_token'] ?? null);
 $conn = $application['database']->get();
 (new CsrfService($session))->token();

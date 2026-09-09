@@ -25,7 +25,7 @@ final class AuthController extends Controller
     public function login(Request $request): Response
     {
         if ($this->session->isAuthenticated()) {
-            return Response::redirect(Url::to('/admin'));
+            return Response::redirect(Url::to('/admin/'));
         }
 
         $error = null;
@@ -33,7 +33,7 @@ final class AuthController extends Controller
             try {
                 $this->csrf->validate((string) $request->input('_csrf_token', ''));
                 if ($this->auth->authenticate(trim((string) $request->input('username', '')), (string) $request->input('password', ''))) {
-                    return Response::redirect(Url::to('/admin'));
+                    return Response::redirect(Url::to('/admin/'));
                 }
                 $error = 'Usuario o contraseña incorrectos.';
             } catch (\Throwable $exception) {

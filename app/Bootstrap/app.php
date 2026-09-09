@@ -37,6 +37,7 @@ $configuration = [
     'mail' => require $projectRoot . '/config/mail.php',
     'uploads' => require $projectRoot . '/config/uploads.php',
     'google' => require $projectRoot . '/config/google.php',
+    'firebase' => require $projectRoot . '/config/firebase.php',
 ];
 
 return [

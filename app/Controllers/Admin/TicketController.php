@@ -22,10 +22,11 @@ use RcnSistemas\Services\Tickets\TicketPricing;
 use RcnSistemas\Services\Tickets\TicketAssignmentService;
 use RcnSistemas\Services\Communications\UploadService;
 use RcnSistemas\Services\Google\GoogleCalendarAppointmentSyncService;
+use RcnSistemas\Services\Notifications\TicketNotificationDispatcher;
 
 final class TicketController extends Controller
 {
-    public function __construct(private readonly TicketRepository $tickets, private readonly CustomerRepository $customers, ViewRenderer $views, private readonly ?TicketDetailRepository $details = null, private readonly ?CustomerSearchRepository $customerSearch = null, private readonly ?UploadService $uploads = null, private readonly string $uploadDirectory = '', private readonly ?AdminUserManagementRepository $users = null, private readonly ?GoogleCalendarAppointmentSyncService $calendarSync = null) { parent::__construct($views); }
+    public function __construct(private readonly TicketRepository $tickets, private readonly CustomerRepository $customers, ViewRenderer $views, private readonly ?TicketDetailRepository $details = null, private readonly ?CustomerSearchRepository $customerSearch = null, private readonly ?UploadService $uploads = null, private readonly string $uploadDirectory = '', private readonly ?AdminUserManagementRepository $users = null, private readonly ?GoogleCalendarAppointmentSyncService $calendarSync = null, private readonly ?TicketNotificationDispatcher $notificationDispatcher = null) { parent::__construct($views); }
 
     public function create(Request $request, int $viewerId, string $viewerRole = 'agent'): Response
     {
@@ -56,6 +57,7 @@ final class TicketController extends Controller
                 $file = $request->file('attachment');
                 $storedAttachment = $file && $this->uploads && $this->uploadDirectory !== '' ? $this->uploads->store($file, $this->uploadDirectory) : '';
                 $ticket = (new TicketService($this->tickets, new TicketWorkflow()))->create(['customer_id' => $customerId, 'consultation_type' => $values['consultation_type'], 'status' => $values['status'], 'subject' => $values['subject'], 'context_label' => $values['context_label'], 'message' => $values['message'], 'origin_type' => 'admin', 'assigned_user_id' => $assignedUserId, 'assigned_by_user_id' => $viewerId, 'price' => $price, 'appointment_date' => $values['appointment_date'], 'appointment_time' => $values['appointment_time'], 'service_date' => $values['service_date'], 'service_start_time' => $values['service_start_time'], 'service_end_time' => $values['service_end_time'], 'attachment_path' => $storedAttachment ? 'uploads/tickets/' . $storedAttachment : null]);
+                if ($ticket && $this->notificationDispatcher) $this->notificationDispatcher->assignment($ticket, $viewerId, $this->viewerLabel($viewerId), true);
                 $this->calendarSync?->sync($ticket);
                 return Response::redirect(Url::to('/admin/tickets/' . $ticket->id));
             } catch (InvalidArgumentException $exception) { $error = $exception->getMessage(); }
@@ -86,14 +88,25 @@ final class TicketController extends Controller
                 elseif ($action === 'calendar_sync') { if (!$this->calendarSync) throw new InvalidArgumentException('La sincronización de Google Calendar no está disponible.'); }
                 else (new TicketService($this->tickets, new TicketWorkflow()))->changeStatus($ticket, (string) $request->input('status', ''));
                 $updatedTicket = $this->tickets->find($ticket->id);
+                if ($updatedTicket && $this->notificationDispatcher) {
+                    if ($action === 'assignee') $this->notificationDispatcher->assignment($updatedTicket, $viewerId, $this->viewerLabel($viewerId));
+                    elseif ($action === 'observation') $this->notificationDispatcher->observation($updatedTicket, $viewerId, $this->viewerLabel($viewerId));
+                    elseif ($action === 'status') $this->notificationDispatcher->status($updatedTicket, $viewerId, $this->viewerLabel($viewerId));
+                }
                 if ($updatedTicket && $this->calendarSync) {
                     $action === 'assignee' ? $this->calendarSync->syncReassignment($previousTicket, $updatedTicket) : $this->calendarSync->sync($updatedTicket);
                 }
-                return Response::redirect(Url::to('/admin/tickets/' . $ticket->id) . '?return=' . urlencode($returnUrl));
+                return Response::redirect(Url::to('/admin/tickets/' . $ticket->id));
             }
             catch (InvalidArgumentException $exception) { $error = $exception->getMessage(); }
         }
         return $this->view('admin.tickets.show', ['pageTitle' => 'Ticket #' . $ticket->id, 'ticket' => $ticket, 'error' => $error, 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'), 'statuses' => (new TicketWorkflow())->statuses(), 'observations' => $this->details?->observations($ticket->id) ?? [], 'assignableUsers' => $this->users?->all() ?? [], 'viewerRole' => $viewerRole, 'returnUrl' => $returnUrl], 'layouts.admin');
+    }
+
+    private function viewerLabel(int $userId): string
+    {
+        $user = $this->users?->findById($userId);
+        return trim((string) ($user['display_name'] ?? $user['username'] ?? 'Usuario')) ?: 'Usuario';
     }
 
     private function returnUrl(string $url): string

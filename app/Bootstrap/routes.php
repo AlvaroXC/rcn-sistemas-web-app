@@ -30,6 +30,8 @@ use RcnSistemas\Repositories\MysqliCustomerRepository;
 use RcnSistemas\Repositories\MysqliCustomerSearchRepository;
 use RcnSistemas\Repositories\MysqliDashboardMetricsRepository;
 use RcnSistemas\Repositories\MysqliNotificationRepository;
+use RcnSistemas\Repositories\MysqliPushDeviceRepository;
+use RcnSistemas\Repositories\MysqliPushPreferenceRepository;
 use RcnSistemas\Repositories\MysqliGoogleCalendarConnectionRepository;
 use RcnSistemas\Repositories\MysqliTicketCalendarRepository;
 use RcnSistemas\Repositories\MysqliProductRepository;
@@ -56,6 +58,9 @@ use RcnSistemas\Services\Tickets\TicketWorkflow;
 use RcnSistemas\Services\Google\GoogleCalendarService;
 use RcnSistemas\Services\Google\TokenEncryption;
 use RcnSistemas\Services\Google\GoogleCalendarAppointmentSyncService;
+use RcnSistemas\Services\Notifications\FcmClient;
+use RcnSistemas\Services\Notifications\PushDeliveryService;
+use RcnSistemas\Services\Notifications\TicketNotificationDispatcher;
 
 return static function (array $application): Router {
     $connection = $application['database']->get();
@@ -64,6 +69,8 @@ return static function (array $application): Router {
     $session->start();
     $csrf = new CsrfService($session);
     $router = new Router();
+
+    $router->get('/firebase-config.json', static fn (): Response => Response::json($application['config']->get('firebase.web_config', []), 200));
 
     $authorized = static function (callable $handler, bool $adminOnly = false) use ($session, $csrf): callable {
         return static function (Request $request) use ($handler, $adminOnly, $session, $csrf): Response {
@@ -112,6 +119,10 @@ return static function (array $application): Router {
     );
     $router->get('/contacto', static fn (Request $request): Response => $contact->index($request));
     $router->post('/contacto', static fn (Request $request): Response => $contact->index($request));
+    $router->get('/contacto/producto/{id}', static fn (Request $request): Response => $contact->index($request->withQuery(['product' => $request->query('id')])));
+    $router->get('/contacto/promocion/{id}', static fn (Request $request): Response => $contact->index($request->withQuery(['promo' => $request->query('id')])));
+    $router->post('/contacto/producto/{id}', static fn (Request $request): Response => $contact->index($request->withQuery(['product' => $request->query('id')])));
+    $router->post('/contacto/promocion/{id}', static fn (Request $request): Response => $contact->index($request->withQuery(['promo' => $request->query('id')])));
 
     $auth = new AuthController(new AuthService(new MysqliAdminUserRepository($connection), $session), $csrf, $session, $views);
     $router->get('/admin/login', static fn (Request $request): Response => $auth->login($request));
@@ -127,11 +138,18 @@ return static function (array $application): Router {
     $ticketCalendarConnections = new MysqliGoogleCalendarConnectionRepository($connection);
     $ticketCalendarClient = new GoogleCalendarService($application['config']->get('google', []), $ticketCalendarConnections, new TokenEncryption((string) $application['config']->get('app.encryption_key', '')));
     $ticketCalendarSync = new GoogleCalendarAppointmentSyncService($ticketCalendarConnections, new MysqliTicketCalendarRepository($connection), $ticketCalendarClient, $application['config']->get('google', []));
-    $ticketController = new TicketController(new MysqliTicketRepository($connection), new MysqliCustomerRepository($connection), $views, new MysqliTicketDetailRepository($connection), new MysqliCustomerSearchRepository($connection), new UploadService(), $application['root'] . '/uploads/tickets', new MysqliAdminUserManagementRepository($connection), $ticketCalendarSync);
+    $pushDevices = new MysqliPushDeviceRepository($connection);
+    $pushPreferences = new MysqliPushPreferenceRepository($connection);
+    $pushDelivery = new PushDeliveryService($pushDevices, $pushPreferences, new FcmClient($application['config']->get('firebase', [])));
+    $ticketNotifications = new TicketNotificationDispatcher($connection, $pushDelivery, (string) $application['config']->get('app.url', ''));
+    $ticketController = new TicketController(new MysqliTicketRepository($connection), new MysqliCustomerRepository($connection), $views, new MysqliTicketDetailRepository($connection), new MysqliCustomerSearchRepository($connection), new UploadService(), $application['root'] . '/uploads/tickets', new MysqliAdminUserManagementRepository($connection), $ticketCalendarSync, $ticketNotifications);
     $createTicket = $authorized(static fn (Request $request, SessionManager $currentSession): Response => $ticketController->create($request, $currentSession->userId(), $currentSession->role()));
     $showTicket = $authorized(static fn (Request $request, SessionManager $currentSession): Response => $ticketController->show($request, $currentSession->userId(), $currentSession->role()));
     $router->get('/admin/tickets/nuevo', $createTicket);
     $router->post('/admin/tickets/nuevo', $createTicket);
+    $createTicketForCustomer = $authorized(static fn (Request $request, SessionManager $currentSession): Response => $ticketController->create($request->withQuery(['customer_id' => $request->query('id')]), $currentSession->userId(), $currentSession->role()));
+    $router->get('/admin/tickets/nuevo/cliente/{id}', $createTicketForCustomer);
+    $router->post('/admin/tickets/nuevo/cliente/{id}', $createTicketForCustomer);
     $router->get('/admin/tickets/{id}', $showTicket);
     $router->post('/admin/tickets/{id}', $showTicket);
 
@@ -165,8 +183,9 @@ return static function (array $application): Router {
     $router->get('/admin/promociones/{id}/editar', $authorized(static fn (Request $request): Response => $adminPromotions->index($request->withQuery(['action' => 'edit']))));
     $router->post('/admin/promociones/{id}/editar', $authorized(static fn (Request $request): Response => $adminPromotions->index($request->withQuery(['action' => 'edit']))));
 
-    $notifications = new NotificationController(new MysqliNotificationRepository($connection), $views);
+    $notifications = new NotificationController(new MysqliNotificationRepository($connection), new MysqliPushDeviceRepository($connection), new MysqliPushPreferenceRepository($connection), $application['config']->get('firebase', []), $views);
     $router->get('/admin/notificaciones', $authorized(static fn (Request $request, SessionManager $currentSession): Response => $notifications->index($request, $currentSession->userId())));
+    $router->post('/admin/notificaciones', $authorized(static fn (Request $request, SessionManager $currentSession): Response => $notifications->index($request, $currentSession->userId())));
 
     $googleConnections = new MysqliGoogleCalendarConnectionRepository($connection);
     $googleCalendar = new GoogleCalendarController($googleConnections, new GoogleCalendarService($application['config']->get('google', []), $googleConnections, new TokenEncryption((string) $application['config']->get('app.encryption_key', ''))), $csrf, $session, $views);

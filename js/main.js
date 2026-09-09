@@ -6,7 +6,7 @@
 
     const scripts = document.body.classList.contains('public-page')
         ? ['public.js']
-        : ['admin.js', 'notifications.js'];
+        : ['admin.js', 'notifications.js', 'pwa.js', 'push.js'];
     const currentScriptUrl = document.currentScript ? new URL(document.currentScript.src, document.baseURI) : null;
     const basePath = currentScriptUrl?.pathname.replace(/\/js\/main\.js$/, '') || '';
 
