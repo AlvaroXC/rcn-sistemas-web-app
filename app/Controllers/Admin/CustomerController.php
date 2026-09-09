@@ -40,17 +40,7 @@ final class CustomerController extends Controller
         $customerId = (int) $request->query('id', 0);
         $customer = $customerId > 0 ? $this->customers->find($customerId) : null;
         if (!$customer) return $this->view('errors.404', [], 'layouts.admin', 404);
-        $returnUrl = $this->returnUrl((string) $request->query('return', Url::to('/admin/tickets')));
         $ticketFilter = $customer->phone ?: ($customer->email ?: $customer->name);
-        return $this->view('admin.customers.show', ['pageTitle' => 'Cliente: ' . $customer->name, 'customer' => $customer, 'tickets' => $this->customerQuery->tickets($customerId), 'returnUrl' => $returnUrl, 'ticketFilter' => $ticketFilter], 'layouts.admin');
-    }
-
-    private function returnUrl(string $url): string
-    {
-        $url = trim($url);
-        $basePath = rtrim((string) (parse_url((string) (function_exists('getEnvVar') ? getEnvVar('APP_URL', '') : ''), PHP_URL_PATH) ?: ($_SERVER['RCN_BASE_PATH'] ?? '')), '/');
-        if ($basePath !== '' && str_starts_with($url, $basePath . '/')) $url = substr($url, strlen($basePath));
-
-        return preg_match('#^/admin/(tickets|notificaciones|clientes)(?:\\?[^\\r\\n]*)?$#', $url) ? Url::to($url) : Url::to('/admin/tickets');
+        return $this->view('admin.customers.show', ['pageTitle' => 'Cliente: ' . $customer->name, 'customer' => $customer, 'tickets' => $this->customerQuery->tickets($customerId), 'ticketFilter' => $ticketFilter], 'layouts.admin');
     }
 }

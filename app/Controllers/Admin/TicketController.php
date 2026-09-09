@@ -72,7 +72,6 @@ final class TicketController extends Controller
     {
         $ticket = $this->tickets->find((int) $request->query('id', 0));
         if (!$ticket || ($viewerRole !== 'admin' && $ticket->assignedUserId !== $viewerId)) return $this->view('errors.404', [], 'layouts.admin', 404);
-        $returnUrl = $this->returnUrl((string) $request->query('return', $request->input('return', Url::to('/admin/tickets'))));
         $error = null;
         if ($request->isMethod('POST')) {
             try {
@@ -81,7 +80,7 @@ final class TicketController extends Controller
                 if ($action === 'observation' && $this->details) { $content = (new \RcnSistemas\Services\Tickets\TicketObservationService())->validate((string) $request->input('content', '')); if ($ticket->status === 'Cerrado' || !$this->details->addObservation($ticket->id, $content, $viewerId)) throw new InvalidArgumentException('No se pudo guardar la observación.'); }
                 elseif ($action === 'message' && $this->details) { $message = trim((string) $request->input('message', '')); if ($message === '' || !$this->details->updateMessage($ticket->id, $message, $viewerId)) throw new InvalidArgumentException('No se pudo actualizar el mensaje.'); }
                 elseif ($action === 'price') { $price = (new TicketPricing())->calculate((float) $request->input('price_amount', 0), $ticket->customerType ?: 'persona_fisica'); if (!$this->tickets->updatePrice($ticket->id, $price, $viewerId)) throw new InvalidArgumentException('No se pudo actualizar el precio.'); }
-                elseif ($action === 'assignee') { $assignedUserId = (int) $request->input('assigned_user_id', 0); (new TicketAssignmentService())->validate($viewerRole, $assignedUserId); $requestedUser = $this->users?->findById($assignedUserId); if (!$requestedUser || (int) $requestedUser['active'] !== 1) throw new InvalidArgumentException('El responsable seleccionado no está disponible.'); if (!$this->tickets->updateAssignee($ticket->id, $assignedUserId, $viewerId)) throw new InvalidArgumentException('No se pudo actualizar el responsable.'); if ($viewerRole !== 'admin' && $assignedUserId !== $viewerId) return Response::redirect($returnUrl); }
+                elseif ($action === 'assignee') { $assignedUserId = (int) $request->input('assigned_user_id', 0); (new TicketAssignmentService())->validate($viewerRole, $assignedUserId); $requestedUser = $this->users?->findById($assignedUserId); if (!$requestedUser || (int) $requestedUser['active'] !== 1) throw new InvalidArgumentException('El responsable seleccionado no está disponible.'); if (!$this->tickets->updateAssignee($ticket->id, $assignedUserId, $viewerId)) throw new InvalidArgumentException('No se pudo actualizar el responsable.'); if ($viewerRole !== 'admin' && $assignedUserId !== $viewerId) return Response::redirect(Url::to('/admin/tickets')); }
                 elseif ($action === 'appointment') { $appointmentDate = trim((string) $request->input('appointment_date', '')); $appointmentTime = trim((string) $request->input('appointment_time', '')); if (($appointmentDate !== '') xor ($appointmentTime !== '')) throw new InvalidArgumentException('La fecha y hora de la cita deben capturarse juntas.'); if ($appointmentDate !== '') (new TicketScheduleService())->validateAppointment($appointmentDate, $appointmentTime); if (!$this->tickets->updateSchedule($ticket->id, $appointmentDate ?: null, $appointmentTime ?: null, $ticket->serviceDate, $ticket->serviceStartTime, $ticket->serviceEndTime)) throw new InvalidArgumentException('No se pudo actualizar la cita.'); }
                 elseif ($action === 'service') { $serviceDate = trim((string) $request->input('service_date', '')); $serviceStart = trim((string) $request->input('service_start_time', '')); $serviceEnd = trim((string) $request->input('service_end_time', '')); if (($serviceStart !== '') xor ($serviceEnd !== '')) throw new InvalidArgumentException('El inicio y fin del servicio deben capturarse juntos.'); if ($serviceStart !== '') (new TicketScheduleService())->durationMinutes($serviceStart, $serviceEnd); if (!$this->tickets->updateSchedule($ticket->id, $ticket->appointmentDate, $ticket->appointmentTime, $serviceDate ?: null, $serviceStart ?: null, $serviceEnd ?: null)) throw new InvalidArgumentException('No se pudo actualizar la ejecución del servicio.'); }
                 elseif ($action === 'schedule') { $appointmentDate = trim((string) $request->input('appointment_date', '')); $appointmentTime = trim((string) $request->input('appointment_time', '')); $serviceDate = trim((string) $request->input('service_date', '')); $serviceStart = trim((string) $request->input('service_start_time', '')); $serviceEnd = trim((string) $request->input('service_end_time', '')); if (($appointmentDate !== '') xor ($appointmentTime !== '')) throw new InvalidArgumentException('La fecha y hora de la cita deben capturarse juntas.'); if (($serviceStart !== '') xor ($serviceEnd !== '')) throw new InvalidArgumentException('El inicio y fin del servicio deben capturarse juntos.'); if ($appointmentDate !== '') (new TicketScheduleService())->validateAppointment($appointmentDate, $appointmentTime); if ($serviceStart !== '') (new TicketScheduleService())->durationMinutes($serviceStart, $serviceEnd); if (!$this->tickets->updateSchedule($ticket->id, $appointmentDate ?: null, $appointmentTime ?: null, $serviceDate ?: null, $serviceStart ?: null, $serviceEnd ?: null)) throw new InvalidArgumentException('No se pudo actualizar la agenda.'); }
@@ -100,7 +99,7 @@ final class TicketController extends Controller
             }
             catch (InvalidArgumentException $exception) { $error = $exception->getMessage(); }
         }
-        return $this->view('admin.tickets.show', ['pageTitle' => 'Ticket #' . $ticket->id, 'ticket' => $ticket, 'error' => $error, 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'), 'statuses' => (new TicketWorkflow())->statuses(), 'observations' => $this->details?->observations($ticket->id) ?? [], 'assignableUsers' => $this->users?->all() ?? [], 'viewerRole' => $viewerRole, 'returnUrl' => $returnUrl], 'layouts.admin');
+        return $this->view('admin.tickets.show', ['pageTitle' => 'Ticket #' . $ticket->id, 'ticket' => $ticket, 'error' => $error, 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'), 'statuses' => (new TicketWorkflow())->statuses(), 'observations' => $this->details?->observations($ticket->id) ?? [], 'assignableUsers' => $this->users?->all() ?? [], 'viewerRole' => $viewerRole], 'layouts.admin');
     }
 
     private function viewerLabel(int $userId): string
@@ -109,12 +108,4 @@ final class TicketController extends Controller
         return trim((string) ($user['display_name'] ?? $user['username'] ?? 'Usuario')) ?: 'Usuario';
     }
 
-    private function returnUrl(string $url): string
-    {
-        $url = trim($url);
-        $basePath = rtrim((string) (parse_url((string) (function_exists('getEnvVar') ? getEnvVar('APP_URL', '') : ''), PHP_URL_PATH) ?: ($_SERVER['RCN_BASE_PATH'] ?? '')), '/');
-        if ($basePath !== '' && str_starts_with($url, $basePath . '/')) $url = substr($url, strlen($basePath));
-
-        return preg_match('#^/admin/(tickets|notificaciones|clientes/[0-9]+)(?:\\?[^\\r\\n]*)?$#', $url) ? Url::to($url) : Url::to('/admin/tickets');
-    }
 }
