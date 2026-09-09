@@ -39,10 +39,10 @@ final class TicketNotificationDispatcher
         $statement->execute();
         $delivery = $this->push->sendToUser($userId, $ticket->id, $eventType, $title, $message, $this->baseUrl . '/admin/tickets/' . $ticket->id, $eventKey);
         foreach (($delivery['results'] ?? []) as $result) {
-            $log = $this->connection->prepare('INSERT IGNORE INTO push_delivery_log (user_id, device_id, ticket_id, event_key, event_type, result, provider_code) VALUES (?, ?, ?, ?, ?, ?, ?)');
+            $log = $this->connection->prepare('INSERT IGNORE INTO push_delivery_log (user_id, device_id, ticket_id, event_key, event_type, result, provider_code, error_message) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
             if (!$log) continue;
-            $deviceId = (int) ($result['device_id'] ?? 0); $resultType = (string) ($result['result'] ?? 'unknown'); $providerCode = $result['provider_code'] ?? null;
-            $log->bind_param('iiissss', $userId, $deviceId, $ticketId, $eventKey, $eventType, $resultType, $providerCode);
+            $deviceId = (int) ($result['device_id'] ?? 0); $resultType = (string) ($result['result'] ?? 'unknown'); $providerCode = $result['provider_code'] ?? null; $errorMessage = $result['error_message'] ?? null;
+            $log->bind_param('iiisssss', $userId, $deviceId, $ticketId, $eventKey, $eventType, $resultType, $providerCode, $errorMessage);
             $log->execute();
         }
     }
