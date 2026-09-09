@@ -50,9 +50,10 @@
             if (!token) throw new Error('Firebase no generó un dispositivo para este navegador.');
             onMessage(messaging, payload => {
                 const data = payload.data || {};
-                const notification = new Notification(payload.notification?.title || 'RCN Sistemas', {
-                    body: payload.notification?.body || 'Tienes una actualización de ticket.',
-                    icon: `${window.location.origin}${document.body.dataset.appBasePath || ''}/assets/images/pwa-icon.svg`,
+                const notificationContent = payload.notification || data;
+                const notification = new Notification(notificationContent.title || 'RCN Sistemas', {
+                    body: notificationContent.body || 'Tienes una actualización de ticket.',
+                    icon: notificationContent.icon || `${window.location.origin}${document.body.dataset.appBasePath || ''}/assets/images/pwa-icon.svg`,
                     data,
                 });
                 notification.onclick = () => {

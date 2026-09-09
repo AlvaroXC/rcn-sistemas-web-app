@@ -22,6 +22,14 @@ fetch(new URL('firebase-config.json', self.registration.scope))
     .then(config => {
         if (!config.projectId) return;
         firebase.initializeApp(config);
-        firebase.messaging();
+        firebase.messaging().onBackgroundMessage(payload => {
+            const data = payload.data || {};
+            console.info('[RCN Push] Mensaje recibido en segundo plano.', {type: data.type, ticketId: data.ticket_id});
+            self.registration.showNotification(data.title || 'RCN Sistemas', {
+                body: data.body || 'Tienes una actualización de ticket.',
+                icon: data.icon || new URL('assets/images/pwa-icon.svg', self.registration.scope).href,
+                data: {url: data.url || new URL('admin/notificaciones', self.registration.scope).href},
+            });
+        });
     })
     .catch(error => console.error('No se pudo inicializar Firebase Messaging en el Service Worker.', error));
