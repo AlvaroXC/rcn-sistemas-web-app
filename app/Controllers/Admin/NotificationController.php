@@ -21,7 +21,10 @@ final class NotificationController extends Controller
             if ($action === 'register') {
                 $token = trim((string) $request->input('token', ''));
                 if ($token === '' || strlen($token) > 4096) return Response::json(['error' => 'El dispositivo no es válido.'], 422);
-                $this->devices->upsert($userId, $token, trim((string) $request->input('device_key', '')) ?: null, trim((string) $request->input('platform', 'web')) ?: 'web', substr(trim((string) ($request->server('HTTP_USER_AGENT', '') ?? '')), 0, 512));
+                $platform = trim((string) $request->input('platform', 'web')) ?: 'web';
+                if (!in_array($platform, ['web', 'ios-web'], true)) $platform = 'web';
+                $saved = $this->devices->upsert($userId, $token, trim((string) $request->input('device_key', '')) ?: null, $platform, substr(trim((string) ($request->server('HTTP_USER_AGENT', '') ?? '')), 0, 512));
+                if (!$saved) return Response::json(['error' => 'No se pudo guardar el dispositivo. Inténtalo nuevamente.'], 500);
                 return Response::json(['ok' => true]);
             }
             if ($action === 'deactivate') $this->devices->deactivateById($userId, (int) $request->input('device_id', 0));
