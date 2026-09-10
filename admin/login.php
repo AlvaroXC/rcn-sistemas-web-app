@@ -3,11 +3,14 @@
 use RcnSistemas\Core\Security\CsrfService;
 use RcnSistemas\Core\Security\SessionManager;
 use RcnSistemas\Repositories\MysqliAdminUserRepository;
+use RcnSistemas\Repositories\MysqliAdminRememberTokenRepository;
 use RcnSistemas\Services\AuthService;
 
 $application = require __DIR__ . '/../app/Bootstrap/app.php';
 $session = new SessionManager();
 $session->start();
+$auth = new AuthService(new MysqliAdminUserRepository($application['database']->get()), $session, new MysqliAdminRememberTokenRepository($application['database']->get()));
+$auth->restoreRememberedSession();
 if ($session->isAuthenticated()) { header('Location: ' . \RcnSistemas\Core\Routing\Url::to('/admin')); exit; }
 
 $csrf = new CsrfService($session);
@@ -16,8 +19,7 @@ $error = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $csrf->validate($_POST['_csrf_token'] ?? null);
-        $auth = new AuthService(new MysqliAdminUserRepository($application['database']->get()), $session);
-        if ($auth->authenticate(trim((string) ($_POST['username'] ?? '')), (string) ($_POST['password'] ?? ''))) { header('Location: ' . \RcnSistemas\Core\Routing\Url::to('/admin')); exit; }
+        if ($auth->authenticate(trim((string) ($_POST['username'] ?? '')), (string) ($_POST['password'] ?? ''), !empty($_POST['remember_me']))) { header('Location: ' . \RcnSistemas\Core\Routing\Url::to('/admin')); exit; }
         $error = 'Usuario o contraseña incorrectos.';
     } catch (Throwable $exception) {
         $error = $exception->getMessage();

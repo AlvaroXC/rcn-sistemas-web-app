@@ -15,6 +15,7 @@
             <input type="hidden" name="_csrf_token" value="<?php echo htmlspecialchars($csrf, ENT_QUOTES, 'UTF-8'); ?>">
             <div style="display: grid; gap: 0.8rem;"><label style="font-weight: 700; font-size: 1.3rem;">Usuario</label><input type="text" name="username" required autofocus style="padding: 1.2rem; border: 1px solid var(--border); border-radius: 8px;"></div>
             <div style="display: grid; gap: 0.8rem;"><label style="font-weight: 700; font-size: 1.3rem;">Contraseña</label><input type="password" name="password" required style="padding: 1.2rem; border: 1px solid var(--border); border-radius: 8px;"></div>
+            <label style="display: flex; gap: 0.8rem; align-items: center; font-size: 1.2rem;"><input type="checkbox" name="remember_me" value="1"> Mantener sesión iniciada</label>
             <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Entrar al Panel</button>
         </form>
         <p style="text-align: center; margin-top: 3rem; font-size: 1.3rem; color: var(--text-muted);">&copy; <?php echo date('Y'); ?> RCN Sistemas</p>

@@ -25,6 +25,7 @@ use RcnSistemas\Core\Security\SessionManager;
 use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Repositories\MysqliAdminUserManagementRepository;
 use RcnSistemas\Repositories\MysqliAdminUserRepository;
+use RcnSistemas\Repositories\MysqliAdminRememberTokenRepository;
 use RcnSistemas\Repositories\MysqliCustomerQueryRepository;
 use RcnSistemas\Repositories\MysqliCustomerRepository;
 use RcnSistemas\Repositories\MysqliCustomerSearchRepository;
@@ -68,6 +69,9 @@ return static function (array $application): Router {
     $session = new SessionManager();
     $session->start();
     $csrf = new CsrfService($session);
+    $rememberTokens = new MysqliAdminRememberTokenRepository($connection);
+    $authService = new AuthService(new MysqliAdminUserRepository($connection), $session, $rememberTokens);
+    $authService->restoreRememberedSession();
     $router = new Router();
 
     $router->get('/firebase-config.json', static fn (): Response => Response::json($application['config']->get('firebase.web_config', []), 200));
@@ -124,7 +128,7 @@ return static function (array $application): Router {
     $router->post('/contacto/producto/{id}', static fn (Request $request): Response => $contact->index($request->withQuery(['product' => $request->query('id')])));
     $router->post('/contacto/promocion/{id}', static fn (Request $request): Response => $contact->index($request->withQuery(['promo' => $request->query('id')])));
 
-    $auth = new AuthController(new AuthService(new MysqliAdminUserRepository($connection), $session), $csrf, $session, $views);
+    $auth = new AuthController($authService, $csrf, $session, $views);
     $router->get('/admin/login', static fn (Request $request): Response => $auth->login($request));
     $router->post('/admin/login', static fn (Request $request): Response => $auth->login($request));
     $router->get('/admin/logout', static fn (): Response => $auth->logout());
@@ -142,7 +146,7 @@ return static function (array $application): Router {
     $pushPreferences = new MysqliPushPreferenceRepository($connection);
     $pushDelivery = new PushDeliveryService($pushDevices, $pushPreferences, new FcmClient($application['config']->get('firebase', [])));
     $ticketNotifications = new TicketNotificationDispatcher($connection, $pushDelivery, (string) $application['config']->get('app.url', ''));
-    $ticketController = new TicketController(new MysqliTicketRepository($connection), new MysqliCustomerRepository($connection), $views, new MysqliTicketDetailRepository($connection), new MysqliCustomerSearchRepository($connection), new UploadService(), $application['root'] . '/uploads/tickets', new MysqliAdminUserManagementRepository($connection), $ticketCalendarSync, $ticketNotifications);
+    $ticketController = new TicketController(new MysqliTicketRepository($connection), new MysqliCustomerRepository($connection), $views, new MysqliTicketDetailRepository($connection), new MysqliCustomerSearchRepository($connection), new UploadService(), $application['root'] . '/uploads/tickets', new MysqliAdminUserManagementRepository($connection), $ticketCalendarSync, $ticketNotifications, new MysqliNotificationRepository($connection));
     $createTicket = $authorized(static fn (Request $request, SessionManager $currentSession): Response => $ticketController->create($request, $currentSession->userId(), $currentSession->role()));
     $showTicket = $authorized(static fn (Request $request, SessionManager $currentSession): Response => $ticketController->show($request, $currentSession->userId(), $currentSession->role()));
     $router->get('/admin/tickets/nuevo', $createTicket);

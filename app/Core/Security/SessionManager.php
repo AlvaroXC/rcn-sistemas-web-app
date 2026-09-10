@@ -89,6 +89,12 @@ final class SessionManager
         session_destroy();
     }
 
+    public function clearAuthentication(): void
+    {
+        $this->start();
+        unset($_SESSION['admin_id'], $_SESSION['admin_user'], $_SESSION['admin_role'], $_SESSION['last_activity']);
+    }
+
     private function isHttpsRequest(): bool
     {
         return (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')

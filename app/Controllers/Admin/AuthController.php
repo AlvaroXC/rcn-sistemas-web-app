@@ -32,7 +32,7 @@ final class AuthController extends Controller
         if ($request->isMethod('POST')) {
             try {
                 $this->csrf->validate((string) $request->input('_csrf_token', ''));
-                if ($this->auth->authenticate(trim((string) $request->input('username', '')), (string) $request->input('password', ''))) {
+                if ($this->auth->authenticate(trim((string) $request->input('username', '')), (string) $request->input('password', ''), (bool) $request->input('remember_me', false))) {
                     return Response::redirect(Url::to('/admin/'));
                 }
                 $error = 'Usuario o contraseña incorrectos.';
@@ -46,7 +46,7 @@ final class AuthController extends Controller
 
     public function logout(): Response
     {
-        $this->session->destroy();
+        $this->auth->logout();
 
         return Response::redirect(Url::to('/admin/login'));
     }
