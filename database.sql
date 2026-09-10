@@ -4,3 +4,5 @@ SOURCE database/migrations/001_initial_schema.sql;
 SOURCE database/migrations/002_support_and_admin_extensions.sql;
 SOURCE database/migrations/003_notifications_and_sessions.sql;
 SOURCE database/migrations/004_complete_ticket_audit_schema.sql;
+SOURCE database/migrations/005_google_calendar.sql;
+SOURCE database/migrations/006_push_notifications.sql;
