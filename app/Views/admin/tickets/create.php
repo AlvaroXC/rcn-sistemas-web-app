@@ -1,7 +1,7 @@
 <?php
 $escape = static fn (mixed $value): string => htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
-$types = ['Compra', 'Soporte', 'Informacion'];
-$statuses = ['Nuevo', 'Agendado', 'En revision', 'En proceso', 'Pendiente de respuesta', 'Por facturar', 'Resuelto', 'Cerrado'];
+$types = $consultationTypes ?? [];
+$statuses = $statuses ?? [];
 ?>
 <section class="section">
     <nav class="breadcrumbs" aria-label="Navegación"><a href="<?php echo $baseUrl; ?>/admin/tickets">Tickets</a><span>/</span><span>Nuevo ticket</span></nav>

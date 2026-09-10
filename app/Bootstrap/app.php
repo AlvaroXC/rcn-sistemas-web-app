@@ -38,6 +38,8 @@ $configuration = [
     'uploads' => require $projectRoot . '/config/uploads.php',
     'google' => require $projectRoot . '/config/google.php',
     'firebase' => require $projectRoot . '/config/firebase.php',
+    'company' => require $projectRoot . '/config/company.php',
+    'billing' => require $projectRoot . '/config/billing.php',
 ];
 
 return [

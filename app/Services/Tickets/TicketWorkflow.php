@@ -7,6 +7,7 @@ use InvalidArgumentException;
 final class TicketWorkflow
 {
     public const CLOSED = 'Cerrado';
+    public const DEFAULT = 'Nuevo';
     private const STATUSES = ['Nuevo', 'Agendado', 'En revision', 'En proceso', 'Pendiente de respuesta', 'Por facturar', 'Resuelto', 'Cerrado'];
 
     public function statuses(): array { return self::STATUSES; }

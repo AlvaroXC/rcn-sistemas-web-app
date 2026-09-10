@@ -32,6 +32,7 @@ final class TicketListController extends Controller
         $filters['per_page'] = $perPage;
         $total = $this->tickets->count($filters, $viewerId, $viewerRole);
         $totalPages = max(1, (int) ceil($total / $perPage));
+        $page = min($page, $totalPages);
         $isOpenScope = $filters['scope'] === 'open';
         $activeFilters = [];
         foreach (['customer' => 'Cliente', 'status' => 'Estado', 'consultation_type' => 'Tipo', 'date_from' => 'Desde', 'date_to' => 'Hasta'] as $key => $label) {

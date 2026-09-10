@@ -12,6 +12,7 @@ use RcnSistemas\Repositories\CustomerRepository;
 use RcnSistemas\Repositories\CustomerQueryRepository;
 use RcnSistemas\Services\Customers\CustomerIdentity;
 use RcnSistemas\Services\Customers\CustomerService;
+use RcnSistemas\Services\Customers\CustomerCatalog;
 
 final class CustomerController extends Controller
 {
@@ -32,7 +33,7 @@ final class CustomerController extends Controller
         $perPage = (int) $request->query('per_page', 10);
         if (!in_array($perPage, [10, 25, 50], true)) $perPage = 10;
         $total = $this->customerQuery->count($search);
-        return $this->view('admin.customers.index', ['pageTitle' => 'Clientes', 'customer' => $customer, 'editing' => $editing, 'error' => $error, 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'), 'customers' => $this->customerQuery->list($search, $perPage, ($page - 1) * $perPage), 'search' => $search, 'page' => $page, 'perPage' => $perPage, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $perPage))], 'layouts.admin');
+        return $this->view('admin.customers.index', ['pageTitle' => 'Clientes', 'customer' => $customer, 'editing' => $editing, 'error' => $error, 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'), 'customers' => $this->customerQuery->list($search, $perPage, ($page - 1) * $perPage), 'search' => $search, 'page' => $page, 'perPage' => $perPage, 'total' => $total, 'totalPages' => max(1, (int) ceil($total / $perPage)), 'customerTypes' => CustomerCatalog::labels()], 'layouts.admin');
     }
 
     public function show(Request $request): Response
@@ -41,6 +42,6 @@ final class CustomerController extends Controller
         $customer = $customerId > 0 ? $this->customers->find($customerId) : null;
         if (!$customer) return $this->view('errors.404', [], 'layouts.admin', 404);
         $ticketFilter = $customer->phone ?: ($customer->email ?: $customer->name);
-        return $this->view('admin.customers.show', ['pageTitle' => 'Cliente: ' . $customer->name, 'customer' => $customer, 'tickets' => $this->customerQuery->tickets($customerId), 'ticketFilter' => $ticketFilter], 'layouts.admin');
+        return $this->view('admin.customers.show', ['pageTitle' => 'Cliente: ' . $customer->name, 'customer' => $customer, 'tickets' => $this->customerQuery->tickets($customerId), 'ticketFilter' => $ticketFilter, 'customerTypeLabel' => CustomerCatalog::label($customer->customerType)], 'layouts.admin');
     }
 }

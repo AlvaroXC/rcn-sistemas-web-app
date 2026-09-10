@@ -10,6 +10,7 @@ use RcnSistemas\Core\Security\CsrfService;
 use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Services\Communications\ContactService;
 use RcnSistemas\Services\Communications\UploadService;
+use RcnSistemas\Services\Tickets\TicketCatalog;
 use RcnSistemas\Repositories\ProductRepository;
 use RcnSistemas\Repositories\PromotionRepository;
 
@@ -26,6 +27,7 @@ final class ContactController extends Controller
         if ($context === '' && $promoId > 0 && $this->promotions?->find($promoId)) $context = 'Interés en promoción: ' . $this->promotions->find($promoId)->title;
         $error = null;
         $sent = false;
+        $ticketCreated = null;
         $values = ['nombre' => '', 'email' => '', 'telefono' => '', 'opcion' => 'Informacion', 'mensaje' => ''];
         if ($request->isMethod('POST')) {
             try {
@@ -33,11 +35,11 @@ final class ContactController extends Controller
                 foreach ($values as $key => $value) $values[$key] = trim((string) $request->input($key, $value));
                 $file = $request->file('imagen');
                 $stored = $file ? $this->uploads->store($file, $this->uploadDirectory) : '';
-                $this->contact->createTicket(['name' => $values['nombre'], 'email' => $values['email'], 'phone' => $values['telefono'], 'consultation_type' => $values['opcion'], 'message' => $values['mensaje'], 'product_id' => $productId, 'promo_id' => $promoId, 'context_label' => $context, 'origin_type' => $productId > 0 ? 'product' : ($promoId > 0 ? 'promotion' : 'contact'), 'attachment_path' => $stored ? 'uploads/tickets/' . $stored : null, 'attachment_full_path' => $stored ? $this->uploadDirectory . DIRECTORY_SEPARATOR . $stored : null], null);
+                $ticketCreated = $this->contact->createTicket(['name' => $values['nombre'], 'email' => $values['email'], 'phone' => $values['telefono'], 'consultation_type' => $values['opcion'], 'message' => $values['mensaje'], 'product_id' => $productId, 'promo_id' => $promoId, 'context_label' => $context, 'origin_type' => $productId > 0 ? 'product' : ($promoId > 0 ? 'promotion' : 'contact'), 'attachment_path' => $stored ? 'uploads/tickets/' . $stored : null, 'attachment_full_path' => $stored ? $this->uploadDirectory . DIRECTORY_SEPARATOR . $stored : null], null);
                 $sent = true;
                 $values = ['nombre' => '', 'email' => '', 'telefono' => '', 'opcion' => 'Informacion', 'mensaje' => ''];
             } catch (InvalidArgumentException | \RuntimeException $exception) { $error = $exception->getMessage(); }
         }
-        return $this->view('public.contact.index', ['pageTitle' => 'Contacto', 'csrf' => $this->csrf->field(), 'context' => $context, 'productId' => $productId, 'promoId' => $promoId, 'error' => $error, 'sent' => $sent, 'values' => $values], 'layouts.public');
+        return $this->view('public.contact.index', ['pageTitle' => 'Contacto', 'csrf' => $this->csrf->field(), 'context' => $context, 'productId' => $productId, 'promoId' => $promoId, 'error' => $error, 'sent' => $sent, 'ticketCreated' => $ticketCreated, 'values' => $values, 'consultationTypes' => TicketCatalog::labels()], 'layouts.public');
     }
 }

@@ -5,7 +5,9 @@ namespace RcnSistemas\Services\Communications;
 use InvalidArgumentException;
 use RcnSistemas\Models\Ticket;
 use RcnSistemas\Services\Customers\CustomerService;
+use RcnSistemas\Services\Tickets\TicketCatalog;
 use RcnSistemas\Services\Tickets\TicketService;
+use RcnSistemas\Services\Tickets\TicketWorkflow;
 
 final class ContactService
 {
@@ -24,7 +26,7 @@ final class ContactService
         if (trim((string) ($data['name'] ?? '')) === '' || trim((string) ($data['phone'] ?? '')) === '') {
             throw new InvalidArgumentException('El nombre y el teléfono son obligatorios.');
         }
-        if (!in_array((string) ($data['consultation_type'] ?? ''), ['Compra', 'Soporte', 'Informacion'], true)) {
+        if (!in_array((string) ($data['consultation_type'] ?? ''), TicketCatalog::TYPES, true)) {
             throw new InvalidArgumentException('Selecciona un tipo de consulta válido.');
         }
         if ($file !== null) {
@@ -42,7 +44,7 @@ final class ContactService
         $ticket = $this->tickets->create([
             'customer_id' => $customer->id,
             'consultation_type' => $data['consultation_type'] ?? 'Informacion',
-            'status' => 'Nuevo',
+            'status' => TicketWorkflow::DEFAULT,
             'origin_type' => $data['origin_type'] ?? 'contact',
             'product_id' => $data['product_id'] ?? null,
             'promo_id' => $data['promo_id'] ?? null,

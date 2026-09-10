@@ -59,7 +59,7 @@ final class MysqliTicketQueryRepository implements TicketQueryRepository
                 $conditions[] = 't.assigned_user_id = ?'; $types .= 'i'; $params[] = (int) $filters['assigned_user_id'];
             }
         }
-        if (($filters['customer'] ?? '') !== '') { $conditions[] = '(c.name LIKE ? OR c.business_name LIKE ? OR c.email LIKE ? OR c.phone LIKE ?)'; $types .= 'ssss'; $search = '%' . $filters['customer'] . '%'; array_push($params, $search, $search, $search, $search); }
+        if (($filters['customer'] ?? '') !== '') { $conditions[] = '(CAST(t.id AS CHAR) LIKE ? OR c.name LIKE ? OR c.business_name LIKE ? OR c.email LIKE ? OR c.phone LIKE ? OR t.subject LIKE ? OR t.context_label LIKE ?)'; $types .= 'sssssss'; $search = '%' . $filters['customer'] . '%'; array_push($params, $search, $search, $search, $search, $search, $search, $search); }
         if (($filters['date_from'] ?? '') !== '') { $conditions[] = 'DATE(t.created_at) >= ?'; $types .= 's'; $params[] = $filters['date_from']; }
         if (($filters['date_to'] ?? '') !== '') { $conditions[] = 'DATE(t.created_at) <= ?'; $types .= 's'; $params[] = $filters['date_to']; }
         return [$conditions ? ' WHERE ' . implode(' AND ', $conditions) : '', $types, $params];
