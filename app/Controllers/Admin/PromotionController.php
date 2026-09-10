@@ -37,6 +37,7 @@ final class PromotionController extends Controller
 
             if ($formAction === 'delete') {
                 if ($this->service->delete($promotionId)) {
+                    $this->flash('promotion_notice', 'La promoción se eliminó correctamente.');
                     return Response::redirect(Url::to('/admin/promociones'));
                 }
                 $error = 'No se pudo eliminar la promoción.';
@@ -59,6 +60,7 @@ final class PromotionController extends Controller
 
                 try {
                     $this->service->save($data, $promotionId);
+                    $this->flash('promotion_notice', 'La promoción se guardó correctamente.');
                     return Response::redirect(Url::to('/admin/promociones'));
                 } catch (InvalidArgumentException $exception) {
                     $error = $exception->getMessage();
@@ -71,13 +73,21 @@ final class PromotionController extends Controller
             return $this->view('errors.404', [], 'layouts.admin', 404);
         }
 
+        $notice = $_SESSION['_flash_messages']['promotion_notice'] ?? null;
+        unset($_SESSION['_flash_messages']['promotion_notice']);
         return $this->view('admin.promotions.index', [
             'pageTitle' => 'Gestionar promociones',
             'action' => $action,
             'promotions' => $action === 'list' ? $this->promotions->all(false) : [],
             'promotion' => $current,
             'error' => $error,
+            'notice' => $notice,
             'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'),
         ], 'layouts.admin');
+    }
+
+    private function flash(string $key, string $message): void
+    {
+        $_SESSION['_flash_messages'][$key] = ['message' => $message, 'type' => 'success'];
     }
 }

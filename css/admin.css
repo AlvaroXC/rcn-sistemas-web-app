@@ -1,6 +1,422 @@
 .admin-main { min-height: 70vh; }
 .admin-main .table { width: 100%; }
 .admin-main .inline-form { display: inline; }
+.table-action-label { display: none; }
+
+/* Notification center: clear hierarchy on desktop and compact cards on mobile. */
+.notifications-page__header { align-items: flex-end; }
+.notification-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 1.8rem;
+}
+
+/* Google Calendar integration: clear status, account ownership and setup guidance. */
+.google-calendar-page__header {
+    align-items: flex-end;
+    margin-bottom: 2.4rem;
+}
+.google-calendar-page__header h1 {
+    margin-bottom: .8rem;
+}
+.google-calendar-page__header > div > p:last-child {
+    max-width: 62rem;
+    color: var(--text-muted);
+}
+.google-calendar-page__eyebrow,
+.google-calendar-card__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    margin-bottom: .7rem;
+    color: var(--secondary);
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+.google-calendar-page__eyebrow i {
+    font-size: 1.1rem;
+}
+.google-calendar-status {
+    display: inline-flex;
+    align-items: center;
+    gap: .7rem;
+    min-height: 3.8rem;
+    padding: .7rem 1.2rem;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-size: 1.25rem;
+    font-weight: 800;
+    white-space: nowrap;
+}
+.google-calendar-status--is-connected {
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+    color: #15803d;
+}
+.google-calendar-status--is-warning {
+    border-color: #fde68a;
+    background: #fffbeb;
+    color: #a16207;
+}
+.google-calendar-status--is-disconnected {
+    border-color: var(--border);
+    background: #f8fafc;
+    color: var(--text-muted);
+}
+.google-calendar-alert {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .9rem;
+}
+.google-calendar-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.08fr) minmax(32rem, .92fr);
+    gap: 2rem;
+    align-items: stretch;
+}
+.google-calendar-card {
+    height: 100%;
+    padding: 3rem;
+    border-color: rgba(0, 58, 113, .08);
+    transition: box-shadow .25s ease, border-color .25s ease;
+}
+.google-calendar-card:hover {
+    transform: none;
+    border-color: rgba(3, 123, 192, .2);
+    box-shadow: 0 16px 34px rgba(0, 58, 113, .1);
+}
+.google-calendar-card__heading {
+    display: flex;
+    align-items: center;
+    gap: 1.4rem;
+    margin-bottom: 2.4rem;
+}
+.google-calendar-card__heading h2 {
+    margin: 0;
+    font-size: 2.3rem !important;
+    line-height: 1.25;
+}
+.google-calendar-card__eyebrow {
+    margin-bottom: .45rem;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+}
+.google-calendar-card__icon {
+    display: inline-flex;
+    width: 5.2rem;
+    height: 5.2rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border-radius: 1.4rem;
+    background: rgba(140, 188, 0, .14);
+    color: var(--accent-hover);
+    font-size: 2.2rem;
+}
+.google-calendar-card__icon--secondary {
+    background: rgba(3, 123, 192, .12);
+    color: var(--secondary);
+}
+.google-calendar-account {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    min-height: 7rem;
+    padding: 1.2rem 1.4rem;
+    border: 1px solid var(--border);
+    border-radius: 1.2rem;
+    background: #fbfdff;
+}
+.google-calendar-account__avatar {
+    display: inline-flex;
+    width: 4.2rem;
+    height: 4.2rem;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--accent-light);
+    color: var(--secondary);
+}
+.google-calendar-account__details {
+    display: grid;
+    min-width: 0;
+    flex: 1;
+    gap: .25rem;
+}
+.google-calendar-account__details strong {
+    overflow: hidden;
+    color: var(--primary);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.google-calendar-account__details span,
+.google-calendar-account small {
+    color: var(--text-muted);
+    font-size: 1.2rem;
+}
+.google-calendar-account small {
+    text-align: right;
+    white-space: nowrap;
+}
+.google-calendar-card__description {
+    margin: 1.8rem 0;
+    color: var(--text-muted);
+    line-height: 1.7;
+}
+.google-calendar-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-top: 2.4rem;
+}
+.google-calendar-card__actions form {
+    margin: 0;
+}
+.google-calendar-card .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: .8rem;
+    min-height: 4.8rem;
+}
+.google-calendar-state {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.1rem;
+    margin-bottom: 2rem;
+    padding: 1.4rem;
+    border-radius: 1.1rem;
+}
+.google-calendar-state > i {
+    margin-top: .25rem;
+}
+.google-calendar-state strong {
+    display: block;
+    margin-bottom: .3rem;
+}
+.google-calendar-state p {
+    margin: 0;
+    color: inherit;
+    font-size: 1.35rem;
+    line-height: 1.55;
+}
+.google-calendar-state--warning {
+    background: #fffbeb;
+    color: #a16207;
+}
+.google-calendar-permissions {
+    display: grid;
+    gap: 1rem;
+    margin: 2rem 0 2.4rem;
+}
+.google-calendar-permissions div {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: var(--primary);
+    font-size: 1.35rem;
+}
+.google-calendar-permissions i {
+    width: 2.2rem;
+    color: var(--accent-hover);
+    text-align: center;
+}
+.google-calendar-steps {
+    display: grid;
+    gap: 1.5rem;
+    counter-reset: calendar-step;
+}
+.google-calendar-steps li {
+    display: grid;
+    grid-template-columns: 3.2rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: start;
+}
+.google-calendar-steps li > span {
+    display: inline-flex;
+    width: 3.2rem;
+    height: 3.2rem;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--accent-light);
+    color: var(--secondary);
+    font-weight: 800;
+}
+.google-calendar-steps strong {
+    display: block;
+    margin: .2rem 0 .25rem;
+    color: var(--primary);
+}
+.google-calendar-steps p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 1.3rem;
+    line-height: 1.5;
+}
+.google-calendar-privacy {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-top: 2.5rem;
+    padding: 1.4rem;
+    border-radius: 1.1rem;
+    background: #f8fafc;
+    color: var(--text-muted);
+    font-size: 1.25rem;
+    line-height: 1.5;
+}
+.google-calendar-privacy i {
+    margin-top: .25rem;
+    color: var(--secondary);
+}
+.google-calendar-privacy p {
+    margin: 0;
+}
+.google-calendar-privacy strong {
+    color: var(--primary);
+}
+
+@media (max-width: 991px) {
+    .google-calendar-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 767px) {
+    .google-calendar-page__header {
+        align-items: flex-start;
+        gap: 1.4rem;
+    }
+    .google-calendar-status {
+        align-self: flex-start;
+    }
+    .google-calendar-card {
+        padding: 2rem;
+    }
+    .google-calendar-card__heading {
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .google-calendar-card__heading h2 {
+        font-size: 2rem !important;
+    }
+    .google-calendar-account {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+    .google-calendar-account small {
+        width: 100%;
+        margin-left: 5.4rem;
+        text-align: left;
+    }
+    .google-calendar-card__actions,
+    .google-calendar-card__actions .btn,
+    .google-calendar-card > .btn {
+        width: 100%;
+    }
+    .google-calendar-card__actions form {
+        width: 100%;
+    }
+}
+.notification-stat {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    min-width: 0;
+    padding: 1.6rem 1.8rem;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: #fff;
+    box-shadow: var(--shadow);
+}
+.notification-stat__icon,
+.notification-card__icon,
+.notification-item__icon,
+.push-device__icon,
+.notification-empty__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    border-radius: 999px;
+    background: rgba(3, 123, 192, 0.12);
+    color: var(--secondary);
+}
+.notification-stat__icon { width: 4rem; height: 4rem; font-size: 1.7rem; }
+.notification-stat__icon--muted, .notification-card__icon--muted { background: #f1f5f9; color: #64748b; }
+.notification-stat__icon--success { background: #ecfdf5; color: #047857; }
+.notification-stat strong { display: block; color: var(--primary); font-size: 2.4rem; line-height: 1; }
+.notification-stat small { display: block; margin-top: .4rem; color: var(--text-muted); font-size: 1.25rem; }
+.notification-settings-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 1.8rem; margin-bottom: 1.8rem; }
+.notification-card__heading { display: flex; align-items: center; gap: 1.2rem; margin-bottom: 1.6rem; }
+.notification-card__heading h2 { margin: 0; }
+.notification-card__icon { width: 4.4rem; height: 4.4rem; font-size: 1.8rem; }
+.notification-card__icon--secondary { background: rgba(0, 48, 96, .1); color: var(--primary); }
+.notification-card__icon--accent { background: rgba(142, 198, 0, .15); color: #5f8500; }
+.push-settings > p { max-width: 66rem; margin-bottom: 1.4rem; }
+.push-settings__enable { min-height: 4.8rem; }
+.notification-status { display: flex; align-items: center; gap: .7rem; margin: 1.2rem 0 0; color: #047857; font-size: 1.35rem; font-weight: 700; }
+.notification-status:has(.fa-info-circle) { color: var(--text-muted); }
+.notification-state { display: flex; gap: .8rem; align-items: flex-start; padding: 1.2rem 1.4rem; border-radius: 10px; background: #fffbeb; color: #92400e; }
+.notification-state p { margin: 0; }
+.notification-help { margin-top: 1.6rem; color: var(--text-muted); font-size: 1.3rem; }
+.notification-help summary { cursor: pointer; color: var(--primary); font-weight: 700; }
+.notification-help__content { padding: 1rem 0 0 2rem; }
+.notification-help__content p { margin: .6rem 0; }
+.notification-preference-list { display: grid; gap: 1rem; margin-bottom: 1.6rem; }
+.notification-preference { display: flex; align-items: flex-start; gap: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 10px; cursor: pointer; }
+.notification-preference:has(input:checked) { border-color: rgba(3, 123, 192, .35); background: #f8fbff; }
+.notification-preference input { width: 1.8rem; height: 1.8rem; flex: 0 0 auto; margin-top: .15rem; accent-color: var(--secondary); }
+.notification-preference strong, .notification-preference small { display: block; }
+.notification-preference small { margin-top: .25rem; color: var(--text-muted); font-size: 1.2rem; line-height: 1.4; }
+.push-device-list { display: grid; gap: 1rem; }
+.push-device { display: flex; align-items: center; gap: 1.2rem; padding: 1.2rem 0; border-bottom: 1px solid var(--border); }
+.push-device:last-child { border-bottom: 0; }
+.push-device__icon { width: 3.8rem; height: 3.8rem; background: #f1f5f9; color: var(--primary); }
+.push-device__info { display: grid; min-width: 0; flex: 1; gap: .35rem; }
+.push-device__info strong { color: var(--primary); }
+.push-device__info small { color: var(--text-muted); font-size: 1.2rem; }
+.device-status { width: fit-content; font-size: 1.15rem; font-weight: 700; }
+.device-status i { margin-right: .45rem; font-size: .7rem; }
+.device-status--active { color: #047857; }
+.device-status--inactive { color: var(--text-muted); }
+.btn--small { min-height: 3.8rem !important; padding: .8rem 1.2rem !important; font-size: 1.2rem !important; }
+.notification-history { margin-top: 1.8rem; }
+.notification-history .notification-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 1.2rem; padding: 1.6rem; }
+.notification-item__icon { width: 3.8rem; height: 3.8rem; }
+.notification-item--unread .notification-item__icon { background: rgba(3, 123, 192, .14); }
+.notification-item--read .notification-item__icon { background: #f1f5f9; color: #64748b; }
+.notification-new { display: inline-flex; padding: .45rem .8rem; border-radius: 999px; background: #e0f2fe; color: #075985; font-size: 1.1rem; font-weight: 800; }
+.notification-item__meta { display: flex; flex-wrap: wrap; gap: .8rem 1.4rem; color: var(--text-muted); font-size: 1.2rem; }
+.notification-item__action { align-self: center; white-space: nowrap; }
+.notification-empty { display: grid; justify-items: center; padding: 3rem 1.5rem; text-align: center; }
+.notification-empty__icon { width: 5rem; height: 5rem; margin-bottom: 1.2rem; background: #f1f5f9; color: #64748b; font-size: 2rem; }
+.notification-empty p { margin: .5rem 0 0; color: var(--text-muted); }
+
+@media (max-width: 767px) {
+    .notifications-page__header { align-items: stretch; }
+    .notifications-page__header .btn { width: 100%; }
+    .notification-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .8rem; }
+    .notification-stat { display: block; padding: 1.1rem .8rem; text-align: center; }
+    .notification-stat__icon { width: 3.2rem; height: 3.2rem; margin: 0 auto .8rem; font-size: 1.4rem; }
+    .notification-stat strong { font-size: 1.9rem; }
+    .notification-stat small { font-size: 1.05rem; line-height: 1.2; }
+    .notification-settings-grid { grid-template-columns: 1fr; gap: 1.2rem; }
+    .push-settings__enable, .push-preferences > .btn { width: 100%; }
+    .push-device { align-items: flex-start; }
+    .push-device form { margin-left: auto; }
+    .notification-history .notification-item { grid-template-columns: auto minmax(0, 1fr); gap: 1rem; }
+    .notification-item__action { grid-column: 1 / -1; width: 100%; }
+    .notification-item__meta { display: grid; gap: .4rem; }
+    .notification-card__heading h2 { font-size: 1.9rem; }
+    .btn--small { min-height: 3.6rem !important; }
+}
 .sidebar__link--logout { margin-top: auto; color: #ff6b6b; }
 .admin-main .admin-form label,
 .admin-main .section > form label {
@@ -159,6 +575,320 @@
 }
 
 @media (max-width: 767px) {
+    .table-action-label { display: inline; }
+    /* Ticket filters: keep actions in the form flow on mobile. */
+    .admin-main .ticket-scope-tabs + .stats + .panel-card .admin-form {
+        padding-bottom: 0;
+    }
+
+    .admin-main .ticket-scope-tabs + .stats + .panel-card .admin-form > .btn {
+        position: static;
+        inset: auto;
+        width: 100%;
+        min-width: 0;
+        height: 56px;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Product list: transform the five-column table into mobile cards. */
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) {
+        overflow: visible;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) > table.table {
+        display: block;
+        min-width: 0;
+        background: transparent;
+        border-collapse: separate;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) thead {
+        display: none;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody {
+        display: grid;
+        gap: 1.2rem;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody tr {
+        display: grid;
+        grid-template-columns: 5.6rem minmax(0, 1fr);
+        grid-template-areas:
+            "image name"
+            "id id"
+            "description description"
+            "actions actions";
+        gap: 0.4rem 1.2rem;
+        padding: 1.6rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td {
+        display: block;
+        width: auto;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        text-align: left;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td:nth-child(1) {
+        grid-area: id;
+        color: var(--text-muted);
+        font-size: 1.3rem;
+        line-height: 1.3;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td:nth-child(1)::before {
+        content: attr(data-label) ": ";
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td:nth-child(2) {
+        grid-area: image;
+        align-self: start;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td:nth-child(2) img {
+        width: 5.6rem !important;
+        height: 5.6rem !important;
+        object-fit: contain !important;
+        border-radius: 8px !important;
+        background: var(--bg-gray);
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td:nth-child(2) .ticket-muted {
+        display: flex;
+        width: 5.6rem;
+        height: 5.6rem;
+        align-items: center;
+        justify-content: center;
+        padding: 0.4rem;
+        border-radius: 8px;
+        background: var(--bg-gray);
+        text-align: center;
+        font-size: 1.1rem;
+        line-height: 1.2;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td:nth-child(3) {
+        grid-area: name;
+        align-self: center;
+        font-size: 1.8rem;
+        line-height: 1.25;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td:nth-child(4) {
+        grid-area: description;
+        display: -webkit-box;
+        overflow: hidden;
+        color: var(--text-muted);
+        font-size: 1.4rem;
+        line-height: 1.45;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td:nth-child(5) {
+        grid-area: actions;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        padding-top: 1.2rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td:nth-child(5) .table__action {
+        display: inline-flex;
+        min-height: 4.4rem;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0 1.2rem;
+        border-radius: 8px;
+        background: var(--accent-light);
+        font-size: 1.4rem;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td:nth-child(5) .table-action-label {
+        margin-left: 0.6rem;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td:nth-child(5) .table__action--danger {
+        background: #fef2f2;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(5):last-child) tbody td:nth-child(5) .table-action-label {
+        margin-left: 0.6rem;
+    }
+
+    /* Promotion list: transform the six-column table into mobile cards. */
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) {
+        overflow: visible;
+        background: transparent;
+        box-shadow: none;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) > table.table {
+        display: block;
+        min-width: 0;
+        background: transparent;
+        border-collapse: separate;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) thead {
+        display: none;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody {
+        display: grid;
+        gap: 1.2rem;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody tr {
+        display: grid;
+        grid-template-columns: 5.6rem minmax(0, 1fr);
+        grid-template-areas:
+            "image title"
+            "id id"
+            "status status"
+            "validity validity"
+            "actions actions";
+        gap: 0.6rem 1.2rem;
+        padding: 1.6rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td {
+        display: block;
+        width: auto;
+        min-width: 0;
+        padding: 0;
+        border: 0;
+        text-align: left;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(1) {
+        grid-area: id;
+        color: var(--text-muted);
+        font-size: 1.3rem;
+        line-height: 1.3;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(1)::before {
+        content: attr(data-label) ": ";
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(2) {
+        grid-area: image;
+        align-self: start;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(2) img {
+        width: 5.6rem !important;
+        height: 5.6rem !important;
+        object-fit: cover !important;
+        border-radius: 8px !important;
+        background: var(--bg-gray);
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(2) .ticket-muted {
+        display: flex;
+        width: 5.6rem;
+        height: 5.6rem;
+        align-items: center;
+        justify-content: center;
+        padding: 0.4rem;
+        border-radius: 8px;
+        background: var(--bg-gray);
+        text-align: center;
+        font-size: 1.1rem;
+        line-height: 1.2;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(3) {
+        grid-area: title;
+        align-self: center;
+        font-size: 1.8rem;
+        line-height: 1.25;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(3) .ticket-meta {
+        display: -webkit-box;
+        overflow: hidden;
+        margin-top: 0.4rem;
+        color: var(--text-muted);
+        font-size: 1.4rem;
+        font-weight: 400;
+        line-height: 1.45;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(4) {
+        grid-area: status;
+        margin-top: 0.4rem;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(5) {
+        grid-area: validity;
+        color: var(--text-muted);
+        font-size: 1.4rem;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(5)::before {
+        content: attr(data-label) ": ";
+        color: var(--primary);
+        font-weight: 700;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(6) {
+        grid-area: actions;
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        margin-top: 1rem;
+        padding-top: 1.2rem;
+        border-top: 1px solid var(--border);
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(6) .table__action {
+        display: inline-flex;
+        min-height: 4.4rem;
+        align-items: center;
+        justify-content: center;
+        margin: 0;
+        padding: 0 1.2rem;
+        border-radius: 8px;
+        background: var(--accent-light);
+        font-size: 1.4rem;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(6) .table-action-label {
+        margin-left: 0.6rem;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(6) .table__action--danger {
+        background: #fef2f2;
+    }
+
+    .admin-main .section > .table-wrapper:has(table.table:not(.table--tickets) thead tr th:nth-child(6):last-child) tbody td:nth-child(6) .table-action-label {
+        margin-left: 0.6rem;
+    }
+
     .admin-main .admin-form__actions--tickets,
     .admin-main .admin-form__actions {
         width: 100%;
@@ -187,5 +917,419 @@
 
     .admin-main .ticket-scope-tabs ~ .panel-card .admin-form > .btn:not(.btn--secondary) {
         bottom: 9.8rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .admin-main .table--tickets th:nth-child(1) { width: 9%; }
+    .admin-main .table--tickets th:nth-child(2) { width: 17%; }
+    .admin-main .table--tickets th:nth-child(3) { width: 13%; }
+    .admin-main .table--tickets th:nth-child(4) { width: 10%; }
+    .admin-main .table--tickets th:nth-child(5) { width: 14%; }
+    .admin-main .table--tickets th:nth-child(6) { width: 11%; }
+    .admin-main .table--tickets th:nth-child(7) { width: 8%; }
+    .admin-main .table--tickets th:nth-child(8) { width: 10%; }
+    .admin-main .table--tickets th:nth-child(9) { width: 12%; }
+    .admin-main .table--tickets th:last-child { width: 9%; }
+
+    .admin-main .ticket-detail-sidebar {
+        position: sticky;
+        top: 2rem;
+        align-self: start;
+        max-height: calc(100vh - 4rem);
+        overflow-y: auto;
+        scrollbar-width: thin;
+    }
+}
+
+@media (max-width: 767px) {
+    .admin-main .ticket-detail-grid {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .admin-main .ticket-detail-sidebar {
+        order: -1;
+    }
+
+    .admin-main .ticket-detail-sidebar .ticket-action-card {
+        border-left: 3px solid var(--secondary);
+    }
+
+    .admin-main .ticket-detail-sidebar .ticket-status-card {
+        border-left: 3px solid var(--accent);
+    }
+
+    .admin-main .table--tickets {
+        display: block;
+        min-width: 0;
+        background: transparent;
+        border-collapse: separate;
+    }
+
+    .admin-main .table--tickets tbody {
+        display: grid;
+        gap: 1.2rem;
+    }
+
+    .admin-main .table--tickets tr {
+        display: grid;
+        gap: 0.7rem;
+        padding: 1.6rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: #fff;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+    }
+
+    .admin-main .table--tickets td {
+        position: relative;
+        display: block;
+        width: 100%;
+        min-width: 0;
+        padding: 0.6rem 0 0.6rem 9.5rem;
+        border-bottom: 0;
+        text-align: left;
+        line-height: 1.45;
+    }
+
+    .admin-main .table--tickets td::before {
+        content: attr(data-label);
+        position: absolute;
+        top: 0.6rem;
+        left: 0;
+        width: 8.5rem;
+        color: var(--secondary);
+        font-size: 1.15rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+    }
+
+    .admin-main .table--tickets td:nth-child(1) {
+        padding: 0 0 0.4rem;
+    }
+
+    .admin-main .table--tickets td:nth-child(1)::before {
+        display: none;
+    }
+
+    .admin-main .table--tickets td:nth-child(1) .ticket-primary-link {
+        font-size: 1.9rem;
+    }
+
+    .admin-main .table--tickets td:nth-child(1) .ticket-meta {
+        margin-top: 0.2rem;
+    }
+
+    .admin-main .table--tickets td:nth-child(4),
+    .admin-main .table--tickets td:nth-child(7),
+    .admin-main .table--tickets td:nth-child(8) {
+        display: none;
+    }
+
+    .admin-main .table--tickets td:nth-child(5) {
+        padding-left: 0;
+    }
+
+    .admin-main .table--tickets td:nth-child(5)::before {
+        display: none;
+    }
+
+    .admin-main .table--tickets td:nth-child(10) {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        margin-top: 0.7rem;
+        padding: 1.2rem 0 0;
+        border-top: 1px solid var(--border);
+    }
+
+    .admin-main .table--tickets td:nth-child(10) .table__action {
+        display: inline-flex;
+        min-height: 4.4rem;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        padding: 0 1.4rem;
+        border-radius: 8px;
+        background: var(--accent-light);
+        color: var(--secondary);
+        font-weight: 800;
+    }
+
+    .admin-main .ticket-results-summary {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: baseline;
+        gap: 0.6rem;
+    }
+
+    .admin-main .ticket-results-summary__page {
+        margin-left: 0;
+    }
+
+    .admin-main .ticket-scope-tabs {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .admin-main .ticket-scope-tab {
+        width: 100%;
+        padding-inline: 0.8rem;
+        text-align: center;
+    }
+
+    .admin-main .ticket-header-actions {
+        display: grid;
+        grid-template-columns: 1fr;
+    }
+
+    .admin-main .ticket-header-actions .btn,
+    .admin-main .ticket-action-card .btn,
+    .admin-main .ticket-status-card .btn,
+    .admin-main .ticket-observation-form__submit,
+    .admin-main .ticket-message-form__submit {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .admin-main .ticket-section-card__header {
+        align-items: stretch;
+    }
+
+    .admin-main .ticket-price-highlight {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .admin-main .ticket-attachment-card {
+        padding: 1.6rem;
+    }
+
+    .admin-main .ticket-message-display,
+    .admin-main .ticket-observation-item {
+        padding: 1.5rem;
+    }
+
+    .admin-main .ticket-customer-mode {
+        display: grid;
+    }
+
+    .admin-main .ticket-customer-mode__option {
+        width: 100%;
+        min-height: 4.4rem;
+    }
+
+    .admin-main .ticket-customer-search {
+        display: grid;
+        gap: 1.2rem;
+    }
+
+    .admin-main .ticket-customer-search .btn {
+        width: 100%;
+    }
+}
+
+.ticket-filter-form__footer {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 2rem;
+}
+
+.ticket-filter-form__footer > .admin-form__group {
+    width: min(22rem, 100%);
+}
+
+.ticket-filter-form__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.2rem;
+}
+
+.ticket-filter-form__actions .btn {
+    min-width: 16rem;
+    min-height: 5.6rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ticket-active-filters {
+    margin: 1.6rem 0 2rem;
+}
+
+.filter-chip--clear {
+    background: transparent;
+    border: 1px solid rgba(3, 123, 192, 0.25);
+}
+
+@media (max-width: 767px) {
+    .ticket-filter-form__footer {
+        display: grid;
+        gap: 1.6rem;
+    }
+
+    .ticket-filter-form__footer > .admin-form__group {
+        width: 100%;
+    }
+
+    .ticket-filter-form__actions {
+        display: grid;
+        gap: 1.2rem;
+    }
+
+    .ticket-filter-form__actions .btn {
+        width: 100%;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 1199px) {
+    .ticket-filter-form__footer {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.6rem;
+        width: 100%;
+    }
+
+    .ticket-filter-form__footer > .admin-form__group {
+        width: 100% !important;
+        min-width: 0;
+    }
+
+    .ticket-filter-form__actions {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        gap: 1.2rem;
+        width: 100% !important;
+        min-width: 0;
+    }
+
+    .ticket-filter-form__actions .btn {
+        width: 100% !important;
+        min-width: 0 !important;
+    }
+}
+
+@media (max-width: 767px) {
+    /* Only the ten-column ticket list hides secondary fields. */
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)) td:nth-child(7) {
+        display: flex;
+        align-items: stretch;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        margin-top: 0.7rem;
+        padding: 1.2rem 0 0;
+        border-top: 1px solid var(--border);
+    }
+
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)) td:nth-child(7)::before {
+        display: none;
+    }
+
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)) td:nth-child(7) .table__action {
+        display: inline-flex;
+        min-height: 4.4rem;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        padding: 0 1.2rem;
+        border-radius: 8px;
+        background: var(--accent-light);
+    }
+
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)) td:last-child:not(:nth-child(7)) {
+        display: flex;
+        align-items: stretch;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+        margin-top: 0.7rem;
+        padding: 1.2rem 0 0;
+        border-top: 1px solid var(--border);
+    }
+
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)) td:last-child:not(:nth-child(7))::before {
+        display: none;
+    }
+
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)) td:last-child:not(:nth-child(7)) .table__action {
+        display: inline-flex;
+        min-height: 4.4rem;
+        width: 100%;
+        align-items: center;
+        justify-content: center;
+        padding: 0 1.2rem;
+        border-radius: 8px;
+        background: var(--accent-light);
+        color: var(--secondary);
+        text-align: center;
+    }
+
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)) td:last-child .table__action,
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)) td:last-child .inline-form {
+        display: block;
+        box-sizing: border-box;
+        width: 100%;
+        min-width: 0;
+        margin: 0 !important;
+    }
+
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)):has(thead tr th:nth-child(7):last-child) tbody td:first-child {
+        padding-left: 9.5rem;
+    }
+
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)):has(thead tr th:nth-child(7):last-child) tbody td:first-child::before {
+        display: block;
+    }
+
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)):has(thead tr th:nth-child(6):last-child) tbody td:first-child {
+        padding-left: 9.5rem;
+    }
+
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)):has(thead tr th:nth-child(6):last-child) tbody td:first-child::before {
+        display: block;
+    }
+
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)) td:last-child .table__action {
+        display: inline-flex !important;
+    }
+
+    .admin-main .table--tickets:not(:has(thead tr th:nth-child(10):last-child)) td:last-child .inline-form {
+        display: block !important;
+    }
+
+    /* Ticket cards: keep every label/value pair aligned on the same grid. */
+    .admin-main .table--tickets:has(thead tr th:nth-child(10):last-child) td:not(:nth-child(1)):not(:nth-child(5)):not(:nth-child(10)) {
+        display: grid;
+        grid-template-columns: 9.5rem minmax(0, 1fr);
+        align-items: start;
+        column-gap: 1rem;
+        padding: 0.6rem 0;
+    }
+
+    .admin-main .table--tickets:has(thead tr th:nth-child(10):last-child) td:not(:nth-child(1)):not(:nth-child(5)):not(:nth-child(10))::before {
+        position: static;
+        width: auto;
+        min-width: 0;
+        line-height: 1.45;
+    }
+
+    .admin-main .table--tickets:has(thead tr th:nth-child(10):last-child) td:nth-child(1),
+    .admin-main .table--tickets:has(thead tr th:nth-child(10):last-child) td:nth-child(5) {
+        display: block;
+        padding-left: 0;
+    }
+
+    .admin-main .table--tickets:has(thead tr th:nth-child(10):last-child) td:nth-child(10) {
+        display: flex;
+        width: 100%;
+        box-sizing: border-box;
+        padding-left: 0;
+    }
+
+    .admin-main .table--tickets:has(thead tr th:nth-child(10):last-child) td:nth-child(10) .table__action {
+        width: 100%;
     }
 }

@@ -32,7 +32,10 @@ final class ProductController extends Controller
         if ($request->isMethod('POST')) {
             $productId = (int) $request->input('id', $productId);
             if ($request->input('form_action') === 'delete') {
-                if ($this->products->delete($productId)) return Response::redirect(Url::to('/admin/productos'));
+                if ($this->products->delete($productId)) {
+                    $this->flash('product_notice', 'El producto se eliminó correctamente.');
+                    return Response::redirect(Url::to('/admin/productos'));
+                }
                 return $this->view('admin.products.index', ['pageTitle' => 'Productos', 'products' => $this->products->all(), 'error' => 'No se pudo eliminar el producto.', 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8')], 'layouts.admin', 422);
             }
             return $this->save($request, $productId);
@@ -40,9 +43,11 @@ final class ProductController extends Controller
         $product = $productId > 0 ? $this->products->find($productId) : null;
         if ($action === 'edit' && !$product) return $this->view('errors.404', [], 'layouts.admin', 404);
         if ($action !== 'list') return $this->view('admin.products.form', ['pageTitle' => $product ? 'Editar producto' : 'Nuevo producto', 'product' => $product, 'error' => null, 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8')], 'layouts.admin');
+        $notice = $_SESSION['_flash_messages']['product_notice'] ?? null;
+        unset($_SESSION['_flash_messages']['product_notice']);
         return $this->view('admin.products.index', [
             'pageTitle' => 'Productos',
-            'products' => $this->products->all(), 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'),
+            'products' => $this->products->all(), 'notice' => $notice, 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'),
         ], 'layouts.admin');
     }
 
@@ -75,7 +80,8 @@ final class ProductController extends Controller
             }
             $product = $this->productService->save($data, $benefits, $productId);
 
-            return Response::redirect(Url::to('/admin/productos/' . $product->id . '/editar'));
+            $this->flash('product_notice', 'El producto se guardó correctamente.');
+            return Response::redirect(Url::to('/admin/productos'));
         } catch (InvalidArgumentException $exception) {
             return $this->view('admin.products.form', [
                 'pageTitle' => 'Nuevo producto',
@@ -84,5 +90,10 @@ final class ProductController extends Controller
                 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'),
             ], 'layouts.admin', 422);
         }
+    }
+
+    private function flash(string $key, string $message): void
+    {
+        $_SESSION['_flash_messages'][$key] = ['message' => $message, 'type' => 'success'];
     }
 }
