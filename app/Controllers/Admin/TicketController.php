@@ -13,6 +13,7 @@ use RcnSistemas\Repositories\TicketRepository;
 use RcnSistemas\Repositories\TicketDetailRepository;
 use RcnSistemas\Repositories\CustomerSearchRepository;
 use RcnSistemas\Repositories\AdminUserManagementRepository;
+use RcnSistemas\Repositories\NotificationRepository;
 use RcnSistemas\Services\Customers\CustomerIdentity;
 use RcnSistemas\Services\Customers\CustomerService;
 use RcnSistemas\Services\Tickets\TicketService;
@@ -20,13 +21,14 @@ use RcnSistemas\Services\Tickets\TicketWorkflow;
 use RcnSistemas\Services\Tickets\TicketScheduleService;
 use RcnSistemas\Services\Tickets\TicketPricing;
 use RcnSistemas\Services\Tickets\TicketAssignmentService;
+use RcnSistemas\Services\Tickets\TicketCatalog;
 use RcnSistemas\Services\Communications\UploadService;
 use RcnSistemas\Services\Google\GoogleCalendarAppointmentSyncService;
 use RcnSistemas\Services\Notifications\TicketNotificationDispatcher;
 
 final class TicketController extends Controller
 {
-    public function __construct(private readonly TicketRepository $tickets, private readonly CustomerRepository $customers, ViewRenderer $views, private readonly ?TicketDetailRepository $details = null, private readonly ?CustomerSearchRepository $customerSearch = null, private readonly ?UploadService $uploads = null, private readonly string $uploadDirectory = '', private readonly ?AdminUserManagementRepository $users = null, private readonly ?GoogleCalendarAppointmentSyncService $calendarSync = null, private readonly ?TicketNotificationDispatcher $notificationDispatcher = null) { parent::__construct($views); }
+    public function __construct(private readonly TicketRepository $tickets, private readonly CustomerRepository $customers, ViewRenderer $views, private readonly ?TicketDetailRepository $details = null, private readonly ?CustomerSearchRepository $customerSearch = null, private readonly ?UploadService $uploads = null, private readonly string $uploadDirectory = '', private readonly ?AdminUserManagementRepository $users = null, private readonly ?GoogleCalendarAppointmentSyncService $calendarSync = null, private readonly ?TicketNotificationDispatcher $notificationDispatcher = null, private readonly ?NotificationRepository $notifications = null) { parent::__construct($views); }
 
     public function create(Request $request, int $viewerId, string $viewerRole = 'agent'): Response
     {
@@ -65,13 +67,14 @@ final class TicketController extends Controller
         $customerQuery = trim((string) $request->query('customer_query', ''));
         $customerResults = $this->customerSearch?->search($customerQuery) ?? [];
         $selectedCustomer = $customerId > 0 ? $this->customers->find($customerId) : null;
-        return $this->view('admin.tickets.create', ['pageTitle' => 'Nuevo ticket', 'values' => $values, 'error' => $error, 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'), 'customerQuery' => $customerQuery, 'customerResults' => $customerResults, 'selectedCustomer' => $selectedCustomer, 'assignableUsers' => $this->users?->all() ?? [], 'viewerRole' => $viewerRole, 'customerMode' => $customerMode], 'layouts.admin');
+        return $this->view('admin.tickets.create', ['pageTitle' => 'Nuevo ticket', 'values' => $values, 'error' => $error, 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'), 'customerQuery' => $customerQuery, 'customerResults' => $customerResults, 'selectedCustomer' => $selectedCustomer, 'assignableUsers' => $this->users?->all() ?? [], 'viewerRole' => $viewerRole, 'customerMode' => $customerMode, 'consultationTypes' => TicketCatalog::TYPES, 'statuses' => (new TicketWorkflow())->statuses()], 'layouts.admin');
     }
 
     public function show(Request $request, int $viewerId, string $viewerRole): Response
     {
         $ticket = $this->tickets->find((int) $request->query('id', 0));
         if (!$ticket || ($viewerRole !== 'admin' && $ticket->assignedUserId !== $viewerId)) return $this->view('errors.404', [], 'layouts.admin', 404);
+        $this->markNotificationsAsRead($viewerId, $ticket->id);
         $error = null;
         if ($request->isMethod('POST')) {
             try {
@@ -107,6 +110,12 @@ final class TicketController extends Controller
     {
         $user = $this->users?->findById($userId);
         return trim((string) ($user['display_name'] ?? $user['username'] ?? 'Usuario')) ?: 'Usuario';
+    }
+
+    private function markNotificationsAsRead(int $viewerId, int $ticketId): void
+    {
+        if ($viewerId <= 0 || $ticketId <= 0) return;
+        $this->notifications?->markTicketAsRead($viewerId, $ticketId);
     }
 
 }
