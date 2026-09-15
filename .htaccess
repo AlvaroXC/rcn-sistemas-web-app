@@ -3,125 +3,58 @@
 </FilesMatch>
 
 Options -MultiViews
+DirectoryIndex index.php
 RewriteEngine On
 
-# Redirecciones canónicas de las páginas públicas heredadas.
-<If "%{REQUEST_METHOD} == 'GET'">
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*index\.php(?:[?\ ]|$) [NC]
-RewriteRule ^index\.php$ ./ [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*productos\.php(?:[?\ ]|$) [NC]
-RewriteRule ^productos\.php$ productos [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*product_view\.php\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)id=([0-9]+)(?:&|$) [NC]
-RewriteRule ^product_view\.php$ productos/%1 [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*product_view\.php(?:[?\ ]|$) [NC]
-RewriteRule ^product_view\.php$ productos [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*promociones\.php(?:[?\ ]|$) [NC]
-RewriteRule ^promociones\.php$ promociones [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*promotion_view\.php\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)id=([0-9]+)(?:&|$) [NC]
-RewriteRule ^promotion_view\.php$ promociones/%1 [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*promotion_view\.php(?:[?\ ]|$) [NC]
-RewriteRule ^promotion_view\.php$ promociones [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*testimoniales\.php(?:[?\ ]|$) [NC]
-RewriteRule ^testimoniales\.php$ testimoniales [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*contacto\.php(?:[?\ ]|$) [NC]
-RewriteRule ^contacto\.php$ contacto [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/contacto\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)product=([0-9]+)(?:&|$) [NC]
-RewriteRule ^contacto$ contacto/producto/%1 [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/contacto\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)promo=([0-9]+)(?:&|$) [NC]
-RewriteRule ^contacto$ contacto/promocion/%1 [R=301,L,NE,QSD]
+# Rutas amigables administrativas.
+RewriteRule ^admin/login/?$ /admin/login.php [L,QSA]
+RewriteRule ^admin/logout/?$ /admin/logout.php [L,QSA]
+RewriteRule ^admin/?$ /admin/index.php [L,QSA]
 
-# Redirecciones canónicas de las páginas administrativas heredadas.
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/index\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/index\.php$ admin [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/login\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/login\.php$ admin/login [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/logout\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/logout\.php$ admin/logout [R=301,L,NE,QSD]
+RewriteRule ^admin/productos/?$ /admin/products.php [L,QSA]
+RewriteRule ^admin/productos/nuevo/?$ /admin/products.php?action=new [L,QSA]
+RewriteRule ^admin/productos/([0-9]+)/editar/?$ /admin/products.php?action=edit&id=$1 [L,QSA]
 
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/products\.php\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)action=new(?:&|$) [NC]
-RewriteRule ^admin/products\.php$ admin/productos/nuevo [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/products\.php\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)action=edit(?:&|$) [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)id=([0-9]+)(?:&|$) [NC]
-RewriteRule ^admin/products\.php$ admin/productos/%1/editar [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/products\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/products\.php$ admin/productos [R=301,L,NE,QSD]
+RewriteRule ^admin/promociones/?$ /admin/promotions.php [L,QSA]
+RewriteRule ^admin/promociones/nueva/?$ /admin/promotions.php?action=new [L,QSA]
+RewriteRule ^admin/promociones/([0-9]+)/editar/?$ /admin/promotions.php?action=edit&id=$1 [L,QSA]
 
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/promotions\.php\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)action=new(?:&|$) [NC]
-RewriteRule ^admin/promotions\.php$ admin/promociones/nueva [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/promotions\.php\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)action=edit(?:&|$) [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)id=([0-9]+)(?:&|$) [NC]
-RewriteRule ^admin/promotions\.php$ admin/promociones/%1/editar [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/promotions\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/promotions\.php$ admin/promociones [R=301,L,NE,QSD]
+RewriteRule ^admin/tickets/?$ /admin/tickets.php [L,QSA]
+RewriteRule ^admin/tickets/nuevo/?$ /admin/ticket_create.php [L,QSA]
+RewriteRule ^admin/tickets/nuevo/cliente/([0-9]+)/?$ /admin/ticket_create.php?customer_id=$1 [L,QSA]
+RewriteRule ^admin/tickets/([0-9]+)/orden-servicio\.pdf$ /admin/ticket_service_order_pdf.php?id=$1 [L,QSA]
+RewriteRule ^admin/tickets/([0-9]+)/?$ /admin/ticket_view.php?id=$1 [L,QSA]
 
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/ticket_create\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/ticket_create\.php$ admin/tickets/nuevo [R=301,L,NE]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/tickets/nuevo\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)customer_id=([0-9]+)(?:&|$) [NC]
-RewriteRule ^admin/tickets/nuevo$ admin/tickets/nuevo/cliente/%1 [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/tickets\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/tickets\.php$ admin/tickets [R=301,L,NE]
+RewriteRule ^admin/clientes/?$ /admin/customers.php [L,QSA]
+RewriteRule ^admin/clientes/nuevo/?$ /admin/customer_create.php [L,QSA]
+RewriteRule ^admin/clientes/buscar/?$ /admin/customer_search.php [L,QSA]
+RewriteRule ^admin/clientes/([0-9]+)/editar/?$ /admin/customer_edit.php?id=$1 [L,QSA]
+RewriteRule ^admin/clientes/([0-9]+)/?$ /admin/customer_view.php?id=$1 [L,QSA]
 
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/customer_create\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/customer_create\.php$ admin/clientes/nuevo [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/customer_edit\.php\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)id=([0-9]+)(?:&|$) [NC]
-RewriteRule ^admin/customer_edit\.php$ admin/clientes/%1/editar [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/customer_edit\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/customer_edit\.php$ admin/clientes [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/customer_view\.php\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)id=([0-9]+)(?:&|$) [NC]
-RewriteRule ^admin/customer_view\.php$ admin/clientes/%1 [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/customer_view\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/customer_view\.php$ admin/clientes [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/customers\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/customers\.php$ admin/clientes [R=301,L,NE]
+RewriteRule ^admin/usuarios/?$ /admin/users.php [L,QSA]
+RewriteRule ^admin/usuarios/nuevo/?$ /admin/user_create.php [L,QSA]
+RewriteRule ^admin/usuarios/([0-9]+)/editar/?$ /admin/user_edit.php?id=$1 [L,QSA]
 
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/user_create\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/user_create\.php$ admin/usuarios/nuevo [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/user_edit\.php\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)id=([0-9]+)(?:&|$) [NC]
-RewriteRule ^admin/user_edit\.php$ admin/usuarios/%1/editar [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/user_edit\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/user_edit\.php$ admin/usuarios [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/users\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/users\.php$ admin/usuarios [R=301,L,NE]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/notifications\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/notifications\.php$ admin/notificaciones [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/customer_search\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/customer_search\.php$ admin/clientes/buscar [R=301,L,NE]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/ticket_service_order_pdf\.php\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)id=([0-9]+)(?:&|$) [NC]
-RewriteRule ^admin/ticket_service_order_pdf\.php$ admin/tickets/%1/orden-servicio.pdf [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/ticket_view\.php\? [NC]
-RewriteCond %{QUERY_STRING} (?:^|&)id=([0-9]+)(?:&|$) [NC]
-RewriteRule ^admin/ticket_view\.php$ admin/tickets/%1 [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/ticket_view\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/ticket_view\.php$ admin/tickets [R=301,L,NE,QSD]
-RewriteCond %{THE_REQUEST} \s/+[^\ ]*/admin/notifications_stream\.php(?:[?\ ]|$) [NC]
-RewriteRule ^admin/notifications_stream\.php$ admin/notificaciones/stream [R=301,L,NE,QSD]
-</If>
+RewriteRule ^admin/notificaciones/?$ /admin/notifications.php [L,QSA]
+RewriteRule ^admin/notificaciones/stream/?$ /admin/notifications_stream.php [L,QSA]
 
-# Los recursos estáticos se sirven después de normalizar las URL heredadas.
+# Google Calendar utiliza el controlador frontal para OAuth.
+RewriteRule ^admin/google-calendar(?:/.*)?$ /index.php [L,QSA]
+
+# Rutas amigables públicas.
+RewriteRule ^productos/?$ /productos.php [L,QSA]
+RewriteRule ^productos/([0-9]+)/?$ /product_view.php?id=$1 [L,QSA]
+RewriteRule ^promociones/?$ /promociones.php [L,QSA]
+RewriteRule ^promociones/([0-9]+)/?$ /promotion_view.php?id=$1 [L,QSA]
+RewriteRule ^testimoniales/?$ /testimoniales.php [L,QSA]
+RewriteRule ^contacto/?$ /contacto.php [L,QSA]
+RewriteRule ^contacto/producto/([0-9]+)/?$ /contacto.php?product=$1 [L,QSA]
+RewriteRule ^contacto/promocion/([0-9]+)/?$ /contacto.php?promo=$1 [L,QSA]
+
+# Archivos y directorios reales.
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
-# Endpoints técnicos expuestos con rutas limpias; su implementación permanece interna.
-RewriteRule ^admin/clientes/buscar$ admin/customer_search.php [END,QSA]
-RewriteRule ^admin/notificaciones/stream$ admin/notifications_stream.php [END,QSA]
-RewriteRule ^admin/tickets/([0-9]+)/orden-servicio\.pdf$ admin/ticket_service_order_pdf.php?id=$1 [END,QSA]
-
-# La carpeta física admin no debe impedir que /admin llegue al controlador frontal.
-RewriteRule ^admin/?$ index.php [L,QSA]
-
-# Todas las rutas de la aplicación se resuelven desde el controlador frontal.
-RewriteRule ^ index.php [L,QSA]
+# Front controller para cualquier ruta restante.
+RewriteRule ^ /index.php [L,QSA]
