@@ -1,6 +1,5 @@
 <?php
 use RcnSistemas\Core\Security\SessionManager;
-use RcnSistemas\Repositories\MysqliNotificationRepository;
 
 $session = new SessionManager();
 $session->start();
@@ -29,12 +28,7 @@ $adminLabel = $session->userLabel() ?: 'Administrador';
 $adminRole = $session->role();
 $adminRoleLabel = $adminRole === 'admin' ? 'Administrador' : 'Operador';
 $adminInitial = strtoupper(substr($adminLabel, 0, 1));
-$notificationContext = ['unread' => 0, 'latestId' => 0];
-if ($session->isAuthenticated()) {
-    $layoutApplication = require dirname(__DIR__, 3) . '/app/Bootstrap/app.php';
-    $notificationRepository = new MysqliNotificationRepository($layoutApplication['database']->get());
-    $notificationContext = ['unread' => $notificationRepository->unreadCount($session->userId()), 'latestId' => $notificationRepository->latestId($session->userId())];
-}
+$notificationContext = $notificationContext ?? ['unread' => 0, 'latestId' => 0];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -45,6 +39,10 @@ if ($session->isAuthenticated()) {
     <meta name="csrf-token" content="<?php echo htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
     <link rel="manifest" href="<?php echo $baseUrl; ?>/manifest.webmanifest">
     <title><?php echo htmlspecialchars((string) ($pageTitle ?? 'Panel Administrativo'), ENT_QUOTES, 'UTF-8'); ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>/css/styles.css?v=<?php echo $assetVersion; ?>">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>/css/admin.css?v=<?php echo $assetVersion; ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">

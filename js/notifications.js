@@ -51,7 +51,7 @@ const initializeNotifications = () => {
         try { payload = JSON.parse(event.data || '{}'); } catch (error) {}
         showToast('Sesión expirada', 'Tu sesión del panel venció. Vuelve a iniciar sesión.', true, payload.login_url || body.dataset.notificationLoginUrl || '');
     });
-    window.addEventListener('beforeunload', () => source.close(), { once: true });
+    window.addEventListener('pagehide', () => source.close(), { once: true });
     syncBadge(unreadCount);
 };
 

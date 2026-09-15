@@ -8,7 +8,10 @@ use RcnSistemas\Core\Routing\Url;
 
 final class ViewRenderer
 {
-    public function __construct(private readonly string $viewsPath)
+    public function __construct(
+        private readonly string $viewsPath,
+        private readonly array $layoutData = []
+    )
     {
     }
 
@@ -21,7 +24,7 @@ final class ViewRenderer
             return $viewContent;
         }
 
-        return $this->renderFile($layout, [...$viewData, 'content' => $viewContent]);
+        return $this->renderFile($layout, [...$viewData, ...$this->layoutData, 'content' => $viewContent]);
     }
 
     public function response(string $view, array $data = [], ?string $layout = null, int $status = 200): Response

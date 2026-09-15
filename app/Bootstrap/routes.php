@@ -65,13 +65,18 @@ use RcnSistemas\Services\Notifications\TicketNotificationDispatcher;
 
 return static function (array $application): Router {
     $connection = $application['database']->get();
-    $views = new ViewRenderer($application['root'] . '/app/Views');
     $session = new SessionManager();
     $session->start();
     $csrf = new CsrfService($session);
     $rememberTokens = new MysqliAdminRememberTokenRepository($connection);
     $authService = new AuthService(new MysqliAdminUserRepository($connection), $session, $rememberTokens);
     $authService->restoreRememberedSession();
+    $notificationContext = ['unread' => 0, 'latestId' => 0];
+    if ($session->isAuthenticated()) {
+        $notificationRepository = new MysqliNotificationRepository($connection);
+        $notificationContext = ['unread' => $notificationRepository->unreadCount($session->userId()), 'latestId' => $notificationRepository->latestId($session->userId())];
+    }
+    $views = new ViewRenderer($application['root'] . '/app/Views', ['notificationContext' => $notificationContext]);
     $router = new Router();
 
     $router->get('/firebase-config.json', static fn (): Response => Response::json($application['config']->get('firebase.web_config', []), 200));

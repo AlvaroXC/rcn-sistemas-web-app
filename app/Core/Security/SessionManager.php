@@ -27,6 +27,13 @@ final class SessionManager
         session_start();
     }
 
+    public function close(): void
+    {
+        if (session_status() === PHP_SESSION_ACTIVE) {
+            session_write_close();
+        }
+    }
+
     public function authenticate(array $user): void
     {
         $this->start();
