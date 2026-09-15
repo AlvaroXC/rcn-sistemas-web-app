@@ -20,9 +20,15 @@ final class MysqliProductRepository implements ProductRepository
         }
 
         $result = $this->connection->query($sql);
-        $products = [];
+        $rows = [];
         while ($result && $row = $result->fetch_assoc()) {
-            $products[] = $this->hydrate($row);
+            $rows[] = $row;
+        }
+
+        $benefitsByProduct = $this->benefitsForProducts(array_map(static fn (array $row): int => (int) $row['id'], $rows));
+        $products = [];
+        foreach ($rows as $row) {
+            $products[] = $this->hydrate($row, $benefitsByProduct[(int) $row['id']] ?? []);
         }
 
         return $products;
@@ -93,18 +99,42 @@ final class MysqliProductRepository implements ProductRepository
         return $statement->execute();
     }
 
-    private function hydrate(array $row): Product
+    private function hydrate(array $row, ?array $benefits = null): Product
     {
-        $benefitStatement = $this->connection->prepare('SELECT * FROM benefits WHERE product_id = ? ORDER BY id ASC');
         $productId = (int) $row['id'];
-        $benefitStatement->bind_param('i', $productId);
-        $benefitStatement->execute();
-        $benefitResult = $benefitStatement->get_result();
-        $benefits = [];
-        while ($benefitResult && $benefitRow = $benefitResult->fetch_assoc()) {
-            $benefits[] = Benefit::fromArray($benefitRow);
+        if ($benefits === null) {
+            $benefitStatement = $this->connection->prepare('SELECT * FROM benefits WHERE product_id = ? ORDER BY id ASC');
+            $benefitStatement->bind_param('i', $productId);
+            $benefitStatement->execute();
+            $benefitResult = $benefitStatement->get_result();
+            $benefits = [];
+            while ($benefitResult && $benefitRow = $benefitResult->fetch_assoc()) {
+                $benefits[] = Benefit::fromArray($benefitRow);
+            }
         }
 
         return Product::fromArray($row, $benefits);
+    }
+
+    /** @return array<int, array<int, Benefit>> */
+    private function benefitsForProducts(array $productIds): array
+    {
+        $productIds = array_values(array_unique(array_filter(array_map('intval', $productIds), static fn (int $id): bool => $id > 0)));
+        if ($productIds === []) {
+            return [];
+        }
+
+        $placeholders = implode(',', array_fill(0, count($productIds), '?'));
+        $statement = $this->connection->prepare('SELECT * FROM benefits WHERE product_id IN (' . $placeholders . ') ORDER BY product_id ASC, id ASC');
+        $types = str_repeat('i', count($productIds));
+        $statement->bind_param($types, ...$productIds);
+        $statement->execute();
+        $result = $statement->get_result();
+        $benefitsByProduct = [];
+        while ($result && $row = $result->fetch_assoc()) {
+            $benefitsByProduct[(int) $row['product_id']][] = Benefit::fromArray($row);
+        }
+
+        return $benefitsByProduct;
     }
 }
