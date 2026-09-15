@@ -14,7 +14,7 @@
                 </div>
                 <div class="contact-form"><div class="card form-card">
                     <?php if ($sent): ?>
-                        <div class="alert alert--success"><i class="fas fa-check-circle alert__icon" aria-hidden="true"></i><h2>¡Mensaje enviado!</h2><p>Gracias por contactarnos. Un asesor se comunicará contigo muy pronto.</p><?php if ($ticketCreated): ?><p><strong>Ticket generado:</strong> #<?php echo (int) $ticketCreated->id; ?></p><?php endif; ?><a href="<?php echo Url::to('/'); ?>" class="btn alert__action">Volver al inicio</a></div>
+                        <div class="alert alert--success"><i class="fas fa-check-circle alert__icon" aria-hidden="true"></i><h2>¡Mensaje enviado!</h2><p>Gracias por contactarnos. Un asesor se comunicará contigo muy pronto.</p><?php if ($ticketCreated): ?><p><strong>Ticket generado:</strong> #<?php echo (int) $ticketCreated->id; ?></p><?php endif; ?><a href="<?php echo \RcnSistemas\Core\Routing\Url::to('/'); ?>" class="btn alert__action">Volver al inicio</a></div>
                     <?php else: ?>
                         <?php if ($error): ?><div class="alert alert--error"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div><?php endif; ?>
                         <?php if ($context): ?><div class="alert alert--info"><strong>Consulta relacionada:</strong> <?php echo htmlspecialchars($context, ENT_QUOTES, 'UTF-8'); ?></div><?php endif; ?>

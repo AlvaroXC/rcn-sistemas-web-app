@@ -5,7 +5,9 @@ if ($baseUrl === '') {
     $scriptDirectory = str_replace('\\', '/', dirname((string) ($_SERVER['SCRIPT_NAME'] ?? '')));
     $baseUrl = $scriptDirectory === '.' || $scriptDirectory === '/' ? '' : $scriptDirectory;
 }
-$assetVersion = rawurlencode((string) (function_exists('getEnvVar') ? getEnvVar('APP_ASSET_VERSION', '2026.06.27.1') : '2026.06.27.1'));
+$assetRoot = dirname(__DIR__, 3);
+$assetStamp = max(array_map(static fn (string $path): int => is_file($path) ? (int) filemtime($path) : 0, [$assetRoot . '/css/styles.css', $assetRoot . '/css/public.css', $assetRoot . '/js/main.js', $assetRoot . '/js/public.js']));
+$assetVersion = rawurlencode((string) (function_exists('getEnvVar') ? getEnvVar('APP_ASSET_VERSION', '2026.06.27.1') : '2026.06.27.1') . '-' . $assetStamp);
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -14,6 +16,10 @@ $assetVersion = rawurlencode((string) (function_exists('getEnvVar') ? getEnvVar(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="RCN Sistemas - Distribuidores de software contable y administrativo CONTPAQi">
     <title><?php echo htmlspecialchars((string) ($pageTitle ?? 'RCN Sistemas'), ENT_QUOTES, 'UTF-8'); ?></title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>/css/styles.css?v=<?php echo $assetVersion; ?>">
     <link rel="stylesheet" href="<?php echo $baseUrl; ?>/css/public.css?v=<?php echo $assetVersion; ?>">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
