@@ -9,6 +9,7 @@ use RcnSistemas\Core\Http\Response;
 use RcnSistemas\Core\Security\CsrfService;
 use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Services\Communications\ContactService;
+use RcnSistemas\Services\Communications\ContactSpamGuard;
 use RcnSistemas\Services\Communications\UploadService;
 use RcnSistemas\Services\Tickets\TicketCatalog;
 use RcnSistemas\Repositories\ProductRepository;
@@ -33,6 +34,14 @@ final class ContactController extends Controller
             try {
                 $this->csrf->validate((string) $request->input('_csrf_token', ''));
                 foreach ($values as $key => $value) $values[$key] = trim((string) $request->input($key, $value));
+                $guard = new ContactSpamGuard();
+                if ($guard->isHoneypotTriggered($request->input(ContactSpamGuard::HONEYPOT_FIELD, ''))) {
+                    // Bot: fingimos éxito sin guardar nada.
+                    $sent = true;
+                    return $this->view('public.contact.index', ['pageTitle' => 'Contacto', 'csrf' => $this->csrf->field(), 'context' => $context, 'productId' => $productId, 'promoId' => $promoId, 'error' => null, 'sent' => true, 'ticketCreated' => null, 'values' => $values, 'consultationTypes' => TicketCatalog::labels()], 'layouts.public');
+                }
+                $guard->assertLooksHuman($values['nombre'], $values['mensaje']);
+                $guard->assertWithinRateLimit((string) $request->server('REMOTE_ADDR', 'unknown'));
                 $file = $request->file('imagen');
                 $stored = $file ? $this->uploads->store($file, $this->uploadDirectory) : '';
                 $ticketCreated = $this->contact->createTicket(['name' => $values['nombre'], 'email' => $values['email'], 'phone' => $values['telefono'], 'consultation_type' => $values['opcion'], 'message' => $values['mensaje'], 'product_id' => $productId, 'promo_id' => $promoId, 'context_label' => $context, 'origin_type' => $productId > 0 ? 'product' : ($promoId > 0 ? 'promotion' : 'contact'), 'attachment_path' => $stored ? 'uploads/tickets/' . $stored : null, 'attachment_full_path' => $stored ? $this->uploadDirectory . DIRECTORY_SEPARATOR . $stored : null], null);
