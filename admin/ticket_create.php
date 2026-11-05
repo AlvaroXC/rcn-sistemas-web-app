@@ -9,7 +9,7 @@ use RcnSistemas\Repositories\MysqliCustomerRepository;
 use RcnSistemas\Repositories\MysqliTicketRepository;
 use RcnSistemas\Repositories\MysqliCustomerSearchRepository;
 use RcnSistemas\Repositories\MysqliAdminUserManagementRepository;
-use RcnSistemas\Repositories\MysqliGoogleCalendarConnectionRepository;
+use RcnSistemas\Repositories\MysqliGoogleCalendarIntegrationRepository;
 use RcnSistemas\Repositories\MysqliTicketCalendarRepository;
 use RcnSistemas\Services\Communications\UploadService;
 use RcnSistemas\Services\Google\GoogleCalendarAppointmentSyncService;
@@ -26,13 +26,12 @@ $pushDevices = new \RcnSistemas\Repositories\MysqliPushDeviceRepository($connect
 $pushPreferences = new \RcnSistemas\Repositories\MysqliPushPreferenceRepository($connection);
 $pushDelivery = new \RcnSistemas\Services\Notifications\PushDeliveryService($pushDevices, $pushPreferences, new \RcnSistemas\Services\Notifications\FcmClient($application['config']->get('firebase', [])));
 $ticketNotifications = new \RcnSistemas\Services\Notifications\TicketNotificationDispatcher($connection, $pushDelivery, (string) $application['config']->get('app.url', ''));
-$calendarConnections = new MysqliGoogleCalendarConnectionRepository($connection);
+$calendarIntegrations = new MysqliGoogleCalendarIntegrationRepository($connection);
 $calendarSync = new GoogleCalendarAppointmentSyncService(
-    $calendarConnections,
+    $calendarIntegrations,
     new MysqliTicketCalendarRepository($connection),
     new GoogleCalendarService(
         $application['config']->get('google', []),
-        $calendarConnections,
         new TokenEncryption((string) $application['config']->get('app.encryption_key', ''))
     ),
     $application['config']->get('google', [])
