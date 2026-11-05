@@ -10,7 +10,8 @@ final class Customer
         public readonly ?string $email,
         public readonly string $phone,
         public readonly string $businessName,
-        public readonly string $customerType
+        public readonly string $customerType,
+        public readonly ?string $rfc = null
     ) {
     }
 
@@ -22,7 +23,8 @@ final class Customer
             ($data['email'] ?? null) !== '' ? ($data['email'] ?? null) : null,
             trim((string) ($data['phone'] ?? '')),
             trim((string) ($data['business_name'] ?? '')),
-            trim((string) ($data['customer_type'] ?? 'persona_fisica'))
+            trim((string) ($data['customer_type'] ?? 'persona_fisica')),
+            ($data['rfc'] ?? null) !== '' ? ($data['rfc'] ?? null) : null
         );
     }
 }

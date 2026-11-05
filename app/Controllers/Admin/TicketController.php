@@ -43,7 +43,7 @@ final class TicketController extends Controller
                 $customerId = (int) $values['customer_id'];
                 if ($customerMode === 'existing' && $customerId <= 0) throw new InvalidArgumentException('Selecciona un cliente existente.');
                 if ($customerId > 0 && !$this->customers->find($customerId)) throw new InvalidArgumentException('El cliente seleccionado no existe.');
-                $customer = $customerId > 0 ? $this->customers->find($customerId) : (new CustomerService($this->customers, new CustomerIdentity()))->save(['name' => $values['name'], 'phone' => $values['phone'], 'email' => $values['email'], 'business_name' => $values['business_name'], 'customer_type' => $values['customer_type']]);
+                $customer = $customerId > 0 ? $this->customers->find($customerId) : (new CustomerService($this->customers, new CustomerIdentity()))->save(['name' => $values['name'], 'phone' => $values['phone'], 'email' => $values['email'], 'business_name' => $values['business_name'], 'customer_type' => $values['customer_type']], true);
                 $customerId = $customer->id;
                 $assignedUserId = $viewerId;
                 if ($this->users && (int) $values['assigned_user_id'] > 0) {

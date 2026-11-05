@@ -17,6 +17,7 @@ final class CustomerServiceValidationTest extends TestCase
         $repository = new class implements CustomerRepository {
             public function findByPhone(string $phone): ?Customer { return null; }
             public function find(int $customerId): ?Customer { return null; }
+            public function findByRfc(string $rfc): ?Customer { return null; }
             public function save(array $data): ?Customer { return null; }
         };
         (new CustomerService($repository, new CustomerIdentity()))->save(['name' => 'Cliente']);

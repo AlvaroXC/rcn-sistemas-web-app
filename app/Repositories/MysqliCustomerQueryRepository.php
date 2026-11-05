@@ -52,7 +52,7 @@ final class MysqliCustomerQueryRepository implements CustomerQueryRepository
         $search = trim($search);
         if ($search === '') return ['', '', []];
         $value = '%' . $search . '%';
-        return [' WHERE name LIKE ? OR business_name LIKE ? OR email LIKE ? OR phone LIKE ?', 'ssss', [$value, $value, $value, $value]];
+        return [' WHERE customers.name LIKE ? OR customers.business_name LIKE ? OR customers.rfc LIKE ? OR customers.email LIKE ? OR customers.phone LIKE ?', 'sssss', [$value, $value, $value, $value, $value]];
     }
 
     private function bind(object $statement, string $types, array $params): void

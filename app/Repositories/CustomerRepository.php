@@ -10,5 +10,7 @@ interface CustomerRepository
 
     public function find(int $customerId): ?Customer;
 
+    public function findByRfc(string $rfc): ?Customer;
+
     public function save(array $data): ?Customer;
 }

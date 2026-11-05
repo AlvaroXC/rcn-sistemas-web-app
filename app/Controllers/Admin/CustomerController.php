@@ -17,16 +17,26 @@ use RcnSistemas\Services\Customers\CustomerCatalog;
 final class CustomerController extends Controller
 {
     private CustomerService $service;
-    public function __construct(private readonly CustomerRepository $customers, private readonly CustomerQueryRepository $customerQuery, ViewRenderer $views) { parent::__construct($views); $this->service = new CustomerService($customers, new CustomerIdentity()); }
+    public function __construct(private readonly CustomerRepository $customers, private readonly CustomerQueryRepository $customerQuery, ViewRenderer $views)
+    {
+        parent::__construct($views);
+        $this->service = new CustomerService($customers, new CustomerIdentity());
+    }
 
     public function index(Request $request): Response
     {
-        $customerId = (int) ($request->query('id', $request->input('id', 0))); $editing = $customerId > 0 || $request->query('action') === 'new';
-        $customer = $customerId > 0 ? $this->customers->find($customerId) : null; if ($customerId > 0 && !$customer) return $this->view('errors.404', [], 'layouts.admin', 404);
+        $customerId = (int) ($request->query('id', $request->input('id', 0)));
+        $editing = $customerId > 0 || $request->query('action') === 'new';
+        $customer = $customerId > 0 ? $this->customers->find($customerId) : null;
+        if ($customerId > 0 && !$customer) return $this->view('errors.404', [], 'layouts.admin', 404);
         $error = null;
         if ($request->isMethod('POST')) {
-            try { $customer = $this->service->save(['id' => $customerId, 'name' => $request->input('name', ''), 'phone' => $request->input('phone', ''), 'email' => $request->input('email'), 'business_name' => $request->input('business_name', ''), 'customer_type' => $request->input('customer_type', 'persona_fisica')]); return Response::redirect(Url::to('/admin/clientes/' . $customer->id)); }
-            catch (InvalidArgumentException $exception) { $error = $exception->getMessage(); }
+            try {
+                $customer = $this->service->save(['id' => $customerId, 'name' => $request->input('name', ''), 'phone' => $request->input('phone', ''), 'email' => $request->input('email'), 'business_name' => $request->input('business_name', ''), 'rfc' => $request->input('rfc', ''), 'customer_type' => $request->input('customer_type', 'persona_fisica')], true);
+                return Response::redirect(Url::to('/admin/clientes/' . $customer->id));
+            } catch (InvalidArgumentException $exception) {
+                $error = $exception->getMessage();
+            }
         }
         $search = trim((string) $request->query('search', $request->query('q', '')));
         $page = max(1, (int) $request->query('page', 1));
