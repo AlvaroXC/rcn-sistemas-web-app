@@ -1,6 +1,6 @@
 <?php
 $escape = static fn (mixed $value): string => htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
-$url = static fn (int $targetPage): string => '/admin/clientes?' . http_build_query(['search' => $search, 'per_page' => $perPage, 'page' => $targetPage]);
+$url = static fn (int $targetPage): string => \RcnSistemas\Core\Routing\Url::to('/admin/clientes') . '?' . http_build_query(['search' => $search, 'per_page' => $perPage, 'page' => $targetPage]);
 ?>
 <section class="section">
     <header class="admin-header"><div><h1><?php echo $editing ? ($customer ? 'Editar cliente' : 'Nuevo cliente') : 'Clientes'; ?></h1><p>Gestiona contactos y razones sociales asociadas a los tickets.</p></div><div class="ticket-header-actions"><a href="<?php echo $baseUrl; ?>/admin/clientes/nuevo" class="btn">Nuevo cliente</a><a href="<?php echo $baseUrl; ?>/admin/tickets/nuevo" class="btn btn--secondary">Nuevo ticket</a></div></header>
