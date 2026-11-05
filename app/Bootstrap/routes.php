@@ -3,6 +3,7 @@
 use RcnSistemas\Controllers\Admin\AuthController;
 use RcnSistemas\Controllers\Admin\CustomerController;
 use RcnSistemas\Controllers\Admin\CustomerSearchController;
+use RcnSistemas\Controllers\Admin\CustomerContactController;
 use RcnSistemas\Controllers\Admin\LicenseController;
 use RcnSistemas\Controllers\Admin\QuotationController;
 use RcnSistemas\Controllers\Admin\DashboardController;
@@ -28,6 +29,7 @@ use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Repositories\MysqliAdminUserManagementRepository;
 use RcnSistemas\Repositories\MysqliAdminUserRepository;
 use RcnSistemas\Repositories\MysqliAdminRememberTokenRepository;
+use RcnSistemas\Repositories\MysqliCustomerContactRepository;
 use RcnSistemas\Repositories\MysqliCustomerLicenseRepository;
 use RcnSistemas\Repositories\MysqliLicenseQuotationRepository;
 use RcnSistemas\Repositories\MysqliCustomerQueryRepository;
@@ -167,7 +169,8 @@ return static function (array $application): Router {
     $router->post('/admin/tickets/{id}', $showTicket);
 
     $customerLicenses = new MysqliCustomerLicenseRepository($connection);
-    $customerController = new CustomerController(new MysqliCustomerRepository($connection), new MysqliCustomerQueryRepository($connection), $customerLicenses, $views);
+    $customerContacts = new MysqliCustomerContactRepository($connection);
+    $customerController = new CustomerController(new MysqliCustomerRepository($connection), new MysqliCustomerQueryRepository($connection), $customerLicenses, $customerContacts, $views);
     $customers = $authorized(static fn (Request $request): Response => $customerController->index($request));
     $router->get('/admin/clientes', $customers);
     $router->post('/admin/clientes', $customers);
@@ -176,6 +179,12 @@ return static function (array $application): Router {
     $router->get('/admin/clientes/{id}/editar', $authorized(static fn (Request $request): Response => $customerController->index($request)));
     $router->post('/admin/clientes/{id}/editar', $authorized(static fn (Request $request): Response => $customerController->index($request)));
     $router->get('/admin/clientes/{id}', $authorized(static fn (Request $request): Response => $customerController->show($request)));
+    $contactController = new CustomerContactController($customerContacts, new MysqliCustomerRepository($connection), $views);
+    $router->get('/admin/clientes/{id}/contactos/nuevo', $authorized(static fn (Request $request): Response => $contactController->create($request)));
+    $router->post('/admin/clientes/{id}/contactos/nuevo', $authorized(static fn (Request $request): Response => $contactController->create($request)));
+    $router->get('/admin/contactos/{id}/editar', $authorized(static fn (Request $request): Response => $contactController->edit($request)));
+    $router->post('/admin/contactos/{id}/editar', $authorized(static fn (Request $request): Response => $contactController->edit($request)));
+    $router->post('/admin/contactos/{id}/eliminar', $authorized(static fn (Request $request): Response => $contactController->delete($request)));
     $router->get('/admin/clientes/buscar', $authorized(static fn (Request $request): Response => (new CustomerSearchController(new MysqliCustomerSearchRepository($connection)))->index($request)));
 
     $licenseQuotations = new MysqliLicenseQuotationRepository($connection);

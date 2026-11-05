@@ -8,9 +8,11 @@ use RcnSistemas\Core\Http\Request;
 use RcnSistemas\Core\Http\Response;
 use RcnSistemas\Core\Routing\Url;
 use RcnSistemas\Core\View\ViewRenderer;
+use RcnSistemas\Repositories\CustomerContactRepository;
 use RcnSistemas\Repositories\CustomerLicenseRepository;
 use RcnSistemas\Repositories\CustomerRepository;
 use RcnSistemas\Repositories\CustomerQueryRepository;
+use RcnSistemas\Services\Customers\ContactNotice;
 use RcnSistemas\Services\Customers\CustomerIdentity;
 use RcnSistemas\Services\Customers\CustomerService;
 use RcnSistemas\Services\Customers\CustomerCatalog;
@@ -19,7 +21,7 @@ use RcnSistemas\Services\Licenses\LicenseNotice;
 final class CustomerController extends Controller
 {
     private CustomerService $service;
-    public function __construct(private readonly CustomerRepository $customers, private readonly CustomerQueryRepository $customerQuery, private readonly CustomerLicenseRepository $licenses, ViewRenderer $views)
+    public function __construct(private readonly CustomerRepository $customers, private readonly CustomerQueryRepository $customerQuery, private readonly CustomerLicenseRepository $licenses, private readonly CustomerContactRepository $contacts, ViewRenderer $views)
     {
         parent::__construct($views);
         $this->service = new CustomerService($customers, new CustomerIdentity());
@@ -54,6 +56,6 @@ final class CustomerController extends Controller
         $customer = $customerId > 0 ? $this->customers->find($customerId) : null;
         if (!$customer) return $this->view('errors.404', [], 'layouts.admin', 404);
         $ticketFilter = $customer->phone ?: ($customer->email ?: $customer->name);
-        return $this->view('admin.customers.show', ['pageTitle' => 'Cliente: ' . $customer->name, 'customer' => $customer, 'tickets' => $this->customerQuery->tickets($customerId), 'licenses' => $this->licenses->forCustomer($customerId), 'licenseNotice' => LicenseNotice::pull(), 'today' => date('Y-m-d'), 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'), 'ticketFilter' => $ticketFilter, 'customerTypeLabel' => CustomerCatalog::label($customer->customerType)], 'layouts.admin');
+        return $this->view('admin.customers.show', ['pageTitle' => 'Cliente: ' . $customer->name, 'customer' => $customer, 'tickets' => $this->customerQuery->tickets($customerId), 'licenses' => $this->licenses->forCustomer($customerId), 'contacts' => $this->contacts->forCustomer($customerId), 'contactNotice' => ContactNotice::pull(), 'licenseNotice' => LicenseNotice::pull(), 'today' => date('Y-m-d'), 'csrf' => htmlspecialchars((string) ($_SESSION['_csrf_token'] ?? ''), ENT_QUOTES, 'UTF-8'), 'ticketFilter' => $ticketFilter, 'customerTypeLabel' => CustomerCatalog::label($customer->customerType)], 'layouts.admin');
     }
 }

@@ -52,7 +52,8 @@ final class MysqliCustomerQueryRepository implements CustomerQueryRepository
         $search = trim($search);
         if ($search === '') return ['', '', []];
         $value = '%' . $search . '%';
-        return [' WHERE customers.name LIKE ? OR customers.business_name LIKE ? OR customers.rfc LIKE ? OR customers.email LIKE ? OR customers.phone LIKE ?', 'sssss', [$value, $value, $value, $value, $value]];
+        // También encuentra al cliente por el nombre o teléfono de sus contactos; EXISTS no duplica filas.
+        return [' WHERE customers.name LIKE ? OR customers.business_name LIKE ? OR customers.rfc LIKE ? OR customers.email LIKE ? OR customers.phone LIKE ? OR EXISTS (SELECT 1 FROM customer_contacts cc WHERE cc.customer_id = customers.id AND (cc.name LIKE ? OR cc.phone LIKE ?))', 'sssssss', [$value, $value, $value, $value, $value, $value, $value]];
     }
 
     private function bind(object $statement, string $types, array $params): void
