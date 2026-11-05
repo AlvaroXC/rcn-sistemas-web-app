@@ -48,7 +48,14 @@ final class Ticket
         public readonly ?string $messageUpdatedByDisplayName = null,
         public readonly ?string $messageUpdatedAt = null,
         public readonly ?string $createdAt = null,
-        public readonly ?string $updatedAt = null
+        public readonly ?string $updatedAt = null,
+        public readonly ?string $googleCalendarTargetId = null,
+        public readonly string $googleCalendarMigrationStatus = 'not_applicable',
+        public readonly ?string $googleCalendarLegacyEventId = null,
+        public readonly ?string $googleCalendarLegacyCalendarId = null,
+        public readonly ?int $googleCalendarLegacyUserId = null,
+        public readonly string $googleCalendarLegacyCleanupStatus = 'not_required',
+        public readonly ?string $googleCalendarLegacyCleanupError = null
     ) {
     }
 
@@ -98,7 +105,14 @@ final class Ticket
             self::nullableString($data['message_updated_by_display_name'] ?? null),
             self::nullableString($data['message_updated_at'] ?? null),
             self::nullableString($data['created_at'] ?? null),
-            self::nullableString($data['updated_at'] ?? null)
+            self::nullableString($data['updated_at'] ?? null),
+            self::nullableString($data['google_calendar_target_id'] ?? null),
+            (string) ($data['google_calendar_migration_status'] ?? 'not_applicable'),
+            self::nullableString($data['google_calendar_legacy_event_id'] ?? null),
+            self::nullableString($data['google_calendar_legacy_calendar_id'] ?? null),
+            isset($data['google_calendar_legacy_user_id']) ? (int) $data['google_calendar_legacy_user_id'] : null,
+            (string) ($data['google_calendar_legacy_cleanup_status'] ?? 'not_required'),
+            self::nullableString($data['google_calendar_legacy_cleanup_error'] ?? null)
         );
     }
 
