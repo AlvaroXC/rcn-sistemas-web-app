@@ -14,6 +14,6 @@ $customerUrl = $baseUrl . '/admin/clientes/' . (int) $customer->id;
         </div>
         <div class="admin-form__buttons"><button type="submit" class="btn"><?php echo $contact ? 'Guardar cambios' : 'Registrar contacto'; ?></button><?php if ($contact): ?><button type="submit" form="delete-contact" class="btn btn--danger">Eliminar contacto</button><?php endif; ?></div>
     </form>
-    <?php if ($contact): ?><form id="delete-contact" method="post" action="<?php echo $baseUrl; ?>/admin/contactos/<?php echo (int) $contact->id; ?>/eliminar" hidden onsubmit="return confirm('¿Seguro que deseas eliminar este contacto?');"><input type="hidden" name="_csrf_token" value="<?php echo $csrf; ?>"></form><?php endif; ?>
+    <?php if ($contact): ?><form id="delete-contact" method="post" action="<?php echo $baseUrl; ?>/admin/contactos/<?php echo (int) $contact->id; ?>/eliminar" hidden data-confirm="¿Seguro que deseas eliminar este contacto?" data-confirm-title="Eliminar contacto" data-confirm-accept="Eliminar" data-confirm-variant="danger"><input type="hidden" name="_csrf_token" value="<?php echo $csrf; ?>"></form><?php endif; ?>
     </div>
 </section>

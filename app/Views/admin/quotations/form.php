@@ -17,6 +17,6 @@ $licenseUrl = $baseUrl . '/admin/licencias/' . (int) $license->id . '/editar';
         <div class="admin-form__group"><label class="admin-form__label" for="notes">Observaciones</label><textarea id="notes" name="notes" class="admin-form__textarea" rows="3" maxlength="5000"><?php echo $escape($values['notes']); ?></textarea><span class="ticket-muted">Si el cliente rechaza la cotización, registra aquí el motivo (obligatorio).</span></div>
         <div class="admin-form__buttons"><button type="submit" class="btn"><?php echo $quotation ? 'Guardar cambios' : 'Registrar cotización'; ?></button><?php if ($quotation): ?><button type="submit" form="delete-quotation" class="btn btn--danger">Eliminar cotización</button><?php endif; ?></div>
     </form>
-    <?php if ($quotation): ?><form id="delete-quotation" method="post" action="<?php echo $baseUrl; ?>/admin/cotizaciones/<?php echo (int) $quotation->id; ?>/eliminar" hidden onsubmit="return confirm('¿Seguro que deseas eliminar esta cotización?');"><input type="hidden" name="_csrf_token" value="<?php echo $csrf; ?>"></form><?php endif; ?>
+    <?php if ($quotation): ?><form id="delete-quotation" method="post" action="<?php echo $baseUrl; ?>/admin/cotizaciones/<?php echo (int) $quotation->id; ?>/eliminar" hidden data-confirm="¿Seguro que deseas eliminar esta cotización?" data-confirm-title="Eliminar cotización" data-confirm-accept="Eliminar" data-confirm-variant="danger"><input type="hidden" name="_csrf_token" value="<?php echo $csrf; ?>"></form><?php endif; ?>
     </div>
 </section>

@@ -57,7 +57,7 @@ $errorMessage = match ($queryError) {
                     <div class="google-calendar-card__actions">
                         <a href="https://calendar.google.com/calendar/" class="btn" target="_blank" rel="noopener"><i class="fas fa-external-link-alt" aria-hidden="true"></i> Abrir Google Calendar</a>
                         <a href="<?php echo \RcnSistemas\Core\Routing\Url::to('/admin/google-calendar/connect'); ?>" class="btn btn--secondary"><i class="fas fa-rotate" aria-hidden="true"></i> Reconectar</a>
-                        <form method="post" onsubmit="return confirm('¿Seguro que deseas desconectar el calendario común?');"><input type="hidden" name="_csrf_token" value="<?php echo $escape($csrf); ?>"><input type="hidden" name="action" value="disconnect"><button type="submit" class="btn btn--secondary"><i class="fas fa-link-slash" aria-hidden="true"></i> Desconectar</button></form>
+                        <form method="post" data-confirm="¿Seguro que deseas desconectar el calendario común? Las citas dejarán de sincronizarse hasta que se vuelva a conectar." data-confirm-title="Desconectar calendario" data-confirm-accept="Desconectar" data-confirm-variant="danger"><input type="hidden" name="_csrf_token" value="<?php echo $escape($csrf); ?>"><input type="hidden" name="action" value="disconnect"><button type="submit" class="btn btn--secondary"><i class="fas fa-link-slash" aria-hidden="true"></i> Desconectar</button></form>
                     </div>
                 <?php endif; ?>
             <?php elseif ($needsReconnect || $hasConfigurationError): ?>

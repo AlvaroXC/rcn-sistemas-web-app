@@ -12,7 +12,7 @@ if ($baseUrl === '') {
     }
 }
 $assetRoot = dirname(__DIR__, 3);
-$assetStamp = max(array_map(static fn (string $path): int => is_file($path) ? (int) filemtime($path) : 0, [$assetRoot . '/css/styles.css', $assetRoot . '/css/admin.css', $assetRoot . '/js/main.js', $assetRoot . '/js/admin.js', $assetRoot . '/js/notifications.js', $assetRoot . '/js/push.js', $assetRoot . '/js/pwa.js']));
+$assetStamp = max(array_map(static fn (string $path): int => is_file($path) ? (int) filemtime($path) : 0, [$assetRoot . '/css/styles.css', $assetRoot . '/css/admin.css', $assetRoot . '/js/main.js', $assetRoot . '/js/admin.js', $assetRoot . '/js/confirm-dialog.js', $assetRoot . '/js/notifications.js', $assetRoot . '/js/push.js', $assetRoot . '/js/pwa.js']));
 $assetVersion = rawurlencode((string) (function_exists('getEnvVar') ? getEnvVar('APP_ASSET_VERSION', '2026.06.27.1') : '2026.06.27.1') . '-' . $assetStamp);
 $firebaseWebConfig = [
     'apiKey' => (string) getEnvVar('FIREBASE_API_KEY', ''),
