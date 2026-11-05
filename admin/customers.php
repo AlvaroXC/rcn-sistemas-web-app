@@ -16,7 +16,8 @@ use RcnSistemas\Controllers\Admin\CustomerController;
 use RcnSistemas\Core\Http\Request;
 use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Repositories\MysqliCustomerRepository;
+use RcnSistemas\Repositories\MysqliCustomerLicenseRepository;
 use RcnSistemas\Repositories\MysqliCustomerQueryRepository;
 
-$controller = new CustomerController(new MysqliCustomerRepository($conn), new MysqliCustomerQueryRepository($conn), new ViewRenderer(__DIR__ . '/../app/Views'));
+$controller = new CustomerController(new MysqliCustomerRepository($conn), new MysqliCustomerQueryRepository($conn), new MysqliCustomerLicenseRepository($conn), new ViewRenderer(__DIR__ . '/../app/Views'));
 $controller->index(Request::fromGlobals())->send();

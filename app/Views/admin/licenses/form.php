@@ -1,0 +1,40 @@
+<?php
+use RcnSistemas\Services\Licenses\LicenseCatalog;
+use RcnSistemas\Services\Licenses\QuotationCatalog;
+
+$escape = static fn (mixed $value): string => htmlspecialchars((string) ($value ?? ''), ENT_QUOTES, 'UTF-8');
+$customerUrl = $baseUrl . '/admin/clientes/' . (int) $customer->id;
+?>
+<section class="section">
+    <nav class="breadcrumbs" aria-label="Navegación"><a href="<?php echo $baseUrl; ?>/admin/clientes">Clientes</a><span>/</span><a href="<?php echo $customerUrl; ?>"><?php echo $escape($customer->name); ?></a><span>/</span><span><?php echo $license ? 'Editar licencia' : 'Nueva licencia'; ?></span></nav>
+    <header class="admin-header"><div><h1><?php echo $license ? 'Editar licencia' . ($license->alias ? ' · ' . $escape($license->alias) : '') : 'Nueva licencia'; ?></h1><p>Licencia de <?php echo $escape($customer->name); ?>.<?php if ($license && $license->licenseType !== 'tradicional'): ?> Para renovarla usa el botón Renovar: calcula el nuevo vencimiento automáticamente.<?php endif; ?></p></div><div class="ticket-header-actions"><?php if ($license): ?><?php $renewId = $license->id; $renewType = $license->licenseType; $renewExpiresAt = $license->expiresAt; $renewReturnTo = '/admin/licencias/' . (int) $license->id . '/editar'; $renewClass = 'btn'; require __DIR__ . '/_renew_button.php'; ?><?php endif; ?><a href="<?php echo $customerUrl; ?>" class="btn btn--secondary">Volver</a></div></header>
+    <?php require __DIR__ . '/_notice.php'; ?>
+    <?php if ($error): ?><p class="alert alert--error"><?php echo $escape($error); ?></p><?php endif; ?>
+    <div class="card panel-card"><form method="post" class="admin-form"><input type="hidden" name="_csrf_token" value="<?php echo $csrf; ?>">
+        <div class="admin-form__row admin-form__row--triple">
+            <div class="admin-form__group"><label class="admin-form__label" for="product_name">Sistema</label><select id="product_name" name="product_name" class="admin-form__input" required><option value="">Selecciona un sistema</option><?php foreach ($productNames as $productName): ?><option value="<?php echo $escape($productName); ?>" <?php echo $values['product_name'] === $productName ? 'selected' : ''; ?>><?php echo $escape($productName); ?></option><?php endforeach; ?><?php if ($values['product_name'] !== '' && !in_array($values['product_name'], $productNames, true)): ?><option value="<?php echo $escape($values['product_name']); ?>" selected><?php echo $escape($values['product_name']); ?> (no está en Productos)</option><?php endif; ?></select></div>
+            <div class="admin-form__group"><label class="admin-form__label" for="alias">Alias (opcional)</label><input id="alias" name="alias" class="admin-form__input" maxlength="100" value="<?php echo $escape($values['alias']); ?>" placeholder="Contabilidad oficina centro"><span class="ticket-muted">Un nombre corto para identificar la licencia más rápido.</span></div>
+            <div class="admin-form__group"><label class="admin-form__label" for="serial_number">Número de serie</label><input id="serial_number" name="serial_number" class="admin-form__input" maxlength="100" value="<?php echo $escape($values['serial_number']); ?>"></div>
+        </div>
+        <div class="admin-form__row admin-form__row--triple">
+            <div class="admin-form__group"><label class="admin-form__label" for="license_type">Tipo de licencia</label><select id="license_type" name="license_type" class="admin-form__input"><?php foreach (LicenseCatalog::types() as $value => $label): ?><option value="<?php echo $escape($value); ?>" <?php echo $values['license_type'] === $value ? 'selected' : ''; ?>><?php echo $escape($label); ?></option><?php endforeach; ?></select></div>
+            <div class="admin-form__group"><label class="admin-form__label" for="rfc_scope">RFC</label><select id="rfc_scope" name="rfc_scope" class="admin-form__input"><?php foreach (LicenseCatalog::rfcScopes() as $value => $label): ?><option value="<?php echo $escape($value); ?>" <?php echo $values['rfc_scope'] === $value ? 'selected' : ''; ?>><?php echo $escape($label); ?></option><?php endforeach; ?></select></div>
+            <div class="admin-form__group"><label class="admin-form__label" for="users_count">Usuarios</label><input id="users_count" name="users_count" type="number" min="1" class="admin-form__input" required value="<?php echo $escape($values['users_count']); ?>"></div>
+        </div>
+        <div class="admin-form__row admin-form__row--triple">
+            <div class="admin-form__group"><label class="admin-form__label" for="version">Versión</label><input id="version" name="version" class="admin-form__input" maxlength="30" value="<?php echo $escape($values['version']); ?>" placeholder="19.2.1"></div>
+            <div class="admin-form__group"><label class="admin-form__label" for="expires_at">Vencimiento</label><input id="expires_at" name="expires_at" type="date" class="admin-form__input" value="<?php echo $escape($values['expires_at']); ?>"><span class="ticket-muted">Obligatorio en anual y mensual. No aplica en tradicional.</span></div>
+        </div>
+        <div class="admin-form__group"><label class="admin-form__label" for="notes">Notas</label><textarea id="notes" name="notes" class="admin-form__textarea" rows="3" maxlength="5000"><?php echo $escape($values['notes']); ?></textarea></div>
+        <div class="admin-form__buttons"><button type="submit" class="btn"><?php echo $license ? 'Guardar cambios' : 'Registrar licencia'; ?></button><?php if ($license): ?><button type="submit" form="delete-license" class="btn btn--danger">Eliminar licencia</button><?php endif; ?></div>
+    </form>
+    <?php if ($license): ?><form id="delete-license" method="post" action="<?php echo $baseUrl; ?>/admin/licencias/<?php echo (int) $license->id; ?>/eliminar" hidden onsubmit="return confirm('¿Seguro que deseas eliminar esta licencia? También se eliminarán sus cotizaciones.');"><input type="hidden" name="_csrf_token" value="<?php echo $csrf; ?>"></form><?php endif; ?>
+    </div>
+    <?php if ($license): ?>
+    <section class="ticket-section-card"><div class="ticket-section-card__header"><div><div class="ticket-section__eyebrow">Renovación</div><h2 class="ticket-section__title">Cotizaciones</h2></div><a href="<?php echo $baseUrl; ?>/admin/licencias/<?php echo (int) $license->id; ?>/cotizaciones/nueva" class="btn">Nueva cotización</a></div><div class="table-wrapper"><table class="table table--tickets"><thead><tr><th>Folio</th><th>Fecha</th><th>Estado</th><th>Observaciones</th><th>Acciones</th></tr></thead><tbody>
+        <?php if (!$quotations): ?><tr><td colspan="5">Esta licencia aún no tiene cotizaciones registradas.</td></tr><?php else: ?><?php foreach ($quotations as $quotationItem): ?>
+            <tr><td data-label="Folio"><?php echo $escape($quotationItem->folio); ?></td><td data-label="Fecha"><?php echo $escape(date('d/m/Y', strtotime($quotationItem->quotedAt))); ?></td><td data-label="Estado"><span class="ticket-status ticket-status--<?php echo $escape($quotationItem->status); ?>"><span class="ticket-status__dot"></span><?php echo $escape(QuotationCatalog::statusLabel($quotationItem->status)); ?></span></td><td data-label="Observaciones"><?php echo $quotationItem->notes ? nl2br($escape($quotationItem->notes)) : '<span class="ticket-muted">Sin observaciones</span>'; ?></td><td data-label="Acciones"><a class="table__action" href="<?php echo $baseUrl; ?>/admin/cotizaciones/<?php echo (int) $quotationItem->id; ?>/editar">Editar</a> <form method="post" action="<?php echo $baseUrl; ?>/admin/cotizaciones/<?php echo (int) $quotationItem->id; ?>/eliminar" class="inline-form" onsubmit="return confirm('¿Seguro que deseas eliminar la cotización <?php echo $escape(addslashes($quotationItem->folio)); ?>?');"><input type="hidden" name="_csrf_token" value="<?php echo $csrf; ?>"><button type="submit" class="table__action table__action--danger table__action-button">Eliminar</button></form></td></tr>
+        <?php endforeach; ?><?php endif; ?>
+    </tbody></table></div></section>
+    <?php endif; ?>
+</section>

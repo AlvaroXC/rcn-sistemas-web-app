@@ -865,6 +865,15 @@ main .section--secondary,
 .ticket-status--por-facturar { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
 .ticket-status--resuelto { background: #dcfce7; color: #15803d; border-color: #86efac; }
 .ticket-status--cerrado { background: #e5e7eb; color: #374151; border-color: #cbd5e1; }
+.ticket-status--vigente { background: #dcfce7; color: #15803d; border-color: #86efac; }
+.ticket-status--por-vencer { background: #fef3c7; color: #92400e; border-color: #fbbf24; }
+.ticket-status--vencida { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
+.ticket-status--vitalicia { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
+.ticket-status--sin-fecha { background: #e5e7eb; color: #374151; border-color: #cbd5e1; }
+.ticket-status--enviada { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+.ticket-status--aceptada { background: #dcfce7; color: #15803d; border-color: #86efac; }
+.ticket-status--facturada { background: #ede9fe; color: #6d28d9; border-color: #c4b5fd; }
+.ticket-status--rechazada { background: #fee2e2; color: #b91c1c; border-color: #fca5a5; }
 
 .ticket-detail-grid {
     display: grid;

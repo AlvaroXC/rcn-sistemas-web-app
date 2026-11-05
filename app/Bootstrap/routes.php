@@ -3,6 +3,8 @@
 use RcnSistemas\Controllers\Admin\AuthController;
 use RcnSistemas\Controllers\Admin\CustomerController;
 use RcnSistemas\Controllers\Admin\CustomerSearchController;
+use RcnSistemas\Controllers\Admin\LicenseController;
+use RcnSistemas\Controllers\Admin\QuotationController;
 use RcnSistemas\Controllers\Admin\DashboardController;
 use RcnSistemas\Controllers\Admin\GoogleCalendarController;
 use RcnSistemas\Controllers\Admin\NotificationController;
@@ -26,6 +28,8 @@ use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Repositories\MysqliAdminUserManagementRepository;
 use RcnSistemas\Repositories\MysqliAdminUserRepository;
 use RcnSistemas\Repositories\MysqliAdminRememberTokenRepository;
+use RcnSistemas\Repositories\MysqliCustomerLicenseRepository;
+use RcnSistemas\Repositories\MysqliLicenseQuotationRepository;
 use RcnSistemas\Repositories\MysqliCustomerQueryRepository;
 use RcnSistemas\Repositories\MysqliCustomerRepository;
 use RcnSistemas\Repositories\MysqliCustomerSearchRepository;
@@ -162,7 +166,8 @@ return static function (array $application): Router {
     $router->get('/admin/tickets/{id}', $showTicket);
     $router->post('/admin/tickets/{id}', $showTicket);
 
-    $customerController = new CustomerController(new MysqliCustomerRepository($connection), new MysqliCustomerQueryRepository($connection), $views);
+    $customerLicenses = new MysqliCustomerLicenseRepository($connection);
+    $customerController = new CustomerController(new MysqliCustomerRepository($connection), new MysqliCustomerQueryRepository($connection), $customerLicenses, $views);
     $customers = $authorized(static fn (Request $request): Response => $customerController->index($request));
     $router->get('/admin/clientes', $customers);
     $router->post('/admin/clientes', $customers);
@@ -172,6 +177,23 @@ return static function (array $application): Router {
     $router->post('/admin/clientes/{id}/editar', $authorized(static fn (Request $request): Response => $customerController->index($request)));
     $router->get('/admin/clientes/{id}', $authorized(static fn (Request $request): Response => $customerController->show($request)));
     $router->get('/admin/clientes/buscar', $authorized(static fn (Request $request): Response => (new CustomerSearchController(new MysqliCustomerSearchRepository($connection)))->index($request)));
+
+    $licenseQuotations = new MysqliLicenseQuotationRepository($connection);
+    $licenseController = new LicenseController($customerLicenses, new MysqliCustomerRepository($connection), $products, $licenseQuotations, $views);
+    $router->get('/admin/licencias', $authorized(static fn (Request $request): Response => $licenseController->index($request)));
+    $router->get('/admin/clientes/{id}/licencias/nueva', $authorized(static fn (Request $request): Response => $licenseController->create($request)));
+    $router->post('/admin/clientes/{id}/licencias/nueva', $authorized(static fn (Request $request): Response => $licenseController->create($request)));
+    $router->get('/admin/licencias/{id}/editar', $authorized(static fn (Request $request): Response => $licenseController->edit($request)));
+    $router->post('/admin/licencias/{id}/editar', $authorized(static fn (Request $request): Response => $licenseController->edit($request)));
+    $router->post('/admin/licencias/{id}/renovar', $authorized(static fn (Request $request): Response => $licenseController->renew($request)));
+    $router->post('/admin/licencias/{id}/eliminar', $authorized(static fn (Request $request): Response => $licenseController->delete($request)));
+
+    $quotationController = new QuotationController($licenseQuotations, $customerLicenses, new MysqliCustomerRepository($connection), $views);
+    $router->get('/admin/licencias/{id}/cotizaciones/nueva', $authorized(static fn (Request $request): Response => $quotationController->create($request)));
+    $router->post('/admin/licencias/{id}/cotizaciones/nueva', $authorized(static fn (Request $request): Response => $quotationController->create($request)));
+    $router->get('/admin/cotizaciones/{id}/editar', $authorized(static fn (Request $request): Response => $quotationController->edit($request)));
+    $router->post('/admin/cotizaciones/{id}/editar', $authorized(static fn (Request $request): Response => $quotationController->edit($request)));
+    $router->post('/admin/cotizaciones/{id}/eliminar', $authorized(static fn (Request $request): Response => $quotationController->delete($request)));
 
     $adminProducts = new AdminProductController($products, new ProductService($products), $views, new UploadService(), $application['root'] . '/uploads/images', $application['root'] . '/uploads/pdfs');
     $productIndex = $authorized(static fn (Request $request): Response => $adminProducts->index($request));
