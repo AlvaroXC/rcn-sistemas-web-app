@@ -83,6 +83,19 @@ main .section--secondary,
 .btn--secondary { background-color: var(--secondary); box-shadow: 0 4px 14px rgba(3, 123, 192, 0.39); }
 .btn--secondary:hover { background-color: var(--primary); }
 .btn--full { width: 100%; }
+/* Un <button> no hereda la tipografía: sin esto queda de distinto tamaño que un <a class="btn">. */
+button.btn { font-family: inherit; font-size: inherit; line-height: inherit; }
+/* Borde con sombra interior para que mida exactamente lo mismo que los demás botones. */
+.btn--danger { background-color: #fff; color: #dc2626; box-shadow: inset 0 0 0 1px #fca5a5; }
+.btn--danger:hover { background-color: #dc2626; color: #fff; box-shadow: 0 4px 14px rgba(220, 38, 38, 0.25); }
+/* Fila de botones de un formulario: alineados a la derecha y sin estirarse al ancho de la tarjeta. */
+.admin-form__buttons { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 1rem; justify-self: end; }
+/* Botones del encabezado (Renovar, Volver…) del mismo ancho y en una sola fila en escritorio. */
+.ticket-header-actions .btn { min-width: 14rem; }
+@media (min-width: 768px) { .admin-header .ticket-header-actions { flex: 0 0 auto; } }
+/* Secciones sueltas de una página (Contactos, Licencias, Tickets, Cotizaciones): separadas de lo que tienen arriba.
+   Las que son tarjeta (.panel-card, p. ej. en el detalle del ticket) ya se espacian con el grid que las contiene. */
+.section > .ticket-section-card:not(.panel-card) { margin-top: 4.5rem; }
 
 /* Header */
 .header { background-color: var(--bg-white); padding: 1.5rem 0; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
@@ -333,8 +346,9 @@ main .section--secondary,
 .float-btn:hover { transform: translateY(-5px) scale(1.05); }
 
 /* Admin Panel */
-.admin-layout { display: grid; grid-template-columns: 1fr; min-height: 100vh; }
-@media (min-width: 992px) { .admin-layout { grid-template-columns: 250px 1fr; transition: grid-template-columns .22s ease; } .admin-layout--collapsed { grid-template-columns: 84px 1fr; } }
+.admin-layout { display: grid; grid-template-columns: minmax(0, 1fr); min-height: 100vh; }
+/* minmax(0, 1fr): el contenido no se ensancha por una tabla grande; la tabla se desplaza dentro de su contenedor. */
+@media (min-width: 992px) { .admin-layout { grid-template-columns: 250px minmax(0, 1fr); transition: grid-template-columns .22s ease; } .admin-layout--collapsed { grid-template-columns: 84px minmax(0, 1fr); } }
 .mobile-topbar, .mobile-sidebar-overlay { display: none; }
 
 .sidebar { background: var(--primary); color: white; padding: 2rem; }
@@ -731,6 +745,8 @@ main .section--secondary,
 .table__action--danger { color: #dc2626; }
 .inline-form { display: inline; margin: 0; }
 .table__action-button { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; }
+.table__action-button.table__action--danger { padding: 0.2rem 0.8rem; border-radius: 6px; background: #fef2f2; box-shadow: inset 0 0 0 1px #fecaca; }
+.table__action-button.table__action--danger:hover { background: #dc2626; color: #fff; box-shadow: none; }
 .status { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 700; }
 .status--active { color: #15803d; }
 .status--inactive { color: #6b7280; }
