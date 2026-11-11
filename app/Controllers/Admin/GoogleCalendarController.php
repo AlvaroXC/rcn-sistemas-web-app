@@ -10,6 +10,7 @@ use RcnSistemas\Core\Security\CsrfService;
 use RcnSistemas\Core\Security\SessionManager;
 use RcnSistemas\Core\View\ViewRenderer;
 use RcnSistemas\Repositories\GoogleCalendarIntegrationRepository;
+use RcnSistemas\Services\Google\GoogleCalendarConfigurationException;
 use RcnSistemas\Services\Google\GoogleCalendarGateway;
 
 final class GoogleCalendarController extends Controller
@@ -58,8 +59,13 @@ final class GoogleCalendarController extends Controller
         if (!$this->session->isAuthenticated()) return Response::redirect(Url::to('/admin/login'));
         if ($this->session->role() !== 'admin') return Response::html('No tienes permisos para administrar Google Calendar.', 403);
         $state = bin2hex(random_bytes(32));
+        try {
+            $authorizationUrl = $this->calendar->authorizationUrl($state);
+        } catch (GoogleCalendarConfigurationException $exception) {
+            return Response::redirect(Url::to('/admin/google-calendar') . '?' . http_build_query(['error' => $exception->getMessage()]));
+        }
         $_SESSION['google_calendar_oauth_state'] = $state;
-        return Response::redirect($this->calendar->authorizationUrl($state));
+        return Response::redirect($authorizationUrl);
     }
 
     public function callback(Request $request): Response

@@ -3,6 +3,7 @@
 namespace Tests\Unit\Services\Google;
 
 use PHPUnit\Framework\TestCase;
+use RcnSistemas\Services\Google\GoogleCalendarConfigurationException;
 use RcnSistemas\Services\Google\GoogleCalendarService;
 use RcnSistemas\Services\Google\TokenEncryption;
 
@@ -19,5 +20,13 @@ final class GoogleCalendarServiceTest extends TestCase
 
         self::assertStringContainsString('state=state-value', $url);
         self::assertStringContainsString('access_type=offline', $url);
+    }
+
+    public function test_it_reports_missing_configuration_instead_of_failing_inside_the_google_client(): void
+    {
+        $service = new GoogleCalendarService(['client_id' => '', 'client_secret' => '', 'redirect_uri' => ''], new TokenEncryption('test-secret'));
+
+        $this->expectException(GoogleCalendarConfigurationException::class);
+        $service->authorizationUrl('state-value');
     }
 }

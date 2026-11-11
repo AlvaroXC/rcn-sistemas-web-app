@@ -116,6 +116,10 @@ final class GoogleCalendarService implements GoogleCalendarGateway
 
     private function newClient(): Client
     {
+        $redirectUri = (string) ($this->config['redirect_uri'] ?? '');
+        if (trim((string) ($this->config['client_id'] ?? '')) === '' || trim((string) ($this->config['client_secret'] ?? '')) === '' || !preg_match('#^https?://#i', $redirectUri)) {
+            throw new GoogleCalendarConfigurationException('Google Calendar no está configurado: agrega GOOGLE_CALENDAR_CLIENT_ID, GOOGLE_CALENDAR_CLIENT_SECRET y GOOGLE_CALENDAR_REDIRECT_URI (dirección completa) al archivo .env.');
+        }
         $client = new Client();
         $client->setClientId((string) ($this->config['client_id'] ?? ''));
         $client->setClientSecret((string) ($this->config['client_secret'] ?? ''));
