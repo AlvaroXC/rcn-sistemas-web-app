@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS admin_notifications (
     KEY idx_admin_notifications_user_id (user_id),
     KEY idx_admin_notifications_ticket_id (ticket_id),
     KEY idx_admin_notifications_is_read (is_read)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS admin_remember_tokens (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -24,4 +24,4 @@ CREATE TABLE IF NOT EXISTS admin_remember_tokens (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     KEY idx_admin_remember_tokens_user_id (user_id),
     KEY idx_admin_remember_tokens_expires_at (expires_at)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

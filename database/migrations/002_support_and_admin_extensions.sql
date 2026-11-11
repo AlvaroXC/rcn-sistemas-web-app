@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS customers (
     KEY idx_customers_email_normalized (email_normalized),
     UNIQUE KEY uniq_customers_phone_normalized (phone_normalized),
     KEY idx_customers_name (name)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS tickets (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     KEY idx_tickets_status (status),
     KEY idx_tickets_created_at (created_at),
     KEY idx_tickets_assigned_user_id (assigned_user_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS ticket_observations (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
@@ -56,4 +56,4 @@ CREATE TABLE IF NOT EXISTS ticket_observations (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     KEY idx_ticket_observations_ticket_id (ticket_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

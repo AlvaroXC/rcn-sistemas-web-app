@@ -15,4 +15,4 @@ CREATE TABLE IF NOT EXISTS customer_licenses (
     UNIQUE KEY uniq_customer_licenses_serial_number (serial_number),
     KEY idx_customer_licenses_customer_id (customer_id),
     KEY idx_customer_licenses_expires_at (expires_at)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
