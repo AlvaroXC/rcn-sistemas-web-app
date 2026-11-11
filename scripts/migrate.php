@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 $application = require __DIR__ . '/../app/Bootstrap/app.php';
 $connection = $application['database']->get(false);
 $databaseName = (string) ($application['config']->get('database.database') ?? '');

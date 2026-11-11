@@ -1,5 +1,10 @@
 <?php
 
+if (PHP_SAPI !== 'cli') {
+    http_response_code(404);
+    exit;
+}
+
 use RcnSistemas\Repositories\MysqliGoogleCalendarConnectionRepository;
 use RcnSistemas\Repositories\MysqliGoogleCalendarEventMigrationRepository;
 use RcnSistemas\Repositories\MysqliGoogleCalendarIntegrationRepository;
