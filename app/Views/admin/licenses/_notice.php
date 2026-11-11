@@ -1,0 +1,1 @@
+<?php if (!empty($licenseNotice['message'])): ?><p class="alert alert--<?php echo $licenseNotice['type'] === 'error' ? 'error' : 'success'; ?>" role="status"><?php echo htmlspecialchars($licenseNotice['message'], ENT_QUOTES, 'UTF-8'); ?></p><?php endif; ?>

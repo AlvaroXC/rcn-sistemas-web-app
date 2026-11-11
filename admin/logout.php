@@ -1,14 +1,13 @@
 <?php
-require_once '../includes/security.php';
-require_once '../includes/db.php';
 
-start_secure_session(false);
-revoke_current_admin_remember_me($conn);
+use RcnSistemas\Core\Security\SessionManager;
+use RcnSistemas\Repositories\MysqliAdminUserRepository;
+use RcnSistemas\Repositories\MysqliAdminRememberTokenRepository;
+use RcnSistemas\Services\AuthService;
 
-$_SESSION = [];
-session_destroy();
-setcookie(session_name(), '', time() - 3600, '/');
-
-header("Location: login.php");
+$application = require __DIR__ . '/../app/Bootstrap/app.php';
+$session = new SessionManager();
+$connection = $application['database']->get();
+(new AuthService(new MysqliAdminUserRepository($connection), $session, new MysqliAdminRememberTokenRepository($connection)))->logout();
+header('Location: ' . \RcnSistemas\Core\Routing\Url::to('/admin/login'));
 exit;
-?>

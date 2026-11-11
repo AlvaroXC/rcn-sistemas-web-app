@@ -1,0 +1,12 @@
+<?php use RcnSistemas\Core\Routing\Url; ?>
+<?php
+$productImage = (string) $product->imagePath;
+if ($productImage !== '' && !preg_match('#^https?://#i', $productImage)) {
+    $productImage = \RcnSistemas\Core\Routing\Url::to('/' . ltrim($productImage, '/'));
+}
+?>
+<main>
+    <section class="section"><div class="container"><div class="product-detail"><div class="product-detail__visual"><?php if ($productImage): ?><img src="<?php echo htmlspecialchars($productImage, ENT_QUOTES, 'UTF-8'); ?>" alt="<?php echo htmlspecialchars($product->name, ENT_QUOTES, 'UTF-8'); ?>" class="product-detail__img"><?php endif; ?></div><div class="product-detail__info"><h1 class="product-detail__title"><?php echo htmlspecialchars($product->name, ENT_QUOTES, 'UTF-8'); ?></h1><p class="product-detail__info-text"><?php echo nl2br(htmlspecialchars($product->longDescription, ENT_QUOTES, 'UTF-8')); ?></p><div class="product-detail__actions"><a href="<?php echo \RcnSistemas\Core\Routing\Url::to('/contacto/producto/' . $product->id); ?>" class="btn">Cotizar ahora</a><?php if ($product->pdfPath): ?><a href="<?php echo htmlspecialchars($product->pdfPath, ENT_QUOTES, 'UTF-8'); ?>" target="_blank" rel="noopener" class="btn btn--secondary"><i class="fas fa-file-pdf"></i> Descargar ficha</a><?php endif; ?></div></div></div></div></section>
+    <?php if ($product->benefits): ?><section class="section section--secondary"><div class="container"><div class="section__title"><h2>Beneficios clave</h2><p class="section__title-text">Por qué este sistema es la mejor inversión para tu negocio.</p></div><div class="grid"><?php foreach ($product->benefits as $benefit): ?><div class="benefit"><i class="fas fa-check-circle benefit__icon"></i><h3 class="benefit__title"><?php echo htmlspecialchars($benefit->title, ENT_QUOTES, 'UTF-8'); ?></h3><p class="benefit__text"><?php echo htmlspecialchars($benefit->description, ENT_QUOTES, 'UTF-8'); ?></p></div><?php endforeach; ?></div></div></section><?php endif; ?>
+    <?php if ($product->videoLink): ?><section class="section"><div class="container"><div class="section__title"><h2>Mira cómo funciona</h2><p class="section__title-text">Una breve demostración de las capacidades del sistema.</p></div><div class="video-wrapper"><div class="video-container"><iframe src="<?php echo htmlspecialchars(str_replace('watch?v=', 'embed/', $product->videoLink), ENT_QUOTES, 'UTF-8'); ?>" allowfullscreen title="Demostración del producto"></iframe></div></div></div></section><?php endif; ?>
+</main>

@@ -1,0 +1,4 @@
+<section>
+    <h1>Ocurrió un error</h1>
+    <p>No fue posible completar la solicitud.</p>
+</section>

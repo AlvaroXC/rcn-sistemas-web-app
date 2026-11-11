@@ -1,0 +1,7 @@
+.public-page .container { max-width: 1180px; }
+.public-page .footer a { color: inherit; }
+.feature-card { padding: 3rem; text-align: center; border: none; background: transparent; box-shadow: none; }
+.feature-card__icon { font-size: 4rem; color: var(--accent); margin-bottom: 2rem; }
+.product-empty { grid-column: 1 / -1; padding: 10rem 0; }
+.product-empty__icon { font-size: 6rem; color: var(--border); margin-bottom: 2rem; }
+.testimonial-form-card { max-width: 600px; margin: 0 auto; }

@@ -1,0 +1,60 @@
+<FilesMatch "^(debug_db|fix_admin|fix_paths|seed)\.php$">
+    Require all denied
+</FilesMatch>
+
+Options -MultiViews
+DirectoryIndex index.php
+RewriteEngine On
+
+# Rutas amigables administrativas.
+RewriteRule ^admin/login/?$ admin/login.php [L,QSA]
+RewriteRule ^admin/logout/?$ admin/logout.php [L,QSA]
+RewriteRule ^admin/?$ admin/index.php [L,QSA]
+
+RewriteRule ^admin/productos/?$ admin/products.php [L,QSA]
+RewriteRule ^admin/productos/nuevo/?$ admin/products.php?action=new [L,QSA]
+RewriteRule ^admin/productos/([0-9]+)/editar/?$ admin/products.php?action=edit&id=$1 [L,QSA]
+
+RewriteRule ^admin/promociones/?$ admin/promotions.php [L,QSA]
+RewriteRule ^admin/promociones/nueva/?$ admin/promotions.php?action=new [L,QSA]
+RewriteRule ^admin/promociones/([0-9]+)/editar/?$ admin/promotions.php?action=edit&id=$1 [L,QSA]
+
+RewriteRule ^admin/tickets/?$ admin/tickets.php [L,QSA]
+RewriteRule ^admin/tickets/nuevo/?$ admin/ticket_create.php [L,QSA]
+RewriteRule ^admin/tickets/nuevo/cliente/([0-9]+)/?$ admin/ticket_create.php?customer_id=$1 [L,QSA]
+RewriteRule ^admin/tickets/([0-9]+)/orden-servicio\.pdf$ admin/ticket_service_order_pdf.php?id=$1 [L,QSA]
+RewriteRule ^admin/tickets/([0-9]+)/?$ admin/ticket_view.php?id=$1 [L,QSA]
+
+RewriteRule ^admin/clientes/?$ admin/customers.php [L,QSA]
+RewriteRule ^admin/clientes/nuevo/?$ admin/customer_create.php [L,QSA]
+RewriteRule ^admin/clientes/buscar/?$ admin/customer_search.php [L,QSA]
+RewriteRule ^admin/clientes/([0-9]+)/editar/?$ admin/customer_edit.php?id=$1 [L,QSA]
+RewriteRule ^admin/clientes/([0-9]+)/?$ admin/customer_view.php?id=$1 [L,QSA]
+
+RewriteRule ^admin/usuarios/?$ admin/users.php [L,QSA]
+RewriteRule ^admin/usuarios/nuevo/?$ admin/user_create.php [L,QSA]
+RewriteRule ^admin/usuarios/([0-9]+)/editar/?$ admin/user_edit.php?id=$1 [L,QSA]
+
+RewriteRule ^admin/notificaciones/?$ admin/notifications.php [L,QSA]
+RewriteRule ^admin/notificaciones/stream/?$ admin/notifications_stream.php [L,QSA]
+
+# Google Calendar utiliza el controlador frontal para OAuth.
+RewriteRule ^admin/google-calendar(?:/.*)?$ index.php [L,QSA]
+
+# Rutas amigables públicas.
+RewriteRule ^productos/?$ productos.php [L,QSA]
+RewriteRule ^productos/([0-9]+)/?$ product_view.php?id=$1 [L,QSA]
+RewriteRule ^promociones/?$ promociones.php [L,QSA]
+RewriteRule ^promociones/([0-9]+)/?$ promotion_view.php?id=$1 [L,QSA]
+RewriteRule ^testimoniales/?$ testimoniales.php [L,QSA]
+RewriteRule ^contacto/?$ contacto.php [L,QSA]
+RewriteRule ^contacto/producto/([0-9]+)/?$ contacto.php?product=$1 [L,QSA]
+RewriteRule ^contacto/promocion/([0-9]+)/?$ contacto.php?promo=$1 [L,QSA]
+
+# Archivos y directorios reales.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# Front controller para cualquier ruta restante.
+RewriteRule ^ index.php [L,QSA]

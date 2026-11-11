@@ -1,53 +1,8 @@
-CREATE DATABASE IF NOT EXISTS rcnsiste_axsoluciones;
-USE rcnsiste_axsoluciones;
-
-CREATE TABLE IF NOT EXISTS users (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
-    password VARCHAR(255) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS products (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    short_description TEXT,
-    long_description TEXT,
-    video_link VARCHAR(255),
-    pdf_path VARCHAR(255),
-    image_path VARCHAR(255),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS benefits (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    product_id INT,
-    title VARCHAR(100),
-    description TEXT,
-    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS promotions (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    title VARCHAR(100) NOT NULL,
-    short_description TEXT,
-    full_description TEXT,
-    terms_conditions TEXT,
-    image_path VARCHAR(255),
-    start_date DATE,
-    end_date DATE,
-    active BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS testimonials (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    name VARCHAR(100),
-    message TEXT,
-    rating INT DEFAULT 5,
-    date DATE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
-INSERT INTO users (username, password) VALUES ('admin', '$2y$10$8C/p0Q5Kq7Z3Q/S1h8lE.O7U6f4f2rV/pE.O7U6f4f2rV/pE.O7U6');
+-- Selecciona la base de datos destino antes de ejecutar este archivo.
+-- Desde la raiz del proyecto se recomienda ejecutar: php scripts/migrate.php
+SOURCE database/migrations/001_initial_schema.sql;
+SOURCE database/migrations/002_support_and_admin_extensions.sql;
+SOURCE database/migrations/003_notifications_and_sessions.sql;
+SOURCE database/migrations/004_complete_ticket_audit_schema.sql;
+SOURCE database/migrations/005_google_calendar.sql;
+SOURCE database/migrations/006_push_notifications.sql;

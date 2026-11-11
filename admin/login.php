@@ -1,45 +1,29 @@
 <?php
-require_once '../includes/security.php';
-require_once '../includes/db.php';
 
-start_secure_session(false);
+use RcnSistemas\Core\Security\CsrfService;
+use RcnSistemas\Core\Security\SessionManager;
+use RcnSistemas\Repositories\MysqliAdminUserRepository;
+use RcnSistemas\Repositories\MysqliAdminRememberTokenRepository;
+use RcnSistemas\Services\AuthService;
 
-if (isset($_SESSION['admin_id'])) {
-    header("Location: index.php");
-    exit;
-}
+$application = require __DIR__ . '/../app/Bootstrap/app.php';
+$session = new SessionManager();
+$session->start();
+$auth = new AuthService(new MysqliAdminUserRepository($application['database']->get()), $session, new MysqliAdminRememberTokenRepository($application['database']->get()));
+$auth->restoreRememberedSession();
+if ($session->isAuthenticated()) { header('Location: ' . \RcnSistemas\Core\Routing\Url::to('/admin')); exit; }
 
-$error = false;
-$loginFlash = get_flash_message('login_notice');
-$loginNotice = trim((string) ($loginFlash['message'] ?? ''));
-$loginNoticeType = trim((string) ($loginFlash['type'] ?? 'error'));
-if (!in_array($loginNoticeType, ['success', 'error'], true)) {
-    $loginNoticeType = 'error';
-}
-
+$csrf = new CsrfService($session);
+$csrf->token();
+$error = null;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username = trim((string) ($_POST['username'] ?? ''));
-    $password = $_POST['password'];
-    $rememberMe = isset($_POST['remember_me']) && $_POST['remember_me'] === '1';
-    
-    $stmt = $conn->prepare("SELECT id, username, password, display_name, role, active FROM users WHERE username = ?");
-    $stmt->bind_param("s", $username);
-    $stmt->execute();
-    $result = $stmt->get_result();
-    
-    if ($user = $result->fetch_assoc()) {
-        if ((int) ($user['active'] ?? 1) === 1 && password_verify($password, $user['password'])) {
-            set_admin_authenticated_session($user);
-            if ($rememberMe) {
-                issue_admin_remember_me_token($conn, (int) $user['id']);
-            } else {
-                revoke_current_admin_remember_me($conn);
-            }
-            header("Location: index.php");
-            exit;
-        }
+    try {
+        $csrf->validate($_POST['_csrf_token'] ?? null);
+        if ($auth->authenticate(trim((string) ($_POST['username'] ?? '')), (string) ($_POST['password'] ?? ''), !empty($_POST['remember_me']))) { header('Location: ' . \RcnSistemas\Core\Routing\Url::to('/admin')); exit; }
+        $error = 'Usuario o contraseña incorrectos.';
+    } catch (Throwable $exception) {
+        $error = $exception->getMessage();
     }
-    $error = "Usuario o contraseña incorrectos.";
 }
 ?>
 <!DOCTYPE html>
@@ -57,37 +41,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body>
     <div class="card login-card">
         <h1 style="text-align: center; margin-bottom: 4rem; font-size: 3rem;">Admin<span>RCN</span></h1>
-
-        <?php if($loginNotice !== ''): ?>
-            <div class="alert alert--<?php echo e($loginNoticeType); ?>">
-                <?php echo e($loginNotice); ?>
-            </div>
-        <?php endif; ?>
-        
-        <?php if($error): ?>
-            <div class="alert alert--error">
-                <?php echo e($error); ?>
-            </div>
-        <?php endif; ?>
-
-        <form action="login.php" method="POST" style="display: grid; gap: 2rem;">
-            <div style="display: grid; gap: 0.8rem;">
-                <label style="font-weight: 700; font-size: 1.3rem;">Usuario</label>
-                <input type="text" name="username" required style="padding: 1.2rem; border: 1px solid var(--border); border-radius: 8px;">
-            </div>
-            <div style="display: grid; gap: 0.8rem;">
-                <label style="font-weight: 700; font-size: 1.3rem;">Contraseña</label>
-                <input type="password" name="password" required style="padding: 1.2rem; border: 1px solid var(--border); border-radius: 8px;">
-            </div>
-            <label style="display: inline-flex; align-items: center; gap: 1rem; font-size: 1.4rem; color: var(--text-dark);">
-                <input type="checkbox" name="remember_me" value="1" style="width: 1.6rem; height: 1.6rem;">
-                Mantener sesión iniciada
-            </label>
+        <?php if ($error): ?><div class="alert alert--error"><?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?></div><?php endif; ?>
+        <form action="<?php echo \RcnSistemas\Core\Routing\Url::to('/admin/login'); ?>" method="post" style="display: grid; gap: 2rem;">
+            <input type="hidden" name="_csrf_token" value="<?php echo htmlspecialchars($csrf->token(), ENT_QUOTES, 'UTF-8'); ?>">
+            <div style="display: grid; gap: 0.8rem;"><label style="font-weight: 700; font-size: 1.3rem;">Usuario</label><input type="text" name="username" required autofocus style="padding: 1.2rem; border: 1px solid var(--border); border-radius: 8px;"></div>
+            <div style="display: grid; gap: 0.8rem;"><label style="font-weight: 700; font-size: 1.3rem;">Contraseña</label><input type="password" name="password" required style="padding: 1.2rem; border: 1px solid var(--border); border-radius: 8px;"></div>
+            <label style="display: inline-flex; align-items: center; gap: 1rem; font-size: 1.4rem; color: var(--text-dark);"><input type="checkbox" name="remember_me" value="1" style="width: 1.6rem; height: 1.6rem;">Mantener sesión iniciada</label>
             <button type="submit" class="btn" style="width: 100%; margin-top: 1rem;">Entrar al Panel</button>
         </form>
-        <p style="text-align: center; margin-top: 3rem; font-size: 1.3rem; color: var(--text-muted);">
-            &copy; <?php echo date('Y'); ?> RCN Sistemas
-        </p>
+        <p style="text-align: center; margin-top: 3rem; font-size: 1.3rem; color: var(--text-muted);">&copy; <?php echo date('Y'); ?> RCN Sistemas</p>
     </div>
 </body>
 </html>
