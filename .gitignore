@@ -13,3 +13,4 @@ scratch/
 .gemini/
 /storage/credentials/*.json
 
+.claude/
